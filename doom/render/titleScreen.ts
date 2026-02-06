@@ -191,9 +191,9 @@ function fillRect(
 			} else {
 				// Alpha blend
 				const idx = (py * fb.width + px) * 4;
-				const sr = fb.data[idx] ?? 0;
-				const sg = fb.data[idx + 1] ?? 0;
-				const sb = fb.data[idx + 2] ?? 0;
+				const sr = fb.colorBuffer[idx] ?? 0;
+				const sg = fb.colorBuffer[idx + 1] ?? 0;
+				const sb = fb.colorBuffer[idx + 2] ?? 0;
 				const alpha = a / 255;
 				const outR = Math.round(sr * (1 - alpha) + r * alpha);
 				const outG = Math.round(sg * (1 - alpha) + g * alpha);

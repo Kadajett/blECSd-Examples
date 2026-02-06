@@ -63,7 +63,7 @@ function renderPanel(out: string[], panel: Panel, idx: number): void {
 	// Stage 1: Background
 	if (stageIdx >= 0) {
 		for (let dy = 0; dy < h; dy++) {
-			out.push(moveTo(pos.y + dy, pos.x));
+			out.push(moveTo(pos!.y + dy, pos!.x));
 			for (let dx = 0; dx < w; dx++) out.push(stageIdx === 0 || stageIdx === 3 ? `${bg} \x1b[0m` : ' ');
 		}
 	}
@@ -71,19 +71,19 @@ function renderPanel(out: string[], panel: Panel, idx: number): void {
 	// Stage 2: Border
 	if (stageIdx >= 1 && stageIdx !== 0) {
 		const bc = isSel ? '\x1b[1;33m' : '\x1b[37m';
-		out.push(moveTo(pos.y, pos.x) + `${bc}${ch(cs.topLeft)}${ch(cs.horizontal).repeat(w - 2)}${ch(cs.topRight)}\x1b[0m`);
+		out.push(moveTo(pos!.y, pos!.x) + `${bc}${ch(cs.topLeft)}${ch(cs.horizontal).repeat(w - 2)}${ch(cs.topRight)}\x1b[0m`);
 		for (let dy = 1; dy < h - 1; dy++) {
-			out.push(moveTo(pos.y + dy, pos.x) + `${bc}${ch(cs.vertical)}\x1b[0m`);
-			out.push(moveTo(pos.y + dy, pos.x + w - 1) + `${bc}${ch(cs.vertical)}\x1b[0m`);
+			out.push(moveTo(pos!.y + dy, pos!.x) + `${bc}${ch(cs.vertical)}\x1b[0m`);
+			out.push(moveTo(pos!.y + dy, pos!.x + w - 1) + `${bc}${ch(cs.vertical)}\x1b[0m`);
 		}
-		out.push(moveTo(pos.y + h - 1, pos.x) + `${bc}${ch(cs.bottomLeft)}${ch(cs.horizontal).repeat(w - 2)}${ch(cs.bottomRight)}\x1b[0m`);
+		out.push(moveTo(pos!.y + h - 1, pos!.x) + `${bc}${ch(cs.bottomLeft)}${ch(cs.horizontal).repeat(w - 2)}${ch(cs.bottomRight)}\x1b[0m`);
 	}
 
 	// Stage 3: Content
 	if (stageIdx >= 2) {
 		const content = `${panel.name}: ${panel.style}`;
-		out.push(moveTo(pos.y + 2, pos.x + 2) + `\x1b[1m${content}\x1b[0m`);
-		out.push(moveTo(pos.y + 4, pos.x + 2) + `\x1b[90mvis=${isVisible(world, panel.eid)}\x1b[0m`);
+		out.push(moveTo(pos!.y + 2, pos!.x + 2) + `\x1b[1m${content}\x1b[0m`);
+		out.push(moveTo(pos!.y + 4, pos!.x + 2) + `\x1b[90mvis=${isVisible(world, panel.eid)}\x1b[0m`);
 	}
 }
 

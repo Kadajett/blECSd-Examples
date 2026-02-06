@@ -41,7 +41,7 @@ function render(): void {
 	const total = list.getLineCount();
 	const cursor = list.getCursor();
 	const scrollInfo = list.getScrollInfo();
-	const firstVisible = scrollInfo?.scrollTop ?? 0;
+	const firstVisible = scrollInfo?.currentLine ?? 0;
 
 	out.push(`  Items: \x1b[36m${total}\x1b[0m  Cursor: \x1b[33m${cursor + 1}\x1b[0m  Visible from: \x1b[32m${firstVisible + 1}\x1b[0m\n`);
 	out.push('  ' + '\u2500'.repeat(Math.min(width - 4, 62)) + '\n');

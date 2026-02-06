@@ -64,11 +64,11 @@ function render(): void {
 		const border = isSel ? '\x1b[1;33m' : '\x1b[90m';
 		const status = dirtyFlag ? `${box.color}\u25cf DIRTY\x1b[0m` : '\x1b[90m\u25cb clean\x1b[0m';
 
-		out.push(moveTo(pos.y, pos.x) + `${border}\u250c${'─'.repeat(16)}\u2510\x1b[0m`);
-		out.push(moveTo(pos.y + 1, pos.x) + `${border}\u2502\x1b[0m ${box.color}${box.name.padEnd(8)}\x1b[0m ${status} ${border}\u2502\x1b[0m`);
-		out.push(moveTo(pos.y + 2, pos.x) + `${border}\u2502\x1b[0m${''.padEnd(16)}${border}\u2502\x1b[0m`);
-		out.push(moveTo(pos.y + 3, pos.x) + `${border}\u2502\x1b[0m \x1b[90m${getContent(world, box.eid).padEnd(15)}\x1b[0m${border}\u2502\x1b[0m`);
-		out.push(moveTo(pos.y + 4, pos.x) + `${border}\u2514${'─'.repeat(16)}\u2518\x1b[0m`);
+		out.push(moveTo(pos!.y, pos!.x) + `${border}\u250c${'─'.repeat(16)}\u2510\x1b[0m`);
+		out.push(moveTo(pos!.y + 1, pos!.x) + `${border}\u2502\x1b[0m ${box.color}${box.name.padEnd(8)}\x1b[0m ${status} ${border}\u2502\x1b[0m`);
+		out.push(moveTo(pos!.y + 2, pos!.x) + `${border}\u2502\x1b[0m${''.padEnd(16)}${border}\u2502\x1b[0m`);
+		out.push(moveTo(pos!.y + 3, pos!.x) + `${border}\u2502\x1b[0m \x1b[90m${getContent(world, box.eid).padEnd(15)}\x1b[0m${border}\u2502\x1b[0m`);
+		out.push(moveTo(pos!.y + 4, pos!.x) + `${border}\u2514${'─'.repeat(16)}\u2518\x1b[0m`);
 	}
 
 	out.push(moveTo(height - 1, 2) + `\x1b[90mPress [d] to dirty selected, [c] to clean, [a] to dirty all, [x] to clean all\x1b[0m`);

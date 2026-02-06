@@ -16,14 +16,14 @@ const table = addEntity(world);
 attachTableBehavior(world, table);
 
 // Configure display
-setTableDisplay(table, { borderStyle: 'single', headerStyle: 'bold', padding: 1, zebra: true });
+setTableDisplay(table, {});
 
 // Set headers
 setHeaders(world, table, [
-	{ key: 'name', label: 'Name', width: 15, align: 'left' },
-	{ key: 'role', label: 'Role', width: 12, align: 'left' },
-	{ key: 'level', label: 'Level', width: 8, align: 'right' },
-	{ key: 'status', label: 'Status', width: 10, align: 'center' },
+	{ header: 'Name', width: 15, align: 'left' },
+	{ header: 'Role', width: 12, align: 'left' },
+	{ header: 'Level', width: 8, align: 'right' },
+	{ header: 'Status', width: 10, align: 'center' },
 ]);
 
 // Add sample data
@@ -92,7 +92,7 @@ process.stdin.on('data', (data: Buffer) => {
 		// Remove all and re-add with random levels
 		while (getDataRows(table).length > 0) removeRow(world, table, 0);
 		for (const row of data) {
-			const cells = row.map((c) => c.text ?? '');
+			const cells = row.map((c) => c.value ?? '');
 			cells[2] = String(Math.random() * 99 | 0);
 			appendRow(world, table, cells);
 		}

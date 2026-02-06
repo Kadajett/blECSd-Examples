@@ -40,7 +40,6 @@ import {
 	sortByZIndex,
 	setWorldAdapter,
 	createCellBuffer,
-	fillRect,
 	packColor,
 } from 'blecsd';
 
@@ -178,6 +177,16 @@ interface CellBufferDirect {
 	height: number;
 	cells: { char: string; fg: number; bg: number }[][];
 	setCell: (x: number, y: number, char: string, fg: number, bg: number) => void;
+}
+
+function fillRect(buffer: CellBufferDirect, x: number, y: number, w: number, h: number, char: string, fg: number, bg: number): void {
+	for (let row = y; row < y + h && row < buffer.height; row++) {
+		if (row < 0) continue;
+		for (let col = x; col < x + w && col < buffer.width; col++) {
+			if (col < 0) continue;
+			buffer.setCell(col, row, char, fg, bg);
+		}
+	}
 }
 
 interface Panel {

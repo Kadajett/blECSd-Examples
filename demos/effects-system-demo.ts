@@ -77,23 +77,23 @@ function render(): void {
 		// Draw shadow first
 		if (shadowEnabled) {
 			for (let dy = 0; dy < 6; dy++) {
-				out.push(moveTo(pos.y + dy + off.y, pos.x + off.x));
-				out.push('\x1b[90m' + String.fromCharCode(shadowCh).repeat(18) + '\x1b[0m');
+				out.push(moveTo(pos!.y + dy + off!.y, pos!.x + off!.x));
+				out.push('\x1b[90m' + String.fromCharCode(shadowCh!).repeat(18) + '\x1b[0m');
 			}
 		}
 
 		// Draw box
 		const border = isSel ? '\x1b[1;33m' : '\x1b[37m';
-		out.push(moveTo(pos.y, pos.x) + `${border}\u250c${'─'.repeat(16)}\u2510\x1b[0m`);
+		out.push(moveTo(pos!.y, pos!.x) + `${border}\u250c${'─'.repeat(16)}\u2510\x1b[0m`);
 		for (let dy = 1; dy < 5; dy++) {
-			out.push(moveTo(pos.y + dy, pos.x) + `${border}\u2502\x1b[0m${box.color}${''.padEnd(16)}\x1b[0m${border}\u2502\x1b[0m`);
+			out.push(moveTo(pos!.y + dy, pos!.x) + `${border}\u2502\x1b[0m${box.color}${''.padEnd(16)}\x1b[0m${border}\u2502\x1b[0m`);
 		}
-		out.push(moveTo(pos.y + 5, pos.x) + `${border}\u2514${'─'.repeat(16)}\u2518\x1b[0m`);
+		out.push(moveTo(pos!.y + 5, pos!.x) + `${border}\u2514${'─'.repeat(16)}\u2518\x1b[0m`);
 
 		// Content
-		out.push(moveTo(pos.y + 2, pos.x + 2) + `\x1b[1m${box.label}\x1b[0m`);
+		out.push(moveTo(pos!.y + 2, pos!.x + 2) + `\x1b[1m${box.label}\x1b[0m`);
 		const status = shadowEnabled ? `\x1b[32mShadow: ${shadowNames[box.charIdx]}\x1b[0m` : '\x1b[90mNo shadow\x1b[0m';
-		out.push(moveTo(pos.y + 3, pos.x + 2) + status);
+		out.push(moveTo(pos!.y + 3, pos!.x + 2) + status);
 	}
 
 	// Color interpolation bar
@@ -136,8 +136,8 @@ process.stdin.on('data', (data: Buffer) => {
 		setShadowChar(world, boxes[selected]!.eid, shadowChars[idx]!);
 	}
 	const dir = parseArrowKey(data);
-	if (dir === 'up') setShadowOffset(world, boxes[selected]!.eid, getShadowOffset(world, boxes[selected]!.eid).x, getShadowOffset(world, boxes[selected]!.eid).y - 1);
-	if (dir === 'down') setShadowOffset(world, boxes[selected]!.eid, getShadowOffset(world, boxes[selected]!.eid).x, getShadowOffset(world, boxes[selected]!.eid).y + 1);
-	if (dir === 'left') setShadowOffset(world, boxes[selected]!.eid, getShadowOffset(world, boxes[selected]!.eid).x - 1, getShadowOffset(world, boxes[selected]!.eid).y);
-	if (dir === 'right') setShadowOffset(world, boxes[selected]!.eid, getShadowOffset(world, boxes[selected]!.eid).x + 1, getShadowOffset(world, boxes[selected]!.eid).y);
+	if (dir === 'up') setShadowOffset(world, boxes[selected]!.eid, getShadowOffset(world, boxes[selected]!.eid)!.x, getShadowOffset(world, boxes[selected]!.eid)!.y - 1);
+	if (dir === 'down') setShadowOffset(world, boxes[selected]!.eid, getShadowOffset(world, boxes[selected]!.eid)!.x, getShadowOffset(world, boxes[selected]!.eid)!.y + 1);
+	if (dir === 'left') setShadowOffset(world, boxes[selected]!.eid, getShadowOffset(world, boxes[selected]!.eid)!.x - 1, getShadowOffset(world, boxes[selected]!.eid)!.y);
+	if (dir === 'right') setShadowOffset(world, boxes[selected]!.eid, getShadowOffset(world, boxes[selected]!.eid)!.x + 1, getShadowOffset(world, boxes[selected]!.eid)!.y);
 });

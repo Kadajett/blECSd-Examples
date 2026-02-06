@@ -24,7 +24,7 @@ const box = createScrollableBox(world, addEntity(world) as Entity, {
 	content: contentLines.join('\n'),
 	border: { type: 'line', ch: 'rounded', fg: '#5cc8ff' },
 	padding: 1, fg: '#ffffff',
-	scrollbar: { mode: 'always', fg: '#ffcc00', bg: '#333333' },
+	scrollbar: { mode: 'visible', fg: '#ffcc00', bg: '#333333' },
 	scrollWidth: 55, scrollHeight: contentLines.length, keys: true, mouse: true,
 });
 

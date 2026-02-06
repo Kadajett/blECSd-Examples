@@ -146,19 +146,19 @@ export function pointToAngle(x: number, y: number): number {
 		if (y >= 0) {
 			if (x > y) {
 				// octant 0
-				return tantoangle[slopeDiv(y, x)] >>> 0;
+				return tantoangle[slopeDiv(y, x)]! >>> 0;
 			}
 			// octant 1
-			return (ANG90 - 1 - tantoangle[slopeDiv(x, y)]) >>> 0;
+			return (ANG90 - 1 - tantoangle[slopeDiv(x, y)]!) >>> 0;
 		}
 		// y < 0
 		const ay = -y;
 		if (x > ay) {
 			// octant 8
-			return (-tantoangle[slopeDiv(ay, x)]) >>> 0;
+			return (-tantoangle[slopeDiv(ay, x)]!) >>> 0;
 		}
 		// octant 7
-		return (ANG270 + tantoangle[slopeDiv(x, ay)]) >>> 0;
+		return (ANG270 + tantoangle[slopeDiv(x, ay)]!) >>> 0;
 	}
 
 	// x < 0
@@ -166,20 +166,20 @@ export function pointToAngle(x: number, y: number): number {
 	if (y >= 0) {
 		if (ax > y) {
 			// octant 3
-			return (ANG180 - 1 - tantoangle[slopeDiv(y, ax)]) >>> 0;
+			return (ANG180 - 1 - tantoangle[slopeDiv(y, ax)]!) >>> 0;
 		}
 		// octant 2
-		return (ANG90 + tantoangle[slopeDiv(ax, y)]) >>> 0;
+		return (ANG90 + tantoangle[slopeDiv(ax, y)]!) >>> 0;
 	}
 
 	// x < 0, y < 0
 	const ay = -y;
 	if (ax > ay) {
 		// octant 4
-		return (ANG180 + tantoangle[slopeDiv(ay, ax)]) >>> 0;
+		return (ANG180 + tantoangle[slopeDiv(ay, ax)]!) >>> 0;
 	}
 	// octant 5
-	return (ANG270 - 1 - tantoangle[slopeDiv(ax, ay)]) >>> 0;
+	return (ANG270 - 1 - tantoangle[slopeDiv(ax, ay)]!) >>> 0;
 }
 
 /**

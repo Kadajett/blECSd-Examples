@@ -494,7 +494,7 @@ const server = net.createServer((socket) => {
 
 		const programConfig: ProgramConfig = {
 			input: telnetStream.input,
-			output: programOutput as NodeJS.WritableStream,
+			output: programOutput,
 			useAlternateScreen: false, // Telnet clients may have issues with alternate screen
 			hideCursor: false,
 			forceWidth: telnetStream.width,
@@ -525,7 +525,7 @@ const server = net.createServer((socket) => {
 		telnetStream.onResize((cols, rows) => {
 			session.width = cols;
 			session.height = rows;
-			program.emit('resize', { cols, rows });
+			(program as unknown as { emit(event: string, data: unknown): void }).emit('resize', { cols, rows });
 		});
 
 		// Initialize program and create UI

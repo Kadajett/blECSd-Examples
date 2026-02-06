@@ -31,7 +31,7 @@ function render(): void {
 
 	const stats = getStoreStats(store);
 	const bytes = getByteSize(store);
-	out.push(`  Lines: \x1b[36m${stats.lineCount}\x1b[0m  Chunks: \x1b[33m${stats.chunkCount}\x1b[0m  Size: \x1b[32m${(bytes / 1024).toFixed(1)}KB\x1b[0m  Empty: ${isStoreEmpty(store) ? 'yes' : 'no'}\n`);
+	out.push(`  Lines: \x1b[36m${stats.lineCount}\x1b[0m  Size: \x1b[32m${(bytes / 1024).toFixed(1)}KB\x1b[0m  Empty: ${isStoreEmpty(store) ? 'yes' : 'no'}\n`);
 	out.push(`  Scroll: \x1b[90m${scrollPos + 1}-${Math.min(scrollPos + viewH, stats.lineCount)} of ${stats.lineCount}\x1b[0m\n`);
 	out.push('  ' + '\u2500'.repeat(Math.min(width - 4, 70)) + '\n');
 

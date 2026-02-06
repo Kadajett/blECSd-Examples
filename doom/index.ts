@@ -28,6 +28,7 @@ import { three } from 'blecsd';
 import { ANGLETOFINESHIFT, FINEMASK, finecosine, finesine, generateTables } from './math/angles.js';
 import { FRACBITS, FRACUNIT } from './math/fixed.js';
 import { initRenderTables, updateFlatScales } from './math/tables.js';
+import type { WadFile } from './wad/types.js';
 import { loadWad } from './wad/wad.js';
 import { loadMap } from './wad/mapData.js';
 import { parsePlaypal, parseColormap } from './render/palette.js';
@@ -97,7 +98,7 @@ function main(): void {
 
 	// Load WAD
 	console.log(`Loading WAD: ${wadPath}`);
-	let wad;
+	let wad: WadFile;
 	try {
 		wad = loadWad(wadPath);
 	} catch (err) {
@@ -527,7 +528,7 @@ function drawGameOverOverlay(rs: { fb: ReturnType<typeof three.createPixelFrameb
  * Apply a red tint to the framebuffer by blending red into every pixel.
  */
 function applyRedTint(rs: { fb: ReturnType<typeof three.createPixelFramebuffer>; screenWidth: number; screenHeight: number }): void {
-	const data = rs.fb.data;
+	const data = rs.fb.colorBuffer;
 	for (let i = 0; i < data.length; i += 4) {
 		// Blend toward red: increase red channel, reduce green and blue
 		const r = data[i] ?? 0;

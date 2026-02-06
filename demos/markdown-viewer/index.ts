@@ -20,9 +20,18 @@
 import {
 	createWorld,
 	createCellBuffer,
-	fillRect,
 } from 'blecsd';
 import type { World } from 'blecsd';
+
+function fillRect(buffer: ReturnType<typeof createCellBuffer>, x: number, y: number, w: number, h: number, char: string, fg: number, bg: number): void {
+	for (let row = y; row < y + h && row < buffer.height; row++) {
+		if (row < 0) continue;
+		for (let col = x; col < x + w && col < buffer.width; col++) {
+			if (col < 0) continue;
+			buffer.setCell(col, row, char, fg, bg);
+		}
+	}
+}
 
 // =============================================================================
 // CONFIGURATION

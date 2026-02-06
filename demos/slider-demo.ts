@@ -43,8 +43,8 @@ function render(): void {
 	for (let i = 0; i < sliders.length; i++) {
 		const sl = sliders[i]!;
 		const focused = i === focusIdx;
-		const val = getSliderValue(world, sl.eid);
-		const pct = getSliderPercentage(world, sl.eid);
+		const val = getSliderValue(sl.eid);
+		const pct = getSliderPercentage(sl.eid);
 		const bar = renderSliderString(sl.eid, 25);
 		const row = 6 + i * 3;
 		const color = focused ? '\x1b[1;33m' : '\x1b[0m';

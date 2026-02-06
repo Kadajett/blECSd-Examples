@@ -57,8 +57,8 @@ function render(): void {
 
 	for (const eid of entities) {
 		const pos = getPosition(world, eid);
-		const sx = pos.x - camX;
-		const sy = pos.y - camY;
+		const sx = pos!.x - camX;
+		const sy = pos!.y - camY;
 		if (sx >= 0 && sx < viewW && sy >= 0 && sy < viewH) {
 			visible++;
 			visibleEntities.push({ eid, sx, sy });

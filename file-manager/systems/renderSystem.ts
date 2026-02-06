@@ -9,12 +9,37 @@ import {
 	renderBox,
 	renderText,
 	renderHLine,
-	fillRect,
 	BOX_SINGLE,
 	packColor,
 	parseTags,
 	createTaggedText,
 } from 'blecsd';
+
+/**
+ * Local fillRect helper for CellBuffer with cells[][].
+ * The library's fillRect has a conflicting signature, so we use a local version.
+ */
+function fillRect(
+	buffer: CellBuffer,
+	x: number,
+	y: number,
+	w: number,
+	h: number,
+	char: string,
+	fg: number,
+	bg: number,
+): void {
+	const buf = buffer as CellBuffer & { cells: { char: string; fg: number; bg: number }[][] };
+	for (let row = y; row < y + h; row++) {
+		if (row < 0 || !buf.cells || row >= buf.cells.length) continue;
+		const rowCells = buf.cells[row];
+		if (!rowCells) continue;
+		for (let col = x; col < x + w; col++) {
+			if (col < 0 || col >= rowCells.length) continue;
+			buf.setCell(col, row, char, fg, bg);
+		}
+	}
+}
 import type { FileStore, FileEntry, PreviewContent } from '../data';
 import { highlightContent, supportsHighlighting, SYNTAX_COLORS } from './syntaxHighlight';
 import type { FileManagerConfig, SizeFormat } from '../config';

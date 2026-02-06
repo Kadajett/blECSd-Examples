@@ -32,7 +32,7 @@ function make(name: string, comps: string[]): void {
 	if (comps.includes('pos')) { addComponent(world, eid, Position); setPosition(world, eid, Math.random() * 60 | 0, Math.random() * 20 | 0); }
 	if (comps.includes('render')) { addComponent(world, eid, Renderable); setStyle(world, eid, { fg: 0xffffffff }); }
 	if (comps.includes('dim')) { addComponent(world, eid, Dimensions); setDimensions(world, eid, 10, 3); }
-	if (comps.includes('focus')) { addComponent(world, eid, Focusable); makeFocusable(world, eid); }
+	if (comps.includes('focus')) { addComponent(world, eid, Focusable); makeFocusable(world, eid, true); }
 	if (comps.includes('inter')) { addComponent(world, eid, Interactive); setClickable(world, eid, true); setHoverable(world, eid, true); }
 	if (comps.includes('content')) { addComponent(world, eid, Content); setContent(world, eid, name); }
 	if (comps.includes('pad')) { addComponent(world, eid, Padding); setPaddingAll(world, eid, 1); }

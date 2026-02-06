@@ -41,8 +41,8 @@ function render(): void {
 
 	for (let i = 0; i < bars.length; i++) {
 		const bar = bars[i]!;
-		const pct = getProgressPercentage(world, bar.eid);
-		const done = isProgressComplete(world, bar.eid);
+		const pct = getProgressPercentage(bar.eid);
+		const done = isProgressComplete(bar.eid);
 		const focused = i === focusIdx;
 		const indicator = focused ? '>' : ' ';
 		const barStr = renderProgressString(bar.eid, 30);
@@ -73,7 +73,7 @@ render();
 timer = setInterval(() => {
 	let changed = false;
 	for (const bar of bars) {
-		if (bar.auto && !isProgressComplete(world, bar.eid)) {
+		if (bar.auto && !isProgressComplete(bar.eid)) {
 			incrementProgress(world, bar.eid, 1 + Math.random() * 2);
 			changed = true;
 		}

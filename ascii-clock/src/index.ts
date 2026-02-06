@@ -20,7 +20,6 @@ import {
 	getOutputBuffer,
 	getStyle,
 	hexToColor,
-	hideCursor,
 	outputSystem,
 	setDimensions,
 	setOutputBuffer,
@@ -33,6 +32,7 @@ import {
 } from 'blecsd';
 import { createBigText, type FontDefinition } from 'blecsd/widgets';
 import { loadFont } from 'blecsd/widgets/fonts';
+import { hideCursor } from 'blecsd/systems';
 
 interface ClockOptions {
 	showSeconds: boolean;
@@ -230,159 +230,163 @@ enterAlternateScreen();
 hideCursor();
 clearScreen();
 
-const font = loadFont(options.skinny ? 'terminus-14-normal' : 'terminus-14-bold');
-const timeEntity = addEntity(world) as Entity;
+async function main(): Promise<void> {
+	const font = await loadFont(options.skinny ? 'terminus-14-normal' : 'terminus-14-bold');
+	const timeEntity = addEntity(world) as Entity;
 
-// BigText pre-renders the clock string into bitmap glyphs stored as Content.
-const timeWidget = createBigText(world, timeEntity, {
-	text: '00:00',
-	font,
-	fg: options.fg,
-	shrink: false,
-});
+	// BigText pre-renders the clock string into bitmap glyphs stored as Content.
+	const timeWidget = await createBigText(world, timeEntity, {
+		text: '00:00',
+		font,
+		fg: options.fg,
+		shrink: false,
+	});
 
-let timeText = '';
-let dateText = '';
-let timeWidth = 0;
-let timeHeight = 0;
-let timeLeft = 0;
-let timeTop = 0;
-let dateLeft = 0;
-let dateTop = 0;
+	let timeText = '';
+	let dateText = '';
+	let timeWidth = 0;
+	let timeHeight = 0;
+	let timeLeft = 0;
+	let timeTop = 0;
+	let dateLeft = 0;
+	let dateTop = 0;
 
-const updateLayout = (): void => {
-	const bufferWidth = doubleBuffer.width;
-	const bufferHeight = doubleBuffer.height;
+	const updateLayout = (): void => {
+		const bufferWidth = doubleBuffer.width;
+		const bufferHeight = doubleBuffer.height;
 
-	const size = measureBigText(timeText, font);
-	timeWidth = size.width;
-	timeHeight = size.height;
+		const size = measureBigText(timeText, font);
+		timeWidth = size.width;
+		timeHeight = size.height;
 
-	const dateHeight = options.showDate ? 1 : 0;
-	const gap = options.showDate ? 1 : 0;
-	const totalHeight = timeHeight + dateHeight + gap;
+		const dateHeight = options.showDate ? 1 : 0;
+		const gap = options.showDate ? 1 : 0;
+		const totalHeight = timeHeight + dateHeight + gap;
 
-	timeLeft = Math.max(0, Math.floor((bufferWidth - timeWidth) / 2));
-	timeTop = Math.max(0, Math.floor((bufferHeight - totalHeight) / 2));
-	dateLeft = Math.max(0, Math.floor((bufferWidth - dateText.length) / 2));
-	dateTop = timeTop + timeHeight + gap;
+		timeLeft = Math.max(0, Math.floor((bufferWidth - timeWidth) / 2));
+		timeTop = Math.max(0, Math.floor((bufferHeight - totalHeight) / 2));
+		dateLeft = Math.max(0, Math.floor((bufferWidth - dateText.length) / 2));
+		dateTop = timeTop + timeHeight + gap;
 
-	setDimensions(world, timeWidget.eid, timeWidth, timeHeight);
-	timeWidget.setPosition(timeLeft, timeTop);
-};
+		setDimensions(world, timeWidget.eid, timeWidth, timeHeight);
+		timeWidget.setPosition(timeLeft, timeTop);
+	};
 
-const updateClock = (): void => {
-	const now = new Date();
-	const showColon = now.getSeconds() % 2 === 0;
-	const nextTime = formatTime(now, showColon, options);
-	const nextDate = options.showDate ? formatDate(now, options.dateFormat) : '';
-	const layoutChanged = nextTime !== timeText || nextDate !== dateText;
+	const updateClock = (): void => {
+		const now = new Date();
+		const showColon = now.getSeconds() % 2 === 0;
+		const nextTime = formatTime(now, showColon, options);
+		const nextDate = options.showDate ? formatDate(now, options.dateFormat) : '';
+		const layoutChanged = nextTime !== timeText || nextDate !== dateText;
 
-	if (nextTime !== timeText) {
-		timeText = nextTime;
-		timeWidget.setText(timeText);
-	}
-
-	if (nextDate !== dateText) {
-		dateText = nextDate;
-	}
-
-	if (layoutChanged) {
-		updateLayout();
-	}
-};
-
-const renderClock = (): void => {
-	const buffer = doubleBuffer.backBuffer;
-	clearBuffer(buffer);
-
-	const content = getContent(world, timeWidget.eid);
-	if (content) {
-		const style = getStyle(world, timeWidget.eid);
-		const fg = style?.fg ?? hexToColor(options.fg);
-		const bg = style?.bg ?? 0x000000ff;
-		const fillChar = options.fillChar;
-		const lines = content.split('\n');
-
-		for (let row = 0; row < lines.length; row += 1) {
-			const rawLine = lines[row] ?? '';
-			const line = fillChar === '█' ? rawLine : rawLine.replaceAll('█', fillChar);
-			writeString(buffer, timeLeft, timeTop + row, line, fg, bg);
+		if (nextTime !== timeText) {
+			timeText = nextTime;
+			timeWidget.setText(timeText);
 		}
-	}
 
-	if (options.showDate && dateText) {
-		const dateFg = hexToColor(options.dateFg);
-		writeString(buffer, dateLeft, dateTop, dateText, dateFg, 0x000000ff);
-	}
-};
+		if (nextDate !== dateText) {
+			dateText = nextDate;
+		}
 
-const handleResize = (): void => {
-	const cols = process.stdout.columns ?? DEFAULT_WIDTH;
-	const rows = process.stdout.rows ?? DEFAULT_HEIGHT;
-	triggerResize(world, cols, rows);
+		if (layoutChanged) {
+			updateLayout();
+		}
+	};
 
-	const resized = getOutputBuffer();
-	if (resized) {
-		doubleBuffer = resized;
-		setRenderBuffer(doubleBuffer);
-	}
+	const renderClock = (): void => {
+		const buffer = doubleBuffer.backBuffer;
+		clearBuffer(buffer);
 
-	updateLayout();
-};
+		const content = getContent(world, timeWidget.eid);
+		if (content) {
+			const style = getStyle(world, timeWidget.eid);
+			const fg = style?.fg ?? hexToColor(options.fg);
+			const bg = style?.bg ?? 0x000000ff;
+			const fillChar = options.fillChar;
+			const lines = content.split('\n');
 
-const resizeCleanup = setupSigwinchHandler(world);
-process.stdout.on('resize', handleResize);
+			for (let row = 0; row < lines.length; row += 1) {
+				const rawLine = lines[row] ?? '';
+				const line = fillChar === '█' ? rawLine : rawLine.replaceAll('█', fillChar);
+				writeString(buffer, timeLeft, timeTop + row, line, fg, bg);
+			}
+		}
 
-const input = createInputHandler(process.stdin);
-if (process.stdin.isTTY) {
-	process.stdin.setRawMode(true);
-}
-process.stdin.resume();
+		if (options.showDate && dateText) {
+			const dateFg = hexToColor(options.dateFg);
+			writeString(buffer, dateLeft, dateTop, dateText, dateFg, 0x000000ff);
+		}
+	};
 
-input.onKey((event) => {
-	if (event.name === 'q' || event.name === 'escape' || (event.name === 'c' && event.ctrl)) {
-		cleanup();
-		return;
-	}
+	const handleResize = (): void => {
+		const cols = process.stdout.columns ?? DEFAULT_WIDTH;
+		const rows = process.stdout.rows ?? DEFAULT_HEIGHT;
+		triggerResize(world, cols, rows);
 
-	if (event.name === 's') {
-		options.showSeconds = !options.showSeconds;
-		updateClock();
-		return;
-	}
+		const resized = getOutputBuffer();
+		if (resized) {
+			doubleBuffer = resized;
+			setRenderBuffer(doubleBuffer);
+		}
 
-	if (event.name === 'd') {
-		options.showDate = !options.showDate;
-		updateClock();
-		return;
-	}
-});
+		updateLayout();
+	};
 
-input.start();
+	const resizeCleanup = setupSigwinchHandler(world);
+	process.stdout.on('resize', handleResize);
 
-updateClock();
-
-const FRAME_MS = 1000 / 30;
-const frameInterval = setInterval(() => {
-	updateClock();
-	renderClock();
-	doubleBuffer.fullRedraw = true;
-	outputSystem(world);
-}, FRAME_MS);
-
-function cleanup(): void {
-	clearInterval(frameInterval);
-	input.stop();
-	process.stdout.off('resize', handleResize);
-	resizeCleanup();
-	cleanupOutput();
+	const input = createInputHandler(process.stdin);
 	if (process.stdin.isTTY) {
-		process.stdin.setRawMode(false);
+		process.stdin.setRawMode(true);
 	}
-	process.stdin.pause();
-	process.exit(0);
+	process.stdin.resume();
+
+	input.onKey((event) => {
+		if (event.name === 'q' || event.name === 'escape' || (event.name === 'c' && event.ctrl)) {
+			cleanup();
+			return;
+		}
+
+		if (event.name === 's') {
+			options.showSeconds = !options.showSeconds;
+			updateClock();
+			return;
+		}
+
+		if (event.name === 'd') {
+			options.showDate = !options.showDate;
+			updateClock();
+			return;
+		}
+	});
+
+	input.start();
+
+	updateClock();
+
+	const FRAME_MS = 1000 / 30;
+	const frameInterval = setInterval(() => {
+		updateClock();
+		renderClock();
+		doubleBuffer.fullRedraw = true;
+		outputSystem(world);
+	}, FRAME_MS);
+
+	function cleanup(): void {
+		clearInterval(frameInterval);
+		input.stop();
+		process.stdout.off('resize', handleResize);
+		resizeCleanup();
+		cleanupOutput();
+		if (process.stdin.isTTY) {
+			process.stdin.setRawMode(false);
+		}
+		process.stdin.pause();
+		process.exit(0);
+	}
+
+	process.on('SIGINT', cleanup);
+	process.on('SIGTERM', cleanup);
 }
 
-process.on('SIGINT', cleanup);
-process.on('SIGTERM', cleanup);
+main();

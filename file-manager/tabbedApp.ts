@@ -34,7 +34,6 @@ import {
 	createCellBuffer,
 	renderText,
 	renderBox,
-	fillRect,
 	BOX_SINGLE,
 	packColor,
 	getListSelectedIndex,
@@ -70,8 +69,8 @@ import {
 	clearScrollback,
 	createScrollbackBuffer,
 	getVisibleLines,
-	scrollScrollbackBy,
 	type ScrollbackBuffer,
+	type LineRange,
 } from 'blecsd';
 import { getIcon } from './ui/icons';
 import {
@@ -94,6 +93,48 @@ import { loadPreview, createQuickPreview, EMPTY_PREVIEW, type PreviewContent } f
 // =============================================================================
 
 type CellBufferWithCells = CellBuffer & { cells: { char: string; fg: number; bg: number }[][] };
+
+/**
+ * Local fillRect helper for CellBuffer with cells[][].
+ * The library's fillRect has a conflicting signature, so we use a local version.
+ */
+function fillRect(
+	buffer: CellBufferWithCells | CellBuffer,
+	x: number,
+	y: number,
+	w: number,
+	h: number,
+	char: string,
+	fg: number,
+	bg: number,
+): void {
+	const buf = buffer as CellBufferWithCells;
+	for (let row = y; row < y + h; row++) {
+		if (row < 0 || row >= buf.cells.length) continue;
+		const rowCells = buf.cells[row];
+		if (!rowCells) continue;
+		for (let col = x; col < x + w; col++) {
+			if (col < 0 || col >= rowCells.length) continue;
+			buf.setCell(col, row, char, fg, bg);
+		}
+	}
+}
+
+/**
+ * Local scrollScrollbackBy helper.
+ * Computes a new scroll position by applying a delta, clamped to valid bounds,
+ * and returns the visible lines at the new position.
+ */
+function scrollScrollbackBy(
+	buffer: ScrollbackBuffer,
+	currentLine: number,
+	delta: number,
+	viewportSize: number,
+): LineRange {
+	const maxStart = Math.max(0, buffer.totalLines - viewportSize);
+	const newStart = Math.max(0, Math.min(maxStart, currentLine + delta));
+	return getVisibleLines(buffer, newStart, viewportSize);
+}
 
 interface PreviewState {
 	content: PreviewContent;
@@ -301,6 +342,8 @@ function createRenderState(width: number, height: number, splitRatio: number, sh
 		contentHeight,
 		listHeight,
 		tabHitRegions: [],
+		listRegion: createRegion(0, 3, listWidth, listHeight),
+		previewRegion: createRegion(listWidth + 1, 2, previewWidth > 0 ? previewWidth - 1 : 0, contentHeight),
 	};
 }
 
@@ -314,6 +357,8 @@ function updateRenderState(state: RenderState, width: number, height: number, sp
 	state.previewWidth = showPreview ? Math.max(0, width - state.listWidth - 1) : 0;
 	state.contentHeight = Math.max(1, height - 5);
 	state.listHeight = Math.max(1, state.contentHeight);
+	state.listRegion = createRegion(0, 3, state.listWidth, state.listHeight);
+	state.previewRegion = createRegion(state.listWidth + 1, 2, state.previewWidth > 0 ? state.previewWidth - 1 : 0, state.contentHeight);
 }
 
 function getActiveTab(state: AppState): TabState | undefined {

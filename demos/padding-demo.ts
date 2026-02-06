@@ -64,15 +64,15 @@ function renderBox(out: string[], box: BoxInfo, isSel: boolean): void {
 		out.push(moveTo(pos.y + dy, pos.x) + `${border}\u2502\x1b[0m`);
 		// Fill interior showing padding areas
 		for (let dx = 1; dx < dim.w - 1; dx++) {
-			const inPadTop = dy - 1 < pad.top;
-			const inPadBottom = dy > dim.h - 2 - pad.bottom;
-			const inPadLeft = dx - 1 < pad.left;
-			const inPadRight = dx > dim.w - 2 - pad.right;
+			const inPadTop = dy - 1 < pad!.top;
+			const inPadBottom = dy > dim.h - 2 - pad!.bottom;
+			const inPadLeft = dx - 1 < pad!.left;
+			const inPadRight = dx > dim.w - 2 - pad!.right;
 			const inPad = inPadTop || inPadBottom || inPadLeft || inPadRight;
 			if (inPad) out.push('\x1b[46m\u00b7\x1b[0m');
 			else {
-				const cy = dy - 1 - pad.top;
-				const cx = dx - 1 - pad.left;
+				const cy = dy - 1 - pad!.top;
+				const cx = dx - 1 - pad!.left;
 				out.push(cy === 0 && cx < content.length ? content[cx]! : ' ');
 			}
 		}
@@ -96,7 +96,7 @@ function render(): void {
 	const pad = getPadding(world, box.eid);
 	const hpad = getHorizontalPadding(world, box.eid);
 	const vpad = getVerticalPadding(world, box.eid);
-	out.push(moveTo(height - 2, 2) + `\x1b[1mSelected:\x1b[0m ${box.label}  T:${pad.top} R:${pad.right} B:${pad.bottom} L:${pad.left}  H:${hpad} V:${vpad}  hasPad:${hasPaddingValue(world, box.eid)}`);
+	out.push(moveTo(height - 2, 2) + `\x1b[1mSelected:\x1b[0m ${box.label}  T:${pad!.top} R:${pad!.right} B:${pad!.bottom} L:${pad!.left}  H:${hpad} V:${vpad}  hasPad:${hasPaddingValue(world, box.eid)}`);
 	out.push(moveTo(height, 1) + formatHelpBar('[Tab] Select box  [q] Quit'));
 	process.stdout.write(out.join(''));
 }

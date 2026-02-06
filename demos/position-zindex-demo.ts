@@ -37,7 +37,7 @@ function render(): void {
 	out.push(formatTitle('Position & Z-Index Demo') + '\n\n');
 
 	// Sort entities by z-index for proper layering
-	const sorted = [...entities].sort((a, b) => sortByZIndex(a, b));
+	const sorted = sortByZIndex(world, entities);
 
 	// Render to a simple grid
 	const grid: string[][] = Array.from({ length: height - 4 }, () => Array.from({ length: width }, () => ' '));
@@ -52,8 +52,8 @@ function render(): void {
 		const isSel = idx === selected;
 		for (let dy = 0; dy < 5; dy++) {
 			for (let dx = 0; dx < 14; dx++) {
-				const gy = pos.y + dy;
-				const gx = pos.x + dx;
+				const gy = pos!.y + dy;
+				const gx = pos!.x + dx;
 				if (gy >= 0 && gy < grid.length && gx >= 0 && gx < width) {
 					// Box border
 					const isBorder = dy === 0 || dy === 4 || dx === 0 || dx === 13;
@@ -86,10 +86,10 @@ process.stdin.on('data', (data: Buffer) => {
 	const ch = data.toString();
 	const dir = parseArrowKey(data);
 	const eid = entities[selected]!;
-	if (dir === 'up') setPosition(world, eid, getPosition(world, eid).x, getPosition(world, eid).y - 1);
-	if (dir === 'down') setPosition(world, eid, getPosition(world, eid).x, getPosition(world, eid).y + 1);
-	if (dir === 'left') setPosition(world, eid, getPosition(world, eid).x - 1, getPosition(world, eid).y);
-	if (dir === 'right') setPosition(world, eid, getPosition(world, eid).x + 1, getPosition(world, eid).y);
+	if (dir === 'up') setPosition(world, eid, getPosition(world, eid)!.x, getPosition(world, eid)!.y - 1);
+	if (dir === 'down') setPosition(world, eid, getPosition(world, eid)!.x, getPosition(world, eid)!.y + 1);
+	if (dir === 'left') setPosition(world, eid, getPosition(world, eid)!.x - 1, getPosition(world, eid)!.y);
+	if (dir === 'right') setPosition(world, eid, getPosition(world, eid)!.x + 1, getPosition(world, eid)!.y);
 	if (ch === '\t') selected = (selected + 1) % entities.length;
 	if (ch === '+' || ch === '=') setZIndex(world, eid, getZIndex(world, eid) + 1);
 	if (ch === '-') setZIndex(world, eid, getZIndex(world, eid) - 1);

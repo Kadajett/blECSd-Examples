@@ -39,8 +39,8 @@ function render(): void {
 	manager.update(dt);
 	const tip = manager.getRenderData();
 	if (tip) {
-		const tx = Math.min(tip.position.x, width - tip.text.length - 4);
-		const ty = Math.min(tip.position.y, height - 3);
+		const tx = Math.min(tip.x, width - tip.text.length - 4);
+		const ty = Math.min(tip.y, height - 3);
 		const border = `+${'-'.repeat(tip.text.length + 2)}+`;
 		stdout.write(`\x1b[${ty};${tx}H\x1b[43;30m${border}\x1b[0m`);
 		stdout.write(`\x1b[${ty + 1};${tx}H\x1b[43;30m| ${tip.text} |\x1b[0m`);

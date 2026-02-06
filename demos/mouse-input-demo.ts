@@ -9,7 +9,7 @@
  */
 
 import { parseMouseSequence, isMouseBuffer } from 'blecsd';
-import type { MouseEvent } from 'blecsd';
+import type { ParsedMouseEvent } from 'blecsd';
 
 let lastEvent = '(none)';
 let clickCount = 0;
@@ -37,14 +37,14 @@ function render(): void {
 	process.stdout.write(lines.join(''));
 }
 
-function handleMouse(ev: MouseEvent): void {
+function handleMouse(ev: ParsedMouseEvent): void {
 	lastEvent = `${ev.action} ${ev.button} at (${ev.x}, ${ev.y})`;
-	if (ev.action === 'mousedown') {
+	if (ev.action === 'press') {
 		clickCount++;
 		trail.push({ x: ev.x, y: ev.y, ch: '+' });
-	} else if (ev.action === 'mousemove') {
+	} else if (ev.action === 'move') {
 		trail.push({ x: ev.x, y: ev.y, ch: '.' });
-	} else if (ev.action === 'wheelup' || ev.action === 'wheeldown') {
+	} else if (ev.action === 'wheel') {
 		scrollCount++;
 	}
 	if (trail.length > 50) trail.shift();
