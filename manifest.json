@@ -1,0 +1,79 @@
+{
+  "examples": [
+    {
+      "name": "3d-backends",
+      "description": "Rotating cube rendered with all 5 backends side-by-side",
+      "category": "3d"
+    },
+    {
+      "name": "3d-cube",
+      "description": "Rotating wireframe cube rendered in the terminal",
+      "category": "3d"
+    },
+    {
+      "name": "3d-obj-viewer",
+      "description": "OBJ model viewer rendered in the terminal",
+      "category": "3d"
+    },
+    {
+      "name": "ascii-clock",
+      "description": "ASCII art clock using the BigText widget",
+      "category": "widget"
+    },
+    {
+      "name": "balatro",
+      "description": "Balatro-style poker card game demonstrating blECSd animations and input handling",
+      "category": "game"
+    },
+    {
+      "name": "big-text",
+      "description": "BigText widget showcase",
+      "category": "widget"
+    },
+    {
+      "name": "demos",
+      "description": "Widget and feature demos for blECSd",
+      "category": "demo"
+    },
+    {
+      "name": "doom",
+      "description": "Doom source port rendered in the terminal via Kitty graphics protocol",
+      "category": "game"
+    },
+    {
+      "name": "dvd-bounce",
+      "description": "DVD bounce demo - Thousands of floating panels with physics and z-order shuffling",
+      "category": "demo"
+    },
+    {
+      "name": "file-manager",
+      "description": "Terminal file manager example demonstrating blECSd architecture",
+      "category": "application"
+    },
+    {
+      "name": "multiplexer",
+      "description": "Terminal multiplexer demo - tmux-like multi-pane terminal with shell support",
+      "category": "application"
+    },
+    {
+      "name": "roguelike",
+      "description": "Terminal roguelike dungeon crawler demonstrating collision, AI, and camera systems",
+      "category": "game"
+    },
+    {
+      "name": "system-monitor",
+      "description": "System monitor dashboard demo - htop-like real-time system stats",
+      "category": "application"
+    },
+    {
+      "name": "telnet-server",
+      "description": "Telnet server demo - serve blECSd UIs to remote clients",
+      "category": "application"
+    },
+    {
+      "name": "terminal",
+      "description": "Terminal widget demo - ANSI rendering, scrollback, and optional PTY shell",
+      "category": "widget"
+    }
+  ]
+}

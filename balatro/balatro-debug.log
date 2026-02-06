@@ -1,0 +1,905 @@
+[2026-02-05 00:13:00.964] [INFO] [balatro:main] === BALATRO DEBUG SESSION STARTED ===
+[2026-02-05 00:13:00.965] [INFO] [balatro:main] Log file: /home/kadajett/Dev/gameDev2026/blessed/examples/balatro/balatro-debug.log
+[2026-02-05 00:13:00.966] [INFO] [balatro:main] main() starting
+[2026-02-05 00:13:00.966] [INFO] [balatro:main] Terminal: cols=183 rows=49 isTTY=true
+[2026-02-05 00:13:00.966] [INFO] [balatro:main] Process: pid=891180 argv=[]
+[2026-02-05 00:13:00.966] [DEBUG] [balatro:main] Parsed args: {"mouseEnabled":true,"soundEnabled":true,"seed":null,"help":false,"version":false}
+[2026-02-05 00:13:00.966] [INFO] [balatro:main] Config: mouse=true sound=true seed=null
+[2026-02-05 00:13:00.966] [INFO] [balatro:main] stdin data listener attached
+[2026-02-05 00:13:00.967] [INFO] [balatro:main] Terminal initialized: 183x49
+[2026-02-05 00:13:00.969] [INFO] [balatro:main] Systems registered: input, game-logic, animation, render, output
+[2026-02-05 00:13:00.969] [INFO] [balatro:main] Game loop created, targetFps=60
+[2026-02-05 00:13:00.969] [INFO] [balatro:main] Starting game loop...
+[2026-02-05 00:13:00.973] [INFO] [balatro:main] Game loop start() returned (loop running via setTimeout)
+[2026-02-05 00:13:01.927] [TRACE] [balatro:render] Frame 60, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:02.898] [TRACE] [balatro:render] Frame 120, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:03.881] [TRACE] [balatro:render] Frame 180, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:04.853] [TRACE] [balatro:render] Frame 240, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:05.832] [TRACE] [balatro:render] Frame 300, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:06.805] [TRACE] [balatro:render] Frame 360, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:07.781] [TRACE] [balatro:render] Frame 420, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:08.752] [TRACE] [balatro:render] Frame 480, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:09.724] [TRACE] [balatro:render] Frame 540, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:10.700] [TRACE] [balatro:render] Frame 600, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:11.668] [TRACE] [balatro:render] Frame 660, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:12.646] [TRACE] [balatro:render] Frame 720, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:13.618] [TRACE] [balatro:render] Frame 780, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:14.256] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:13:14.264] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=menu
+[2026-02-05 00:13:14.264] [INFO] [balatro:input] Key: "return" ctrl=false shift=false screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:14.265] [DEBUG] [balatro:input] Action for key "return": PLAY_CARDS
+[2026-02-05 00:13:14.265] [DEBUG] [balatro:input] handleMenuInput key="return" menuScreen=title selectedIndex=0
+[2026-02-05 00:13:14.265] [DEBUG] [balatro:input] Menu input: select
+[2026-02-05 00:13:14.265] [INFO] [balatro:input] Menu action: open_deck_select (was: screen=title idx=0)
+[2026-02-05 00:13:14.265] [INFO] [balatro:screen] Menu action: OPEN DECK SELECT
+[2026-02-05 00:13:14.587] [TRACE] [balatro:render] Frame 840, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:15.562] [TRACE] [balatro:render] Frame 900, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:16.531] [TRACE] [balatro:render] Frame 960, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:17.510] [TRACE] [balatro:render] Frame 1020, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:18.476] [TRACE] [balatro:render] Frame 1080, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:19.448] [TRACE] [balatro:render] Frame 1140, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:20.412] [TRACE] [balatro:render] Frame 1200, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:21.378] [TRACE] [balatro:render] Frame 1260, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:22.350] [TRACE] [balatro:render] Frame 1320, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:23.330] [TRACE] [balatro:render] Frame 1380, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:24.300] [TRACE] [balatro:render] Frame 1440, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:24.774] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:24.787] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=menu
+[2026-02-05 00:13:24.788] [INFO] [balatro:input] Key: "up" ctrl=false shift=false screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:24.788] [DEBUG] [balatro:input] Action for key "up": none
+[2026-02-05 00:13:24.788] [DEBUG] [balatro:input] handleMenuInput key="up" menuScreen=deck_select selectedIndex=0
+[2026-02-05 00:13:24.788] [DEBUG] [balatro:input] Menu input: up
+[2026-02-05 00:13:24.788] [INFO] [balatro:input] Menu action: none (was: screen=deck_select idx=0)
+[2026-02-05 00:13:25.269] [TRACE] [balatro:render] Frame 1500, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:26.105] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:26.116] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=menu
+[2026-02-05 00:13:26.117] [INFO] [balatro:input] Key: "down" ctrl=false shift=false screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:26.117] [DEBUG] [balatro:input] Action for key "down": none
+[2026-02-05 00:13:26.117] [DEBUG] [balatro:input] handleMenuInput key="down" menuScreen=deck_select selectedIndex=2
+[2026-02-05 00:13:26.117] [DEBUG] [balatro:input] Menu input: down
+[2026-02-05 00:13:26.117] [INFO] [balatro:input] Menu action: none (was: screen=deck_select idx=2)
+[2026-02-05 00:13:26.244] [TRACE] [balatro:render] Frame 1560, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:26.375] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:26.390] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=menu
+[2026-02-05 00:13:26.391] [INFO] [balatro:input] Key: "down" ctrl=false shift=false screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:26.391] [DEBUG] [balatro:input] Action for key "down": none
+[2026-02-05 00:13:26.391] [DEBUG] [balatro:input] handleMenuInput key="down" menuScreen=deck_select selectedIndex=0
+[2026-02-05 00:13:26.391] [DEBUG] [balatro:input] Menu input: down
+[2026-02-05 00:13:26.391] [INFO] [balatro:input] Menu action: none (was: screen=deck_select idx=0)
+[2026-02-05 00:13:26.573] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:26.582] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=menu
+[2026-02-05 00:13:26.583] [INFO] [balatro:input] Key: "down" ctrl=false shift=false screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:26.583] [DEBUG] [balatro:input] Action for key "down": none
+[2026-02-05 00:13:26.583] [DEBUG] [balatro:input] handleMenuInput key="down" menuScreen=deck_select selectedIndex=1
+[2026-02-05 00:13:26.583] [DEBUG] [balatro:input] Menu input: down
+[2026-02-05 00:13:26.583] [INFO] [balatro:input] Menu action: none (was: screen=deck_select idx=1)
+[2026-02-05 00:13:27.218] [TRACE] [balatro:render] Frame 1620, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:27.470] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:27.474] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=menu
+[2026-02-05 00:13:27.474] [INFO] [balatro:input] Key: "down" ctrl=false shift=false screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:27.474] [DEBUG] [balatro:input] Action for key "down": none
+[2026-02-05 00:13:27.474] [DEBUG] [balatro:input] handleMenuInput key="down" menuScreen=deck_select selectedIndex=2
+[2026-02-05 00:13:27.475] [DEBUG] [balatro:input] Menu input: down
+[2026-02-05 00:13:27.475] [INFO] [balatro:input] Menu action: none (was: screen=deck_select idx=2)
+[2026-02-05 00:13:27.641] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:27.650] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=menu
+[2026-02-05 00:13:27.651] [INFO] [balatro:input] Key: "down" ctrl=false shift=false screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:27.651] [DEBUG] [balatro:input] Action for key "down": none
+[2026-02-05 00:13:27.651] [DEBUG] [balatro:input] handleMenuInput key="down" menuScreen=deck_select selectedIndex=0
+[2026-02-05 00:13:27.651] [DEBUG] [balatro:input] Menu input: down
+[2026-02-05 00:13:27.651] [INFO] [balatro:input] Menu action: none (was: screen=deck_select idx=0)
+[2026-02-05 00:13:28.176] [TRACE] [balatro:render] Frame 1680, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:29.041] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:29.050] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=menu
+[2026-02-05 00:13:29.050] [INFO] [balatro:input] Key: "down" ctrl=false shift=false screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:29.050] [DEBUG] [balatro:input] Action for key "down": none
+[2026-02-05 00:13:29.050] [DEBUG] [balatro:input] handleMenuInput key="down" menuScreen=deck_select selectedIndex=1
+[2026-02-05 00:13:29.050] [DEBUG] [balatro:input] Menu input: down
+[2026-02-05 00:13:29.050] [INFO] [balatro:input] Menu action: none (was: screen=deck_select idx=1)
+[2026-02-05 00:13:29.146] [TRACE] [balatro:render] Frame 1740, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:29.442] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:29.476] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=menu
+[2026-02-05 00:13:29.477] [INFO] [balatro:input] Key: "down" ctrl=false shift=false screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:29.477] [DEBUG] [balatro:input] Action for key "down": none
+[2026-02-05 00:13:29.477] [DEBUG] [balatro:input] handleMenuInput key="down" menuScreen=deck_select selectedIndex=2
+[2026-02-05 00:13:29.477] [DEBUG] [balatro:input] Menu input: down
+[2026-02-05 00:13:29.477] [INFO] [balatro:input] Menu action: none (was: screen=deck_select idx=2)
+[2026-02-05 00:13:29.675] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:29.686] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=menu
+[2026-02-05 00:13:29.686] [INFO] [balatro:input] Key: "down" ctrl=false shift=false screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:29.686] [DEBUG] [balatro:input] Action for key "down": none
+[2026-02-05 00:13:29.686] [DEBUG] [balatro:input] handleMenuInput key="down" menuScreen=deck_select selectedIndex=0
+[2026-02-05 00:13:29.686] [DEBUG] [balatro:input] Menu input: down
+[2026-02-05 00:13:29.686] [INFO] [balatro:input] Menu action: none (was: screen=deck_select idx=0)
+[2026-02-05 00:13:30.134] [TRACE] [balatro:render] Frame 1800, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:31.111] [TRACE] [balatro:render] Frame 1860, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:32.085] [TRACE] [balatro:render] Frame 1920, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:33.059] [TRACE] [balatro:render] Frame 1980, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:34.027] [TRACE] [balatro:render] Frame 2040, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:34.997] [TRACE] [balatro:render] Frame 2100, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:35.960] [TRACE] [balatro:render] Frame 2160, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:36.935] [TRACE] [balatro:render] Frame 2220, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:37.902] [TRACE] [balatro:render] Frame 2280, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:38.869] [TRACE] [balatro:render] Frame 2340, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:39.842] [TRACE] [balatro:render] Frame 2400, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:40.825] [TRACE] [balatro:render] Frame 2460, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:41.792] [TRACE] [balatro:render] Frame 2520, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:42.759] [TRACE] [balatro:render] Frame 2580, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:43.721] [TRACE] [balatro:render] Frame 2640, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:44.691] [TRACE] [balatro:render] Frame 2700, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:45.657] [TRACE] [balatro:render] Frame 2760, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:46.630] [TRACE] [balatro:render] Frame 2820, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:47.607] [TRACE] [balatro:render] Frame 2880, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:48.594] [TRACE] [balatro:render] Frame 2940, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:49.565] [TRACE] [balatro:render] Frame 3000, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:50.538] [TRACE] [balatro:render] Frame 3060, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:51.504] [TRACE] [balatro:render] Frame 3120, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:52.479] [TRACE] [balatro:render] Frame 3180, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:52.641] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:52.645] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=menu
+[2026-02-05 00:13:52.645] [INFO] [balatro:input] Key: "down" ctrl=false shift=false screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:52.645] [DEBUG] [balatro:input] Action for key "down": none
+[2026-02-05 00:13:52.645] [DEBUG] [balatro:input] handleMenuInput key="down" menuScreen=deck_select selectedIndex=1
+[2026-02-05 00:13:52.645] [DEBUG] [balatro:input] Menu input: down
+[2026-02-05 00:13:52.645] [INFO] [balatro:input] Menu action: none (was: screen=deck_select idx=1)
+[2026-02-05 00:13:52.828] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:52.838] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=menu
+[2026-02-05 00:13:52.838] [INFO] [balatro:input] Key: "down" ctrl=false shift=false screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:52.838] [DEBUG] [balatro:input] Action for key "down": none
+[2026-02-05 00:13:52.838] [DEBUG] [balatro:input] handleMenuInput key="down" menuScreen=deck_select selectedIndex=2
+[2026-02-05 00:13:52.838] [DEBUG] [balatro:input] Menu input: down
+[2026-02-05 00:13:52.838] [INFO] [balatro:input] Menu action: none (was: screen=deck_select idx=2)
+[2026-02-05 00:13:52.970] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:52.982] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=menu
+[2026-02-05 00:13:52.983] [INFO] [balatro:input] Key: "down" ctrl=false shift=false screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:52.983] [DEBUG] [balatro:input] Action for key "down": none
+[2026-02-05 00:13:52.983] [DEBUG] [balatro:input] handleMenuInput key="down" menuScreen=deck_select selectedIndex=0
+[2026-02-05 00:13:52.983] [DEBUG] [balatro:input] Menu input: down
+[2026-02-05 00:13:52.983] [INFO] [balatro:input] Menu action: none (was: screen=deck_select idx=0)
+[2026-02-05 00:13:53.456] [TRACE] [balatro:render] Frame 3240, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:53.818] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:53.825] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=menu
+[2026-02-05 00:13:53.826] [INFO] [balatro:input] Key: "up" ctrl=false shift=false screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:53.826] [DEBUG] [balatro:input] Action for key "up": none
+[2026-02-05 00:13:53.826] [DEBUG] [balatro:input] handleMenuInput key="up" menuScreen=deck_select selectedIndex=1
+[2026-02-05 00:13:53.826] [DEBUG] [balatro:input] Menu input: up
+[2026-02-05 00:13:53.826] [INFO] [balatro:input] Menu action: none (was: screen=deck_select idx=1)
+[2026-02-05 00:13:54.420] [TRACE] [balatro:render] Frame 3300, screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:54.744] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:13:54.745] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=menu
+[2026-02-05 00:13:54.745] [INFO] [balatro:input] Key: "return" ctrl=false shift=false screen=menu dealing=false scoring=idle
+[2026-02-05 00:13:54.745] [DEBUG] [balatro:input] Action for key "return": PLAY_CARDS
+[2026-02-05 00:13:54.745] [DEBUG] [balatro:input] handleMenuInput key="return" menuScreen=deck_select selectedIndex=0
+[2026-02-05 00:13:54.745] [DEBUG] [balatro:input] Menu input: select
+[2026-02-05 00:13:54.745] [INFO] [balatro:input] Menu action: start_game (was: screen=deck_select idx=0)
+[2026-02-05 00:13:54.745] [INFO] [balatro:screen] Menu action: START GAME with deck: red
+[2026-02-05 00:13:54.746] [INFO] [balatro:screen] >>> transitionToPlaying() called from screen: menu deck: red
+[2026-02-05 00:13:54.746] [INFO] [balatro:game] New game: ante=1 blind=Small Blind hand=8 cards deck=44
+[2026-02-05 00:13:54.747] [INFO] [balatro:ecs] syncCardEntities: removed=0 created=8 total=8 dealFromDeck=true
+[2026-02-05 00:13:54.748] [WARN] [balatro:screen] SCREEN TRANSITION: menu -> playing (triggered by key="return")
+[2026-02-05 00:13:54.748] [TRACE] [balatro:animation] Dealing: 0/8 cards dealt, allArrived=false
+[2026-02-05 00:13:54.761] [TRACE] [balatro:animation] Dealing: 0/8 cards dealt, allArrived=false
+[2026-02-05 00:13:54.778] [TRACE] [balatro:animation] Dealing: 0/8 cards dealt, allArrived=false
+[2026-02-05 00:13:54.794] [TRACE] [balatro:animation] Dealing: 0/8 cards dealt, allArrived=false
+[2026-02-05 00:13:54.811] [TRACE] [balatro:animation] Dealing: 0/8 cards dealt, allArrived=false
+[2026-02-05 00:13:54.828] [TRACE] [balatro:animation] Dealing: 0/8 cards dealt, allArrived=false
+[2026-02-05 00:13:54.843] [TRACE] [balatro:animation] Dealing: 0/8 cards dealt, allArrived=false
+[2026-02-05 00:13:54.860] [TRACE] [balatro:animation] Dealing: 0/8 cards dealt, allArrived=false
+[2026-02-05 00:13:54.876] [TRACE] [balatro:animation] Dealing: 0/8 cards dealt, allArrived=false
+[2026-02-05 00:13:54.892] [TRACE] [balatro:animation] Dealing: 0/8 cards dealt, allArrived=false
+[2026-02-05 00:13:54.909] [TRACE] [balatro:animation] Dealing: 0/8 cards dealt, allArrived=false
+[2026-02-05 00:13:54.924] [TRACE] [balatro:animation] Dealing: 0/8 cards dealt, allArrived=false
+[2026-02-05 00:13:54.940] [TRACE] [balatro:animation] Dealing: 0/8 cards dealt, allArrived=false
+[2026-02-05 00:13:54.957] [TRACE] [balatro:animation] Dealing: 1/8 cards dealt, allArrived=false
+[2026-02-05 00:13:54.972] [TRACE] [balatro:animation] Dealing: 1/8 cards dealt, allArrived=false
+[2026-02-05 00:13:54.989] [TRACE] [balatro:animation] Dealing: 1/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.029] [TRACE] [balatro:animation] Dealing: 1/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.044] [TRACE] [balatro:animation] Dealing: 1/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.060] [TRACE] [balatro:animation] Dealing: 2/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.076] [TRACE] [balatro:animation] Dealing: 2/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.093] [TRACE] [balatro:animation] Dealing: 2/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.108] [TRACE] [balatro:animation] Dealing: 2/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.125] [TRACE] [balatro:animation] Dealing: 2/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.140] [TRACE] [balatro:animation] Dealing: 2/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.156] [TRACE] [balatro:animation] Dealing: 3/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.172] [TRACE] [balatro:animation] Dealing: 3/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.189] [TRACE] [balatro:animation] Dealing: 3/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.204] [TRACE] [balatro:animation] Dealing: 3/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.221] [TRACE] [balatro:animation] Dealing: 3/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.237] [TRACE] [balatro:animation] Dealing: 3/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.253] [TRACE] [balatro:animation] Dealing: 4/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.269] [TRACE] [balatro:animation] Dealing: 4/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.286] [TRACE] [balatro:animation] Dealing: 4/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.302] [TRACE] [balatro:animation] Dealing: 4/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.319] [TRACE] [balatro:animation] Dealing: 4/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.336] [TRACE] [balatro:animation] Dealing: 4/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.352] [TRACE] [balatro:animation] Dealing: 5/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.368] [TRACE] [balatro:animation] Dealing: 5/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.385] [TRACE] [balatro:animation] Dealing: 5/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.402] [TRACE] [balatro:animation] Dealing: 5/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.417] [TRACE] [balatro:animation] Dealing: 5/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.417] [TRACE] [balatro:render] Frame 3360, screen=playing dealing=true scoring=idle
+[2026-02-05 00:13:55.433] [TRACE] [balatro:animation] Dealing: 5/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.450] [TRACE] [balatro:animation] Dealing: 6/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.466] [TRACE] [balatro:animation] Dealing: 6/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.483] [TRACE] [balatro:animation] Dealing: 6/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.499] [TRACE] [balatro:animation] Dealing: 6/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.515] [TRACE] [balatro:animation] Dealing: 6/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.532] [TRACE] [balatro:animation] Dealing: 6/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.546] [TRACE] [balatro:animation] Dealing: 6/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.563] [TRACE] [balatro:animation] Dealing: 7/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.578] [TRACE] [balatro:animation] Dealing: 7/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.593] [TRACE] [balatro:animation] Dealing: 7/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.608] [TRACE] [balatro:animation] Dealing: 7/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.625] [TRACE] [balatro:animation] Dealing: 7/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.640] [TRACE] [balatro:animation] Dealing: 7/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.655] [TRACE] [balatro:animation] Dealing: 8/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.671] [TRACE] [balatro:animation] Dealing: 8/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.687] [TRACE] [balatro:animation] Dealing: 8/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.703] [TRACE] [balatro:animation] Dealing: 8/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.719] [TRACE] [balatro:animation] Dealing: 8/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.735] [TRACE] [balatro:animation] Dealing: 8/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.751] [TRACE] [balatro:animation] Dealing: 8/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.767] [TRACE] [balatro:animation] Dealing: 8/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.783] [TRACE] [balatro:animation] Dealing: 8/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.800] [TRACE] [balatro:animation] Dealing: 8/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.816] [TRACE] [balatro:animation] Dealing: 8/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.832] [TRACE] [balatro:animation] Dealing: 8/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.848] [TRACE] [balatro:animation] Dealing: 8/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.864] [TRACE] [balatro:animation] Dealing: 8/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.880] [TRACE] [balatro:animation] Dealing: 8/8 cards dealt, allArrived=false
+[2026-02-05 00:13:55.896] [TRACE] [balatro:animation] Dealing: 8/8 cards dealt, allArrived=true
+[2026-02-05 00:13:55.896] [INFO] [balatro:animation] Dealing phase complete, all cards arrived
+[2026-02-05 00:13:56.383] [TRACE] [balatro:render] Frame 3420, screen=playing dealing=false scoring=idle
+[2026-02-05 00:13:57.354] [TRACE] [balatro:render] Frame 3480, screen=playing dealing=false scoring=idle
+[2026-02-05 00:13:58.322] [TRACE] [balatro:render] Frame 3540, screen=playing dealing=false scoring=idle
+[2026-02-05 00:13:59.191] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:59.199] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:13:59.199] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:13:59.199] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:13:59.200] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:13:59.298] [TRACE] [balatro:render] Frame 3600, screen=playing dealing=false scoring=idle
+[2026-02-05 00:13:59.370] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:59.379] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:13:59.380] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:13:59.380] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:13:59.380] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:13:59.511] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:59.512] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:13:59.512] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:13:59.512] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:13:59.512] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:13:59.666] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:59.672] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:13:59.672] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:13:59.672] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:13:59.672] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:13:59.805] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:59.820] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:13:59.820] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:13:59.820] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:13:59.821] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:13:59.972] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:13:59.981] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:13:59.981] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:13:59.981] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:13:59.981] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:00.273] [TRACE] [balatro:render] Frame 3660, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:00.324] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:00.339] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:00.339] [INFO] [balatro:input] Key: "left" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:00.339] [DEBUG] [balatro:input] Action for key "left": CURSOR_LEFT
+[2026-02-05 00:14:00.339] [DEBUG] [balatro:input] handlePlayingInput key="left" action=CURSOR_LEFT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:00.501] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:00.502] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:00.502] [INFO] [balatro:input] Key: "left" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:00.502] [DEBUG] [balatro:input] Action for key "left": CURSOR_LEFT
+[2026-02-05 00:14:00.502] [DEBUG] [balatro:input] handlePlayingInput key="left" action=CURSOR_LEFT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:00.626] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:00.631] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:00.632] [INFO] [balatro:input] Key: "left" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:00.632] [DEBUG] [balatro:input] Action for key "left": CURSOR_LEFT
+[2026-02-05 00:14:00.632] [DEBUG] [balatro:input] handlePlayingInput key="left" action=CURSOR_LEFT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:00.788] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:00.790] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:00.791] [INFO] [balatro:input] Key: "left" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:00.791] [DEBUG] [balatro:input] Action for key "left": CURSOR_LEFT
+[2026-02-05 00:14:00.791] [DEBUG] [balatro:input] handlePlayingInput key="left" action=CURSOR_LEFT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:01.168] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:01.178] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:01.178] [INFO] [balatro:input] Key: "s" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:01.178] [DEBUG] [balatro:input] Action for key "s": none
+[2026-02-05 00:14:01.179] [DEBUG] [balatro:input] handlePlayingInput key="s" action=null dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:01.243] [TRACE] [balatro:render] Frame 3720, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:02.166] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:02.179] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:02.179] [INFO] [balatro:input] Key: "s" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:02.180] [DEBUG] [balatro:input] Action for key "s": none
+[2026-02-05 00:14:02.180] [DEBUG] [balatro:input] handlePlayingInput key="s" action=null dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:02.211] [TRACE] [balatro:render] Frame 3780, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:03.175] [TRACE] [balatro:render] Frame 3840, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:04.146] [TRACE] [balatro:render] Frame 3900, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:05.113] [TRACE] [balatro:render] Frame 3960, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:05.336] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:05.337] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:05.337] [INFO] [balatro:input] Key: "left" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:05.337] [DEBUG] [balatro:input] Action for key "left": CURSOR_LEFT
+[2026-02-05 00:14:05.337] [DEBUG] [balatro:input] handlePlayingInput key="left" action=CURSOR_LEFT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:05.786] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:05.791] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:05.792] [INFO] [balatro:input] Key: "left" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:05.792] [DEBUG] [balatro:input] Action for key "left": CURSOR_LEFT
+[2026-02-05 00:14:05.792] [DEBUG] [balatro:input] handlePlayingInput key="left" action=CURSOR_LEFT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:06.081] [TRACE] [balatro:render] Frame 4020, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:06.318] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:06.324] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:06.324] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:06.324] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:06.324] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:07.052] [TRACE] [balatro:render] Frame 4080, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:07.300] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:07.311] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:07.311] [INFO] [balatro:input] Key: "space" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:07.311] [DEBUG] [balatro:input] Action for key "space": TOGGLE_CURRENT
+[2026-02-05 00:14:07.311] [DEBUG] [balatro:input] handlePlayingInput key="space" action=TOGGLE_CURRENT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:07.602] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:07.616] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:07.617] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:07.617] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:07.617] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:07.849] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:07.858] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:07.858] [INFO] [balatro:input] Key: "space" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:07.858] [DEBUG] [balatro:input] Action for key "space": TOGGLE_CURRENT
+[2026-02-05 00:14:07.858] [DEBUG] [balatro:input] handlePlayingInput key="space" action=TOGGLE_CURRENT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:08.021] [TRACE] [balatro:render] Frame 4140, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:08.281] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:08.281] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:08.281] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:08.281] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:08.281] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:08.466] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:08.476] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:08.476] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:08.476] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:08.476] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:08.619] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:08.624] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:08.624] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:08.624] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:08.624] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:08.996] [TRACE] [balatro:render] Frame 4200, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:09.139] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:09.143] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:09.144] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:09.144] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:09.144] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:09.493] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:09.501] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:09.501] [INFO] [balatro:input] Key: "space" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:09.501] [DEBUG] [balatro:input] Action for key "space": TOGGLE_CURRENT
+[2026-02-05 00:14:09.501] [DEBUG] [balatro:input] handlePlayingInput key="space" action=TOGGLE_CURRENT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:09.715] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:09.729] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:09.729] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:09.729] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:09.729] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:09.951] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:09.955] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:09.955] [INFO] [balatro:input] Key: "space" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:09.955] [DEBUG] [balatro:input] Action for key "space": TOGGLE_CURRENT
+[2026-02-05 00:14:09.955] [DEBUG] [balatro:input] handlePlayingInput key="space" action=TOGGLE_CURRENT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:09.970] [TRACE] [balatro:render] Frame 4260, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:10.517] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:10.519] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:10.519] [INFO] [balatro:input] Key: "return" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:10.520] [DEBUG] [balatro:input] Action for key "return": PLAY_CARDS
+[2026-02-05 00:14:10.520] [DEBUG] [balatro:input] handlePlayingInput key="return" action=PLAY_CARDS dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:10.520] [INFO] [balatro:game] PLAY_CARDS: selected=[1,2,6,7] handSize=8
+[2026-02-05 00:14:10.520] [INFO] [balatro:game] Hand preview: Two Pair score=96
+[2026-02-05 00:14:10.936] [INFO] [balatro:game] cards_to_play_area complete, entering card_scoring
+[2026-02-05 00:14:10.938] [INFO] [balatro:game] Hand: Two Pair score=96
+[2026-02-05 00:14:10.939] [INFO] [balatro:ecs] syncCardEntities: removed=4 created=4 total=8 dealFromDeck=true
+[2026-02-05 00:14:10.939] [TRACE] [balatro:render] Frame 4320, screen=playing dealing=false scoring=card_scoring
+[2026-02-05 00:14:11.741] [INFO] [balatro:game] card_scoring complete, entering score_counting
+[2026-02-05 00:14:11.903] [TRACE] [balatro:render] Frame 4380, screen=playing dealing=false scoring=score_counting
+[2026-02-05 00:14:12.243] [INFO] [balatro:game] score_counting complete, entering popups phase
+[2026-02-05 00:14:12.871] [TRACE] [balatro:render] Frame 4440, screen=playing dealing=false scoring=popups
+[2026-02-05 00:14:13.467] [INFO] [balatro:game] Popups complete. endState=playing score=96/100
+[2026-02-05 00:14:13.467] [DEBUG] [balatro:game] Scoring complete, continuing play
+[2026-02-05 00:14:13.839] [TRACE] [balatro:render] Frame 4500, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:14.811] [TRACE] [balatro:render] Frame 4560, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:15.782] [TRACE] [balatro:render] Frame 4620, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:16.757] [TRACE] [balatro:render] Frame 4680, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:16.867] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:16.871] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:16.871] [INFO] [balatro:input] Key: "s" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:16.871] [DEBUG] [balatro:input] Action for key "s": none
+[2026-02-05 00:14:16.871] [DEBUG] [balatro:input] handlePlayingInput key="s" action=null dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:17.071] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:17.083] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:17.083] [INFO] [balatro:input] Key: "s" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:17.083] [DEBUG] [balatro:input] Action for key "s": none
+[2026-02-05 00:14:17.083] [DEBUG] [balatro:input] handlePlayingInput key="s" action=null dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:17.723] [TRACE] [balatro:render] Frame 4740, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:17.771] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:17.773] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:17.773] [INFO] [balatro:input] Key: "left" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:17.773] [DEBUG] [balatro:input] Action for key "left": CURSOR_LEFT
+[2026-02-05 00:14:17.773] [DEBUG] [balatro:input] handlePlayingInput key="left" action=CURSOR_LEFT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:18.255] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:18.259] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:18.260] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:18.260] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:18.260] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:18.668] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:18.677] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:18.677] [INFO] [balatro:input] Key: "left" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:18.677] [DEBUG] [balatro:input] Action for key "left": CURSOR_LEFT
+[2026-02-05 00:14:18.677] [DEBUG] [balatro:input] handlePlayingInput key="left" action=CURSOR_LEFT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:18.693] [TRACE] [balatro:render] Frame 4800, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:19.322] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:19.325] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:19.325] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:19.325] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:19.325] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:19.662] [TRACE] [balatro:render] Frame 4860, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:19.718] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:19.728] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:19.728] [INFO] [balatro:input] Key: "left" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:19.728] [DEBUG] [balatro:input] Action for key "left": CURSOR_LEFT
+[2026-02-05 00:14:19.728] [DEBUG] [balatro:input] handlePlayingInput key="left" action=CURSOR_LEFT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:20.468] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:20.472] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:20.472] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:20.472] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:20.472] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:20.634] [TRACE] [balatro:render] Frame 4920, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:20.649] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:20.650] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:20.650] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:20.650] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:20.650] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:20.832] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:20.847] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:20.847] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:20.847] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:20.847] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:21.004] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:21.008] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:21.008] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:21.008] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:21.008] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:21.172] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:21.184] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:21.184] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:21.184] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:21.185] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:21.606] [TRACE] [balatro:render] Frame 4980, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:21.853] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:21.868] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:21.868] [INFO] [balatro:input] Key: "space" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:21.868] [DEBUG] [balatro:input] Action for key "space": TOGGLE_CURRENT
+[2026-02-05 00:14:21.868] [DEBUG] [balatro:input] handlePlayingInput key="space" action=TOGGLE_CURRENT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:22.116] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:22.127] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:22.127] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:22.128] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:22.128] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:22.384] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:22.388] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:22.388] [INFO] [balatro:input] Key: "space" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:22.388] [DEBUG] [balatro:input] Action for key "space": TOGGLE_CURRENT
+[2026-02-05 00:14:22.389] [DEBUG] [balatro:input] handlePlayingInput key="space" action=TOGGLE_CURRENT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:22.585] [TRACE] [balatro:render] Frame 5040, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:22.702] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:22.713] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:22.713] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:22.713] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:22.713] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:23.101] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:23.102] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:23.102] [INFO] [balatro:input] Key: "space" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:23.102] [DEBUG] [balatro:input] Action for key "space": TOGGLE_CURRENT
+[2026-02-05 00:14:23.102] [DEBUG] [balatro:input] handlePlayingInput key="space" action=TOGGLE_CURRENT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:23.554] [TRACE] [balatro:render] Frame 5100, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:23.763] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:23.764] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:23.764] [INFO] [balatro:input] Key: "d" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:23.764] [DEBUG] [balatro:input] Action for key "d": DISCARD_CARDS
+[2026-02-05 00:14:23.764] [DEBUG] [balatro:input] handlePlayingInput key="d" action=DISCARD_CARDS dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:23.765] [INFO] [balatro:game] DISCARD_CARDS: selected=[5,6,7] discardsLeft=4
+[2026-02-05 00:14:23.766] [INFO] [balatro:game] discardAndDraw result: success=true
+[2026-02-05 00:14:23.766] [INFO] [balatro:ecs] syncCardEntities: removed=3 created=3 total=8 dealFromDeck=true
+[2026-02-05 00:14:24.524] [TRACE] [balatro:render] Frame 5160, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:25.224] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:25.236] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:25.236] [INFO] [balatro:input] Key: "left" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:25.237] [DEBUG] [balatro:input] Action for key "left": CURSOR_LEFT
+[2026-02-05 00:14:25.237] [DEBUG] [balatro:input] handlePlayingInput key="left" action=CURSOR_LEFT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:25.494] [TRACE] [balatro:render] Frame 5220, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:25.521] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:25.526] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:25.527] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:25.527] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:25.527] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:25.718] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:25.720] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:25.720] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:25.720] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:25.720] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:25.884] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:25.898] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:25.899] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:25.899] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:25.899] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:26.050] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:26.060] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:26.060] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:26.060] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:26.060] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:26.217] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:26.222] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:26.223] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:26.223] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:26.223] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:26.465] [TRACE] [balatro:render] Frame 5280, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:27.095] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:27.096] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:27.096] [INFO] [balatro:input] Key: "space" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:27.096] [DEBUG] [balatro:input] Action for key "space": TOGGLE_CURRENT
+[2026-02-05 00:14:27.096] [DEBUG] [balatro:input] handlePlayingInput key="space" action=TOGGLE_CURRENT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:27.271] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:27.276] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:27.277] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:27.277] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:27.277] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:27.438] [TRACE] [balatro:render] Frame 5340, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:27.488] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:27.503] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:27.504] [INFO] [balatro:input] Key: "space" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:27.504] [DEBUG] [balatro:input] Action for key "space": TOGGLE_CURRENT
+[2026-02-05 00:14:27.504] [DEBUG] [balatro:input] handlePlayingInput key="space" action=TOGGLE_CURRENT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:27.655] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:27.666] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:27.666] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:27.666] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:27.666] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:27.815] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:27.825] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:27.825] [INFO] [balatro:input] Key: "space" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:27.825] [DEBUG] [balatro:input] Action for key "space": TOGGLE_CURRENT
+[2026-02-05 00:14:27.825] [DEBUG] [balatro:input] handlePlayingInput key="space" action=TOGGLE_CURRENT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:28.410] [TRACE] [balatro:render] Frame 5400, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:29.384] [TRACE] [balatro:render] Frame 5460, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:30.359] [TRACE] [balatro:render] Frame 5520, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:31.338] [TRACE] [balatro:render] Frame 5580, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:32.082] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:32.082] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:32.083] [INFO] [balatro:input] Key: "space" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:32.083] [DEBUG] [balatro:input] Action for key "space": TOGGLE_CURRENT
+[2026-02-05 00:14:32.083] [DEBUG] [balatro:input] handlePlayingInput key="space" action=TOGGLE_CURRENT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:32.306] [TRACE] [balatro:render] Frame 5640, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:32.468] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:32.468] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:32.468] [INFO] [balatro:input] Key: "left" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:32.469] [DEBUG] [balatro:input] Action for key "left": CURSOR_LEFT
+[2026-02-05 00:14:32.469] [DEBUG] [balatro:input] handlePlayingInput key="left" action=CURSOR_LEFT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:33.278] [TRACE] [balatro:render] Frame 5700, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:33.470] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:33.472] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:33.472] [INFO] [balatro:input] Key: "d" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:33.472] [DEBUG] [balatro:input] Action for key "d": DISCARD_CARDS
+[2026-02-05 00:14:33.472] [DEBUG] [balatro:input] handlePlayingInput key="d" action=DISCARD_CARDS dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:33.472] [INFO] [balatro:game] DISCARD_CARDS: selected=[5,6] discardsLeft=3
+[2026-02-05 00:14:33.472] [INFO] [balatro:game] discardAndDraw result: success=true
+[2026-02-05 00:14:33.472] [INFO] [balatro:ecs] syncCardEntities: removed=2 created=2 total=8 dealFromDeck=true
+[2026-02-05 00:14:34.250] [TRACE] [balatro:render] Frame 5760, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:35.222] [TRACE] [balatro:render] Frame 5820, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:36.188] [TRACE] [balatro:render] Frame 5880, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:37.159] [TRACE] [balatro:render] Frame 5940, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:37.385] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:37.386] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:37.386] [INFO] [balatro:input] Key: "s" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:37.386] [DEBUG] [balatro:input] Action for key "s": none
+[2026-02-05 00:14:37.386] [DEBUG] [balatro:input] handlePlayingInput key="s" action=null dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:38.128] [TRACE] [balatro:render] Frame 6000, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:38.199] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:38.210] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:38.211] [INFO] [balatro:input] Key: "s" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:38.211] [DEBUG] [balatro:input] Action for key "s": none
+[2026-02-05 00:14:38.211] [DEBUG] [balatro:input] handlePlayingInput key="s" action=null dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:39.109] [TRACE] [balatro:render] Frame 6060, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:40.074] [TRACE] [balatro:render] Frame 6120, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:41.049] [TRACE] [balatro:render] Frame 6180, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:42.024] [TRACE] [balatro:render] Frame 6240, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:42.997] [TRACE] [balatro:render] Frame 6300, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:43.966] [TRACE] [balatro:render] Frame 6360, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:44.940] [TRACE] [balatro:render] Frame 6420, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:45.917] [TRACE] [balatro:render] Frame 6480, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:46.896] [TRACE] [balatro:render] Frame 6540, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:47.865] [TRACE] [balatro:render] Frame 6600, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:48.840] [TRACE] [balatro:render] Frame 6660, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:49.810] [TRACE] [balatro:render] Frame 6720, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:50.548] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:50.558] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:50.558] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:50.558] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:50.558] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:50.784] [TRACE] [balatro:render] Frame 6780, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:50.899] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:50.899] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:50.899] [INFO] [balatro:input] Key: "left" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:50.899] [DEBUG] [balatro:input] Action for key "left": CURSOR_LEFT
+[2026-02-05 00:14:50.899] [DEBUG] [balatro:input] handlePlayingInput key="left" action=CURSOR_LEFT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:51.247] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:51.252] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:51.252] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:51.252] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:51.252] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:51.456] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:51.463] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:51.463] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:51.463] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:51.463] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:51.730] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:51.736] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:51.736] [INFO] [balatro:input] Key: "left" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:51.736] [DEBUG] [balatro:input] Action for key "left": CURSOR_LEFT
+[2026-02-05 00:14:51.736] [DEBUG] [balatro:input] handlePlayingInput key="left" action=CURSOR_LEFT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:51.753] [TRACE] [balatro:render] Frame 6840, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:51.922] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:51.931] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:51.932] [INFO] [balatro:input] Key: "left" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:51.932] [DEBUG] [balatro:input] Action for key "left": CURSOR_LEFT
+[2026-02-05 00:14:51.932] [DEBUG] [balatro:input] handlePlayingInput key="left" action=CURSOR_LEFT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:52.251] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:52.254] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:52.255] [INFO] [balatro:input] Key: "space" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:52.255] [DEBUG] [balatro:input] Action for key "space": TOGGLE_CURRENT
+[2026-02-05 00:14:52.255] [DEBUG] [balatro:input] handlePlayingInput key="space" action=TOGGLE_CURRENT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:52.514] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:52.527] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:52.527] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:52.527] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:52.527] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:52.718] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:52.723] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:52.723] [INFO] [balatro:input] Key: "space" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:52.723] [DEBUG] [balatro:input] Action for key "space": TOGGLE_CURRENT
+[2026-02-05 00:14:52.723] [DEBUG] [balatro:input] handlePlayingInput key="space" action=TOGGLE_CURRENT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:52.723] [TRACE] [balatro:render] Frame 6900, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:52.989] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:14:52.998] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:52.998] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:52.998] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:14:52.998] [DEBUG] [balatro:input] handlePlayingInput key="right" action=CURSOR_RIGHT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:53.130] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:53.144] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:53.144] [INFO] [balatro:input] Key: "space" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:53.145] [DEBUG] [balatro:input] Action for key "space": TOGGLE_CURRENT
+[2026-02-05 00:14:53.145] [DEBUG] [balatro:input] handlePlayingInput key="space" action=TOGGLE_CURRENT dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:53.696] [TRACE] [balatro:render] Frame 6960, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:54.671] [TRACE] [balatro:render] Frame 7020, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:55.642] [TRACE] [balatro:render] Frame 7080, screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:56.200] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:14:56.208] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=playing
+[2026-02-05 00:14:56.209] [INFO] [balatro:input] Key: "return" ctrl=false shift=false screen=playing dealing=false scoring=idle
+[2026-02-05 00:14:56.209] [DEBUG] [balatro:input] Action for key "return": PLAY_CARDS
+[2026-02-05 00:14:56.209] [DEBUG] [balatro:input] handlePlayingInput key="return" action=PLAY_CARDS dealing=false scoring=idle helpVisible=false
+[2026-02-05 00:14:56.209] [INFO] [balatro:game] PLAY_CARDS: selected=[0,1,2] handSize=8
+[2026-02-05 00:14:56.209] [INFO] [balatro:game] Hand preview: Three of a Kind score=189
+[2026-02-05 00:14:56.611] [INFO] [balatro:game] cards_to_play_area complete, entering card_scoring
+[2026-02-05 00:14:56.612] [INFO] [balatro:game] Hand: Three of a Kind score=189
+[2026-02-05 00:14:56.612] [INFO] [balatro:ecs] syncCardEntities: removed=3 created=3 total=8 dealFromDeck=true
+[2026-02-05 00:14:56.612] [TRACE] [balatro:render] Frame 7140, screen=playing dealing=false scoring=card_scoring
+[2026-02-05 00:14:57.223] [INFO] [balatro:game] card_scoring complete, entering score_counting
+[2026-02-05 00:14:57.581] [TRACE] [balatro:render] Frame 7200, screen=playing dealing=false scoring=score_counting
+[2026-02-05 00:14:57.726] [INFO] [balatro:game] score_counting complete, entering popups phase
+[2026-02-05 00:14:58.555] [TRACE] [balatro:render] Frame 7260, screen=playing dealing=false scoring=popups
+[2026-02-05 00:14:58.961] [INFO] [balatro:game] Popups complete. endState=playing score=285/100
+[2026-02-05 00:14:59.463] [INFO] [balatro:game] shuffle_back complete, transitioning to shop
+[2026-02-05 00:14:59.464] [INFO] [balatro:screen] >>> transitionToShop() called, score: 285 target: 100
+[2026-02-05 00:14:59.530] [TRACE] [balatro:render] Frame 7320, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:00.507] [TRACE] [balatro:render] Frame 7380, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:01.472] [TRACE] [balatro:render] Frame 7440, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:02.447] [TRACE] [balatro:render] Frame 7500, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:03.419] [TRACE] [balatro:render] Frame 7560, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:03.668] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:15:03.675] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=shop
+[2026-02-05 00:15:03.676] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:03.676] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:15:03.676] [DEBUG] [balatro:input] handleShopInput key="right" money=$9
+[2026-02-05 00:15:04.383] [TRACE] [balatro:render] Frame 7620, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:04.482] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:15:04.482] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=shop
+[2026-02-05 00:15:04.482] [INFO] [balatro:input] Key: "left" ctrl=false shift=false screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:04.482] [DEBUG] [balatro:input] Action for key "left": CURSOR_LEFT
+[2026-02-05 00:15:04.482] [DEBUG] [balatro:input] handleShopInput key="left" money=$9
+[2026-02-05 00:15:04.902] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:15:04.906] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=shop
+[2026-02-05 00:15:04.906] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:04.906] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:15:04.906] [DEBUG] [balatro:input] handleShopInput key="right" money=$9
+[2026-02-05 00:15:05.361] [TRACE] [balatro:render] Frame 7680, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:06.161] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:15:06.165] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=shop
+[2026-02-05 00:15:06.166] [INFO] [balatro:input] Key: "left" ctrl=false shift=false screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:06.166] [DEBUG] [balatro:input] Action for key "left": CURSOR_LEFT
+[2026-02-05 00:15:06.166] [DEBUG] [balatro:input] handleShopInput key="left" money=$9
+[2026-02-05 00:15:06.326] [TRACE] [balatro:render] Frame 7740, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:07.297] [TRACE] [balatro:render] Frame 7800, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:08.265] [TRACE] [balatro:render] Frame 7860, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:09.233] [TRACE] [balatro:render] Frame 7920, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:09.479] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:15:09.491] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=shop
+[2026-02-05 00:15:09.491] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:09.491] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:15:09.491] [DEBUG] [balatro:input] handleShopInput key="right" money=$9
+[2026-02-05 00:15:10.203] [TRACE] [balatro:render] Frame 7980, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:11.167] [TRACE] [balatro:render] Frame 8040, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:12.141] [TRACE] [balatro:render] Frame 8100, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:13.108] [TRACE] [balatro:render] Frame 8160, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:14.077] [TRACE] [balatro:render] Frame 8220, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:14.705] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:15:14.710] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=shop
+[2026-02-05 00:15:14.711] [INFO] [balatro:input] Key: "left" ctrl=false shift=false screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:14.711] [DEBUG] [balatro:input] Action for key "left": CURSOR_LEFT
+[2026-02-05 00:15:14.711] [DEBUG] [balatro:input] handleShopInput key="left" money=$9
+[2026-02-05 00:15:15.052] [TRACE] [balatro:render] Frame 8280, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:16.022] [TRACE] [balatro:render] Frame 8340, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:16.991] [TRACE] [balatro:render] Frame 8400, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:17.678] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:15:17.688] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=shop
+[2026-02-05 00:15:17.689] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:17.689] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:15:17.689] [DEBUG] [balatro:input] handleShopInput key="right" money=$9
+[2026-02-05 00:15:17.853] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:15:17.869] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=shop
+[2026-02-05 00:15:17.869] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:17.869] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:15:17.869] [DEBUG] [balatro:input] handleShopInput key="right" money=$9
+[2026-02-05 00:15:17.967] [TRACE] [balatro:render] Frame 8460, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:18.059] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:15:18.064] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=shop
+[2026-02-05 00:15:18.064] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:18.064] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:15:18.064] [DEBUG] [balatro:input] handleShopInput key="right" money=$9
+[2026-02-05 00:15:18.529] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:15:18.532] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=shop
+[2026-02-05 00:15:18.533] [INFO] [balatro:input] Key: "right" ctrl=false shift=false screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:18.533] [DEBUG] [balatro:input] Action for key "right": CURSOR_RIGHT
+[2026-02-05 00:15:18.533] [DEBUG] [balatro:input] handleShopInput key="right" money=$9
+[2026-02-05 00:15:18.742] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:15:18.744] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=shop
+[2026-02-05 00:15:18.744] [INFO] [balatro:input] Key: "down" ctrl=false shift=false screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:18.744] [DEBUG] [balatro:input] Action for key "down": none
+[2026-02-05 00:15:18.744] [DEBUG] [balatro:input] handleShopInput key="down" money=$9
+[2026-02-05 00:15:18.938] [TRACE] [balatro:render] Frame 8520, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:19.486] [DEBUG] [balatro:input] stdin data received, length: 3
+[2026-02-05 00:15:19.492] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=shop
+[2026-02-05 00:15:19.492] [INFO] [balatro:input] Key: "left" ctrl=false shift=false screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:19.492] [DEBUG] [balatro:input] Action for key "left": CURSOR_LEFT
+[2026-02-05 00:15:19.492] [DEBUG] [balatro:input] handleShopInput key="left" money=$9
+[2026-02-05 00:15:19.915] [TRACE] [balatro:render] Frame 8580, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:20.885] [TRACE] [balatro:render] Frame 8640, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:21.846] [TRACE] [balatro:render] Frame 8700, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:22.807] [TRACE] [balatro:render] Frame 8760, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:23.773] [TRACE] [balatro:render] Frame 8820, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:24.738] [TRACE] [balatro:render] Frame 8880, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:25.707] [TRACE] [balatro:render] Frame 8940, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:26.679] [TRACE] [balatro:render] Frame 9000, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:27.649] [TRACE] [balatro:render] Frame 9060, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:28.624] [TRACE] [balatro:render] Frame 9120, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:29.602] [TRACE] [balatro:render] Frame 9180, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:30.569] [TRACE] [balatro:render] Frame 9240, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:31.541] [TRACE] [balatro:render] Frame 9300, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:32.513] [TRACE] [balatro:render] Frame 9360, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:33.476] [TRACE] [balatro:render] Frame 9420, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:34.446] [TRACE] [balatro:render] Frame 9480, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:35.418] [TRACE] [balatro:render] Frame 9540, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:36.389] [TRACE] [balatro:render] Frame 9600, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:37.354] [TRACE] [balatro:render] Frame 9660, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:38.327] [TRACE] [balatro:render] Frame 9720, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:39.307] [TRACE] [balatro:render] Frame 9780, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:40.280] [TRACE] [balatro:render] Frame 9840, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:41.250] [TRACE] [balatro:render] Frame 9900, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:42.219] [TRACE] [balatro:render] Frame 9960, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:43.193] [TRACE] [balatro:render] Frame 10020, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:44.166] [TRACE] [balatro:render] Frame 10080, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:45.136] [TRACE] [balatro:render] Frame 10140, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:46.107] [TRACE] [balatro:render] Frame 10200, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:47.082] [TRACE] [balatro:render] Frame 10260, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:48.058] [TRACE] [balatro:render] Frame 10320, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:49.028] [TRACE] [balatro:render] Frame 10380, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:49.996] [TRACE] [balatro:render] Frame 10440, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:50.969] [TRACE] [balatro:render] Frame 10500, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:51.939] [TRACE] [balatro:render] Frame 10560, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:52.908] [TRACE] [balatro:render] Frame 10620, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:53.879] [TRACE] [balatro:render] Frame 10680, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:54.851] [TRACE] [balatro:render] Frame 10740, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:55.828] [TRACE] [balatro:render] Frame 10800, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:56.792] [TRACE] [balatro:render] Frame 10860, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:57.771] [TRACE] [balatro:render] Frame 10920, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:58.737] [TRACE] [balatro:render] Frame 10980, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:15:59.707] [TRACE] [balatro:render] Frame 11040, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:00.676] [TRACE] [balatro:render] Frame 11100, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:01.638] [TRACE] [balatro:render] Frame 11160, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:02.611] [TRACE] [balatro:render] Frame 11220, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:03.586] [TRACE] [balatro:render] Frame 11280, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:04.557] [TRACE] [balatro:render] Frame 11340, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:05.516] [TRACE] [balatro:render] Frame 11400, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:06.488] [TRACE] [balatro:render] Frame 11460, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:07.456] [TRACE] [balatro:render] Frame 11520, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:08.426] [TRACE] [balatro:render] Frame 11580, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:09.394] [TRACE] [balatro:render] Frame 11640, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:10.365] [TRACE] [balatro:render] Frame 11700, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:11.336] [TRACE] [balatro:render] Frame 11760, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:12.305] [TRACE] [balatro:render] Frame 11820, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:13.274] [TRACE] [balatro:render] Frame 11880, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:14.243] [TRACE] [balatro:render] Frame 11940, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:15.218] [TRACE] [balatro:render] Frame 12000, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:16.192] [TRACE] [balatro:render] Frame 12060, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:17.167] [TRACE] [balatro:render] Frame 12120, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:18.138] [TRACE] [balatro:render] Frame 12180, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:19.104] [TRACE] [balatro:render] Frame 12240, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:20.070] [TRACE] [balatro:render] Frame 12300, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:21.041] [TRACE] [balatro:render] Frame 12360, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:22.018] [TRACE] [balatro:render] Frame 12420, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:22.995] [TRACE] [balatro:render] Frame 12480, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:23.963] [TRACE] [balatro:render] Frame 12540, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:24.937] [TRACE] [balatro:render] Frame 12600, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:25.903] [TRACE] [balatro:render] Frame 12660, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:26.871] [TRACE] [balatro:render] Frame 12720, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:27.849] [TRACE] [balatro:render] Frame 12780, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:28.816] [TRACE] [balatro:render] Frame 12840, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:29.786] [TRACE] [balatro:render] Frame 12900, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:30.775] [TRACE] [balatro:render] Frame 12960, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:31.741] [TRACE] [balatro:render] Frame 13020, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:32.716] [TRACE] [balatro:render] Frame 13080, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:33.683] [TRACE] [balatro:render] Frame 13140, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:34.656] [TRACE] [balatro:render] Frame 13200, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:35.625] [TRACE] [balatro:render] Frame 13260, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:36.585] [TRACE] [balatro:render] Frame 13320, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:37.562] [TRACE] [balatro:render] Frame 13380, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:38.530] [TRACE] [balatro:render] Frame 13440, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:39.501] [TRACE] [balatro:render] Frame 13500, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:40.472] [TRACE] [balatro:render] Frame 13560, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:41.444] [TRACE] [balatro:render] Frame 13620, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:42.412] [TRACE] [balatro:render] Frame 13680, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:43.379] [TRACE] [balatro:render] Frame 13740, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:44.348] [TRACE] [balatro:render] Frame 13800, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:45.324] [TRACE] [balatro:render] Frame 13860, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:46.297] [TRACE] [balatro:render] Frame 13920, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:47.262] [TRACE] [balatro:render] Frame 13980, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:48.234] [TRACE] [balatro:render] Frame 14040, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:49.201] [TRACE] [balatro:render] Frame 14100, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:50.167] [TRACE] [balatro:render] Frame 14160, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:51.133] [TRACE] [balatro:render] Frame 14220, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:52.109] [TRACE] [balatro:render] Frame 14280, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:53.080] [TRACE] [balatro:render] Frame 14340, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:54.056] [TRACE] [balatro:render] Frame 14400, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:55.032] [TRACE] [balatro:render] Frame 14460, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:56.005] [TRACE] [balatro:render] Frame 14520, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:56.977] [TRACE] [balatro:render] Frame 14580, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:57.952] [TRACE] [balatro:render] Frame 14640, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:58.933] [TRACE] [balatro:render] Frame 14700, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:16:59.905] [TRACE] [balatro:render] Frame 14760, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:17:00.872] [TRACE] [balatro:render] Frame 14820, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:17:01.844] [TRACE] [balatro:render] Frame 14880, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:17:02.819] [TRACE] [balatro:render] Frame 14940, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:17:03.788] [TRACE] [balatro:render] Frame 15000, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:17:04.760] [TRACE] [balatro:render] Frame 15060, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:17:05.736] [TRACE] [balatro:render] Frame 15120, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:17:06.707] [TRACE] [balatro:render] Frame 15180, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:17:07.681] [TRACE] [balatro:render] Frame 15240, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:17:08.655] [TRACE] [balatro:render] Frame 15300, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:17:09.626] [TRACE] [balatro:render] Frame 15360, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:17:10.597] [TRACE] [balatro:render] Frame 15420, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:17:11.570] [TRACE] [balatro:render] Frame 15480, screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:17:12.221] [DEBUG] [balatro:input] stdin data received, length: 1
+[2026-02-05 00:17:12.230] [DEBUG] [balatro:input] Processing 1 queued input(s), screen=shop
+[2026-02-05 00:17:12.230] [INFO] [balatro:input] Key: "c" ctrl=true shift=false screen=shop dealing=false scoring=shuffle_back
+[2026-02-05 00:17:12.231] [WARN] [balatro:input] Ctrl+C detected, quitting
+[2026-02-05 00:17:12.231] [WARN] [balatro:main] Output system: state.running=false, exiting process
+[2026-02-05 00:17:12.231] [INFO] [balatro:main] === BALATRO DEBUG SESSION ENDED (running=false) ===
