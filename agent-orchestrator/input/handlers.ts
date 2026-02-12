@@ -241,8 +241,16 @@ function handlePrefixMode(
 		return;
 	}
 
-	// d: Remove focused worker
+	// d: Agent detail overlay
 	if (parsed.key === 'd' && !parsed.ctrl && !parsed.meta) {
+		state.overlay.kind = 'agent-detail';
+		state.inputMode = 'direct';
+		state.needsRender = true;
+		return;
+	}
+
+	// x: Remove focused worker
+	if (parsed.key === 'x' && !parsed.ctrl && !parsed.meta) {
 		if (state.focusTarget === 'worker') {
 			removeFocusedWorker(state);
 		}
@@ -262,14 +270,6 @@ function handlePrefixMode(
 	if (parsed.key === 'p' && !parsed.ctrl && !parsed.meta) {
 		openCommandPalette(state);
 		state.inputMode = 'direct';
-		return;
-	}
-
-	// i: Agent detail overlay
-	if (parsed.key === 'i' && !parsed.ctrl && !parsed.meta) {
-		state.overlay.kind = 'agent-detail';
-		state.inputMode = 'direct';
-		state.needsRender = true;
 		return;
 	}
 

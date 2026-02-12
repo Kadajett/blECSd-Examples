@@ -10,6 +10,7 @@
 import type { MemorySidebarState, SidebarTab, RagSearchResult, RagDocument, SharedContextEntry } from '../types.js';
 import { HEADER_HEIGHT } from '../config.js';
 import { THEME, getBorderChars } from './theme.js';
+import { renderSectionHeader } from './dividers.js';
 
 const RESET = THEME.reset;
 const BORDER = getBorderChars('single');
@@ -83,6 +84,20 @@ export function renderMemorySidebar(
 		output += RESET;
 
 		output += borderColor + BORDER.v + RESET;
+	}
+
+	if (contentHeight > 0) {
+		const sectionLabel = state.tab === 'rag'
+			? 'RAG'
+			: state.tab === 'context'
+				? 'Context'
+				: 'Search';
+		const sectionColor = state.tab === 'rag'
+			? THEME.accent3.fg
+			: state.tab === 'search'
+				? THEME.accent1.fg
+				: THEME.accent4.fg;
+		output += renderSectionHeader(2, startRow + 2, width - 2, sectionLabel, sectionColor);
 	}
 
 	// Bottom border with scroll indicator

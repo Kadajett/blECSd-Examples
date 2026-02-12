@@ -11,6 +11,8 @@ import { renderHeaderBar } from './headerBar.js';
 import { renderToasts } from './toast.js';
 import { renderMemorySidebar, type SidebarRenderData } from './memorySidebar.js';
 import { THEME, getBorderChars } from './theme.js';
+import { renderSparkline } from './sparkline.js';
+import { renderHorizontalDivider, renderSectionHeader } from './dividers.js';
 
 import { warn } from '../utils/logger.js';
 
@@ -203,7 +205,7 @@ export function renderFrame(state: AppState): void {
 
 	// 5. Render overlay (command palette, agent detail) on top of everything
 	if (state.overlay.kind !== 'none') {
-		output += renderOverlay(state.overlay, state.screenWidth, state.screenHeight);
+		output += renderOverlay(state, state.screenWidth, state.screenHeight);
 	}
 
 	// 6. Render toasts on top of everything (including overlay)
@@ -235,14 +237,18 @@ export function renderFrame(state: AppState): void {
 /**
  * Renders an overlay (command palette or agent detail) centered on screen.
  *
- * @param overlay - Overlay state
+ * @param state - Application state
  * @param screenW - Screen width
  * @param screenH - Screen height
  * @returns ANSI string for the overlay
  */
-function renderOverlay(overlay: OverlayState, screenW: number, screenH: number): string {
+function renderOverlay(state: AppState, screenW: number, screenH: number): string {
+	const overlay = state.overlay;
 	if (overlay.kind === 'command-palette') {
 		return renderCommandPalette(overlay, screenW, screenH);
+	}
+	if (overlay.kind === 'agent-detail') {
+		return renderAgentDetailOverlay(state, screenW, screenH);
 	}
 	return '';
 }
@@ -284,6 +290,7 @@ function renderCommandPalette(overlay: OverlayState, screenW: number, screenH: n
 
 	// Separator
 	output += `\x1b[${startY + 2};${startX}H${border}${bg}\u251c${rounded.h.repeat(contentW)}\u2524${RESET}`;
+	output += renderHorizontalDivider(startX + 1, startY + 2, contentW, border, 'single');
 
 	// Items
 	for (let i = 0; i < maxRows; i++) {
@@ -324,7 +331,7 @@ function renderCommandPalette(overlay: OverlayState, screenW: number, screenH: n
 type PaletteRow = { type: 'header'; label: string } | { type: 'item'; label: string; icon: string; itemIndex: number };
 
 function groupPaletteRows(items: readonly string[]): PaletteRow[] {
-	const categories: readonly Array<'Workers' | 'Navigation' | 'Views' | 'System'> = [
+	const categories: ReadonlyArray<'Workers' | 'Navigation' | 'Views' | 'System'> = [
 		'Workers',
 		'Navigation',
 		'Views',
@@ -374,6 +381,128 @@ function getPaletteIcon(label: string): string {
 	if (label.startsWith('Focus')) return '◉';
 	if (label.includes('Pane')) return '▸';
 	return '⌘';
+}
+
+function renderAgentDetailOverlay(state: AppState, screenW: number, screenH: number): string {
+	const rounded = getBorderChars('rounded');
+	const boxW = Math.min(screenW - 4, Math.max(52, Math.floor(screenW * 0.6)));
+	const boxH = Math.min(screenH - 4, Math.max(16, Math.floor(screenH * 0.7)));
+	const innerW = boxW - 2;
+	const innerH = boxH - 2;
+	const startX = Math.max(1, Math.floor((screenW - boxW) / 2));
+	const startY = Math.max(1, Math.floor((screenH - boxH) / 2));
+
+	const focusedPane = state.focusTarget === 'orchestrator'
+		? state.orchestratorPane
+		: state.workerPanes[state.focusedWorkerIndex] ?? null;
+
+	if (!focusedPane) {
+		return '';
+	}
+
+	const status = focusedPane.agent.status;
+	const statusColor = getStatusColor(status);
+	const uptime = formatUptime(Date.now() - focusedPane.agent.spawnedAt);
+	const totalOutput = focusedPane.agent.outputLineCount;
+	const errorCount = getAgentErrorCount(state, focusedPane.agent.id);
+	const activityData = state.activity.history.get(focusedPane.agent.id) ?? [];
+	const sparkline = renderSparkline(activityData, Math.max(0, innerW - 4));
+	const previewLines = getPanePreviewLines(focusedPane, 5, innerW - 4);
+
+	let output = '';
+
+	output += `\x1b[${startY};${startX}H${THEME.accent2.fg}${THEME.overlay.bg}${rounded.tl}${rounded.h.repeat(innerW)}${rounded.tr}${RESET}`;
+	for (let row = 0; row < innerH; row++) {
+		output += `\x1b[${startY + 1 + row};${startX}H${THEME.accent2.fg}${THEME.overlay.bg}${rounded.v}${' '.repeat(innerW)}${rounded.v}${RESET}`;
+	}
+	output += `\x1b[${startY + boxH - 1};${startX}H${THEME.accent2.fg}${THEME.overlay.bg}${rounded.bl}${rounded.h.repeat(innerW)}${rounded.br}${RESET}`;
+
+	const title = `${THEME.bold}${THEME.accent2.fg}${focusedPane.agent.label}${RESET}`;
+	output += writeCentered(startX + 1, startY + 1, innerW, title, THEME.overlay.bg);
+
+	output += `\x1b[${startY + 3};${startX + 3}H${THEME.text.fg}Status: ${statusColor}${status}${RESET}${THEME.text.fg}  Uptime: ${THEME.accent5.fg}${uptime}${RESET}`;
+	output += `\x1b[${startY + 4};${startX + 3}H${THEME.text.fg}Output lines: ${THEME.accent1.fg}${totalOutput}${RESET}`;
+	if (errorCount !== null) {
+		output += `${THEME.text.fg}  Errors: ${THEME.error.fg}${errorCount}${RESET}`;
+	}
+
+	output += renderHorizontalDivider(startX + 3, startY + 5, Math.max(0, innerW - 4), THEME.subtext.fg, 'single');
+	output += renderSectionHeader(startX + 3, startY + 6, Math.max(0, innerW - 4), 'Activity', THEME.accent4.fg);
+	output += `\x1b[${startY + 7};${startX + 3}H${sparkline}${RESET}`;
+
+	output += renderSectionHeader(startX + 3, startY + 9, Math.max(0, innerW - 4), 'Last Output', THEME.accent4.fg);
+	for (let i = 0; i < previewLines.length; i++) {
+		const line = previewLines[i] ?? '';
+		const padded = line.padEnd(Math.max(0, innerW - 4), ' ').slice(0, Math.max(0, innerW - 4));
+		output += `\x1b[${startY + 10 + i};${startX + 3}H${THEME.text.fg}${padded}${RESET}`;
+	}
+
+	return output;
+}
+
+function getStatusColor(status: AgentPane['agent']['status']): string {
+	if (status === 'running') return THEME.success.fg;
+	if (status === 'idle') return THEME.warning.fg;
+	if (status === 'error') return THEME.error.fg;
+	if (status === 'stopped') return THEME.subtext.fg;
+	return THEME.warning.fg;
+}
+
+function formatUptime(ms: number): string {
+	const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+	const hours = Math.floor(totalSeconds / 3600);
+	const minutes = Math.floor((totalSeconds % 3600) / 60);
+	const seconds = totalSeconds % 60;
+	return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function stripAnsi(input: string): string {
+	return input.replace(/\x1b\[[0-9;]*m/g, '');
+}
+
+function writeCentered(x: number, y: number, width: number, text: string, bg: string): string {
+	const visibleLength = stripAnsi(text).length;
+	const leftPad = Math.max(0, Math.floor((width - visibleLength) / 2));
+	return `\x1b[${y};${x}H${bg}${' '.repeat(leftPad)}${text}${RESET}`;
+}
+
+function getPanePreviewLines(pane: AgentPane, count: number, maxWidth: number): string[] {
+	const dims = pane.terminal.getDimensions();
+	const cells = pane.terminal.getCells();
+	if (!cells) {
+		return [];
+	}
+
+	const lines: string[] = [];
+	for (let row = 0; row < dims.height; row++) {
+		let line = '';
+		for (let col = 0; col < dims.width; col++) {
+			const cell = cells[row * dims.width + col];
+			line += cell?.char ?? ' ';
+		}
+		lines.push(line.trimEnd());
+	}
+
+	return lines
+		.filter((line) => line.length > 0)
+		.slice(-count)
+		.map((line) => line.slice(0, Math.max(0, maxWidth)));
+}
+
+function getAgentErrorCount(state: AppState, agentId: string): number | null {
+	if (!state.db) {
+		return null;
+	}
+
+	try {
+		const db = state.db as Database.Database;
+		const row = db.prepare(
+			'SELECT COUNT(*) as count FROM agent_output WHERE agent_id = ? AND lower(line) LIKE ?',
+		).get(agentId, '%error%') as { count: number } | undefined;
+		return row?.count ?? 0;
+	} catch {
+		return null;
+	}
 }
 
 // =============================================================================
