@@ -5,7 +5,7 @@
  */
 
 import type { AppState, GridLayout } from '../types.js';
-import { calculateGridDimensions, ORCHESTRATOR_WIDTH_RATIO } from '../config.js';
+import { calculateGridDimensions, ORCHESTRATOR_WIDTH_RATIO, HEADER_HEIGHT } from '../config.js';
 
 /**
  * Bounds for a rectangular area.
@@ -81,7 +81,7 @@ export function calculatePaneBounds(
 ): Bounds {
 	const orchestratorWidth = Math.floor(screenWidth * orchestratorRatio);
 	const workerAreaWidth = screenWidth - orchestratorWidth;
-	const workerAreaHeight = screenHeight - 1; // Reserve 1 line for status bar
+	const workerAreaHeight = screenHeight - 1 - HEADER_HEIGHT; // Reserve status bar + header
 
 	const paneWidth = Math.floor(workerAreaWidth / gridLayout.cols);
 	const paneHeight = Math.floor(workerAreaHeight / gridLayout.rows);
@@ -91,7 +91,7 @@ export function calculatePaneBounds(
 
 	return {
 		x: orchestratorWidth + gridCol * paneWidth + sidebarOffset,
-		y: gridRow * paneHeight,
+		y: gridRow * paneHeight + HEADER_HEIGHT,
 		width: paneWidth,
 		height: paneHeight,
 	};
@@ -111,7 +111,7 @@ export function calculateOrchestratorBounds(
 	ratio: number,
 ): Bounds {
 	const width = Math.floor(screenWidth * ratio);
-	const height = screenHeight - 1; // Reserve 1 line for status bar
+	const height = screenHeight - 1 - HEADER_HEIGHT; // Reserve status bar + header
 
-	return { x: 0, y: 0, width, height };
+	return { x: 0, y: HEADER_HEIGHT, width, height };
 }

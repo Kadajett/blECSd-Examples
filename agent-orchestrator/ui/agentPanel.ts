@@ -6,19 +6,21 @@
 
 import type { AgentStatus } from '../types.js';
 import { renderSparkline } from './sparkline.js';
+import { THEME, getBorderChars, type BorderChars } from './theme.js';
+
+/** Border style name. */
+export type BorderStyle = 'single' | 'double' | 'rounded';
 
 /**
- * Status indicator characters and colors.
+ * Status indicator characters and colors using theme palette.
  */
 const STATUS_INDICATORS: Record<AgentStatus, { readonly symbol: string; readonly color: string }> = {
-	starting: { symbol: '\u25D0', color: '\x1b[33m' }, // Yellow half-circle
-	running: { symbol: '\u25CF', color: '\x1b[32m' }, // Green circle
-	idle: { symbol: '\u25D0', color: '\x1b[33m' }, // Yellow half-circle
-	error: { symbol: '\u2717', color: '\x1b[31m' }, // Red X
-	stopped: { symbol: '\u25CB', color: '\x1b[90m' }, // Gray hollow circle
+	starting: { symbol: '\u25D0', color: THEME.warning.fg },
+	running: { symbol: '\u25CF', color: THEME.accent3.fg },
+	idle: { symbol: '\u25D0', color: THEME.warning.fg },
+	error: { symbol: '\u2717', color: THEME.error.fg },
+	stopped: { symbol: '\u25CB', color: THEME.subtext.fg },
 };
-
-const RESET = '\x1b[0m';
 
 /**
  * Renders a pane border with title, activity sparkline, and status indicator.
@@ -31,6 +33,7 @@ const RESET = '\x1b[0m';
  * @param status - Agent status
  * @param borderColor - ANSI color code for border
  * @param activityData - Recent activity data points for sparkline
+ * @param borderStyle - Border character style (defaults to 'single')
  * @returns ANSI string for the border
  */
 export function renderPaneBorder(
@@ -42,6 +45,7 @@ export function renderPaneBorder(
 	status: AgentStatus,
 	borderColor: string,
 	activityData?: readonly number[],
+	borderStyle: BorderStyle = 'single',
 ): string {
 	if (width < 4 || height < 2) {
 		return ''; // Too small to render
@@ -53,18 +57,20 @@ export function renderPaneBorder(
 		return '';
 	}
 
+	const chars: BorderChars = getBorderChars(borderStyle);
+
 	// Top border with title, sparkline, and status
 	output += `\x1b[${y + 1};${x + 1}H`;
 	output += borderColor;
-	output += '\u250C\u2500 ';
-	output += RESET;
+	output += `${chars.tl}${chars.h} `;
+	output += THEME.reset;
 	output += label;
 	output += borderColor;
 	output += ' ';
 
 	// Calculate how much space is left for sparkline + status + closing
-	const titleLength = 4 + label.length; // "|- " + label + " "
-	const statusLength = 4; // " " + indicator + " |"
+	const titleLength = 4 + label.length; // "tl h " + label + " "
+	const statusLength = 4; // " " + indicator + " tr"
 
 	// Sparkline fills available space
 	const sparklineMaxWidth = Math.max(0, width - titleLength - statusLength - 1);
@@ -76,36 +82,36 @@ export function renderPaneBorder(
 	const sparklineLength = sparklineStr.length;
 	const paddingLength = Math.max(0, width - titleLength - sparklineLength - statusLength);
 
-	output += RESET;
-	output += '\x1b[90m'; // Dim for sparkline
+	output += THEME.reset;
+	output += THEME.subtext.fg; // Dim for sparkline
 	output += sparklineStr;
-	output += RESET;
+	output += THEME.reset;
 	output += borderColor;
-	output += '\u2500'.repeat(paddingLength);
+	output += chars.h.repeat(paddingLength);
 	output += ' ';
-	output += RESET;
+	output += THEME.reset;
 	output += indicator.color;
 	output += indicator.symbol;
-	output += RESET;
+	output += THEME.reset;
 	output += borderColor;
-	output += ' \u2510';
-	output += RESET;
+	output += ` ${chars.tr}`;
+	output += THEME.reset;
 
 	// Side borders
 	for (let row = 1; row < height - 1; row++) {
 		output += `\x1b[${y + row + 1};${x + 1}H`;
-		output += borderColor + '\u2502' + RESET;
+		output += borderColor + chars.v + THEME.reset;
 		output += `\x1b[${y + row + 1};${x + width}H`;
-		output += borderColor + '\u2502' + RESET;
+		output += borderColor + chars.v + THEME.reset;
 	}
 
 	// Bottom border
 	output += `\x1b[${y + height};${x + 1}H`;
 	output += borderColor;
-	output += '\u2514';
-	output += '\u2500'.repeat(width - 2);
-	output += '\u2518';
-	output += RESET;
+	output += chars.bl;
+	output += chars.h.repeat(width - 2);
+	output += chars.br;
+	output += THEME.reset;
 
 	return output;
 }

@@ -5,10 +5,12 @@
  */
 
 import type { AppState, AgentPane, OverlayState, RagDocument, SharedContextEntry } from '../types.js';
-import { COLORS } from '../config.js';
-import { renderPaneBorder } from './agentPanel.js';
+import { renderPaneBorder, type BorderStyle } from './agentPanel.js';
 import { renderStatusBar } from './statusBar.js';
+import { renderHeaderBar } from './headerBar.js';
+import { renderToasts } from './toast.js';
 import { renderMemorySidebar, type SidebarRenderData } from './memorySidebar.js';
+import { THEME, getBorderChars } from './theme.js';
 
 import { warn } from '../utils/logger.js';
 
@@ -48,6 +50,7 @@ export function unpackRgba(color: number): RgbaColor {
  * @param isFocused - Whether this pane is focused
  * @param borderColor - ANSI color code for the border
  * @param activityData - Activity history for sparkline
+ * @param borderStyle - Border character style
  * @returns ANSI string for the pane
  */
 export function renderAgentPane(
@@ -55,6 +58,7 @@ export function renderAgentPane(
 	isFocused: boolean,
 	borderColor: string,
 	activityData?: readonly number[],
+	borderStyle: BorderStyle = 'single',
 ): string {
 	let output = '';
 
@@ -68,6 +72,7 @@ export function renderAgentPane(
 		pane.agent.status,
 		borderColor,
 		activityData,
+		borderStyle,
 	);
 
 	// Render terminal content
@@ -144,7 +149,7 @@ export function renderAgentPane(
 }
 
 /**
- * Renders the entire frame: sidebar, orchestrator, workers, status bar.
+ * Renders the entire frame: header, sidebar, orchestrator, workers, status bar, toasts.
  *
  * @param state - Application state
  */
@@ -152,47 +157,59 @@ export function renderFrame(state: AppState): void {
 	// Clear screen + hide cursor + move to home
 	let output = '\x1b[?25l\x1b[2J\x1b[H';
 
-	// 0. Render memory sidebar (if visible)
+	// 0. Render header bar at row 1
+	output += renderHeaderBar(state.screenWidth, '');
+
+	// 1. Render memory sidebar (if visible)
 	if (state.sidebar.visible) {
 		const sidebarData = buildSidebarData(state);
 		output += renderMemorySidebar(state.sidebar, sidebarData, state.screenHeight);
 	}
 
 	const orchFocused = state.focusTarget === 'orchestrator';
-	const focusedBorderColor = COLORS.borderFocused;
 
-	// 1. Render orchestrator pane
+	// 2. Render orchestrator pane (rounded border + accent4)
 	if (state.orchestratorPane) {
-		const orchBorder = orchFocused ? focusedBorderColor : COLORS.borderOrchestrator;
+		const orchBorderColor = orchFocused ? THEME.accent1.fg : THEME.accent4.fg;
+		const orchBorderStyle: BorderStyle = orchFocused ? 'double' : 'rounded';
 		const orchActivity = state.activity.history.get(state.orchestratorPane.agent.id);
-		output += renderAgentPane(state.orchestratorPane, orchFocused, orchBorder, orchActivity);
+		output += renderAgentPane(state.orchestratorPane, orchFocused, orchBorderColor, orchActivity, orchBorderStyle);
 	}
 
-	// 2. Render worker panes
+	// 3. Render worker panes
 	for (let i = 0; i < state.workerPanes.length; i++) {
 		const pane = state.workerPanes[i];
 		if (!pane) continue;
 
 		const isFocused = !orchFocused && i === state.focusedWorkerIndex;
-		let borderColor: string = COLORS.borderNormal;
+
+		let borderColor: string;
+		let borderStyle: BorderStyle;
 
 		if (isFocused) {
-			borderColor = focusedBorderColor;
+			borderColor = THEME.accent1.fg;
+			borderStyle = 'double';
+		} else {
+			borderColor = THEME.subtext.fg;
+			borderStyle = 'single';
 		}
 
 		const workerActivity = state.activity.history.get(pane.agent.id);
-		output += renderAgentPane(pane, isFocused, borderColor, workerActivity);
+		output += renderAgentPane(pane, isFocused, borderColor, workerActivity, borderStyle);
 	}
 
-	// 3. Render status bar
+	// 4. Render status bar
 	output += renderStatusBar(state);
 
-	// 4. Render overlay (command palette, agent detail) on top of everything
+	// 5. Render overlay (command palette, agent detail) on top of everything
 	if (state.overlay.kind !== 'none') {
 		output += renderOverlay(state.overlay, state.screenWidth, state.screenHeight);
 	}
 
-	// 5. Position cursor in the focused pane (only show cursor in focused pane)
+	// 6. Render toasts on top of everything (including overlay)
+	output += renderToasts(state.screenWidth, state.screenHeight);
+
+	// 7. Position cursor in the focused pane (only show cursor in focused pane)
 	if (!state.sidebar.focused && state.overlay.kind === 'none') {
 		const focusedPane = orchFocused
 			? state.orchestratorPane
@@ -232,11 +249,14 @@ function renderOverlay(overlay: OverlayState, screenW: number, screenH: number):
 
 /**
  * Renders the command palette overlay: search box, items, hints.
+ * Uses THEME colors for consistent styling.
  */
 function renderCommandPalette(overlay: OverlayState, screenW: number, screenH: number): string {
-	const boxW = Math.min(50, screenW - 4);
-	const maxItems = Math.min(overlay.filteredItems.length, Math.min(10, screenH - 8));
-	const boxH = maxItems + 4; // search(1) + separator(1) + items + hints(1) + border(1)
+	const rounded = getBorderChars('rounded');
+	const boxW = Math.min(64, screenW - 4);
+	const groupedRows = groupPaletteRows(overlay.filteredItems);
+	const maxRows = Math.min(groupedRows.length, Math.max(4, screenH - 10));
+	const boxH = maxRows + 5; // search + separator + rows + hint + borders
 	const startX = Math.max(1, Math.floor((screenW - boxW) / 2));
 	const startY = Math.max(1, Math.floor((screenH - boxH) / 2));
 
@@ -244,51 +264,116 @@ function renderCommandPalette(overlay: OverlayState, screenW: number, screenH: n
 
 	let output = '';
 
-	// Colors
-	const border = '\x1b[36m'; // cyan
-	const bg = '\x1b[48;2;25;25;45m';
-	const searchFg = '\x1b[97m'; // bright white
-	const itemFg = '\x1b[37m'; // white
-	const selectedBg = '\x1b[48;2;60;60;100m';
-	const dimFg = '\x1b[90m'; // gray
-	const hintFg = '\x1b[33m'; // yellow
+	// Theme-based colors
+	const border = THEME.accent1.fg;
+	const bg = THEME.overlay.bg;
+	const searchFg = THEME.text.fg;
+	const itemFg = THEME.text.fg;
+	const selectedFg = `${THEME.bold}${THEME.accent1.fg}`;
+	const hintFg = THEME.subtext.fg;
+	const headerFg = `${THEME.bold}${THEME.accent4.fg}`;
 
 	// Top border
-	output += `\x1b[${startY};${startX}H${border}${bg}\u250C${'\u2500'.repeat(contentW)}\u2510${RESET}`;
+	output += `\x1b[${startY};${startX}H${border}${bg}${rounded.tl}${rounded.h.repeat(contentW)}${rounded.tr}${RESET}`;
 
 	// Search box row
-	const searchLabel = '> ';
+	const searchLabel = `${THEME.accent1.fg}>${RESET} `;
 	const queryDisplay = overlay.searchQuery.slice(0, contentW - searchLabel.length);
 	const searchPad = contentW - searchLabel.length - queryDisplay.length;
-	output += `\x1b[${startY + 1};${startX}H${border}${bg}\u2502${searchFg}${bg}${searchLabel}${queryDisplay}${' '.repeat(Math.max(0, searchPad))}${border}${bg}\u2502${RESET}`;
+	output += `\x1b[${startY + 1};${startX}H${border}${bg}${rounded.v}${searchFg}${bg}${searchLabel}${queryDisplay}${' '.repeat(Math.max(0, searchPad))}${border}${bg}${rounded.v}${RESET}`;
 
 	// Separator
-	output += `\x1b[${startY + 2};${startX}H${border}${bg}\u251C${'\u2500'.repeat(contentW)}\u2524${RESET}`;
+	output += `\x1b[${startY + 2};${startX}H${border}${bg}\u251c${rounded.h.repeat(contentW)}\u2524${RESET}`;
 
 	// Items
-	for (let i = 0; i < maxItems; i++) {
-		const item = overlay.filteredItems[i] ?? '';
-		const isSelected = i === overlay.selectedIndex;
+	for (let i = 0; i < maxRows; i++) {
+		const row = groupedRows[i];
 		const rowY = startY + 3 + i;
-		const indicator = isSelected ? '\u25B8 ' : '  ';
-		const label = (indicator + item).slice(0, contentW);
+		if (!row) {
+			output += `\x1b[${rowY};${startX}H${border}${bg}${rounded.v}${' '.repeat(contentW)}${border}${bg}${rounded.v}${RESET}`;
+			continue;
+		}
+
+		if (row.type === 'header') {
+			const label = row.label.slice(0, contentW);
+			const pad = contentW - label.length;
+			output += `\x1b[${rowY};${startX}H${border}${bg}${rounded.v}${headerFg}${bg}${label}${' '.repeat(Math.max(0, pad))}${border}${bg}${rounded.v}${RESET}`;
+			continue;
+		}
+
+		const isSelected = row.itemIndex === overlay.selectedIndex;
+		const label = `${row.icon} ${row.label}`.slice(0, contentW);
 		const pad = contentW - label.length;
-		const rowBg = isSelected ? selectedBg : bg;
-		const rowFg = isSelected ? searchFg : itemFg;
-		output += `\x1b[${rowY};${startX}H${border}${bg}\u2502${rowFg}${rowBg}${label}${' '.repeat(Math.max(0, pad))}${border}${bg}\u2502${RESET}`;
+		const rowFg = isSelected ? selectedFg : itemFg;
+		output += `\x1b[${rowY};${startX}H${border}${bg}${rounded.v}${rowFg}${bg}${label}${' '.repeat(Math.max(0, pad))}${border}${bg}${rounded.v}${RESET}`;
 	}
 
 	// Hints row
-	const hintsY = startY + 3 + maxItems;
+	const hintsY = startY + 3 + maxRows;
 	const hints = '\u2191\u2193 navigate  Enter select  Esc close';
 	const hintText = hints.slice(0, contentW);
 	const hintPad = contentW - hintText.length;
-	output += `\x1b[${hintsY};${startX}H${border}${bg}\u2502${hintFg}${bg}${hintText}${' '.repeat(Math.max(0, hintPad))}${border}${bg}\u2502${RESET}`;
+	output += `\x1b[${hintsY};${startX}H${border}${bg}${rounded.v}${hintFg}${bg}${hintText}${' '.repeat(Math.max(0, hintPad))}${border}${bg}${rounded.v}${RESET}`;
 
 	// Bottom border
-	output += `\x1b[${hintsY + 1};${startX}H${border}${bg}\u2514${'\u2500'.repeat(contentW)}\u2518${RESET}`;
+	output += `\x1b[${hintsY + 1};${startX}H${border}${bg}${rounded.bl}${rounded.h.repeat(contentW)}${rounded.br}${RESET}`;
 
 	return output;
+}
+
+type PaletteRow = { type: 'header'; label: string } | { type: 'item'; label: string; icon: string; itemIndex: number };
+
+function groupPaletteRows(items: readonly string[]): PaletteRow[] {
+	const categories: readonly Array<'Workers' | 'Navigation' | 'Views' | 'System'> = [
+		'Workers',
+		'Navigation',
+		'Views',
+		'System',
+	];
+	const rows: PaletteRow[] = [];
+
+	for (const category of categories) {
+		const categoryItems = items
+			.map((label, itemIndex) => ({ label, itemIndex }))
+			.filter((item) => getPaletteCategory(item.label) === category);
+		if (categoryItems.length === 0) {
+			continue;
+		}
+
+		rows.push({ type: 'header', label: ` ${category}` });
+		for (const item of categoryItems) {
+			rows.push({
+				type: 'item',
+				label: item.label,
+				icon: getPaletteIcon(item.label),
+				itemIndex: item.itemIndex,
+			});
+		}
+	}
+
+	return rows;
+}
+
+function getPaletteCategory(label: string): 'Workers' | 'Navigation' | 'Views' | 'System' {
+	if (label.includes('Worker')) {
+		return 'Workers';
+	}
+	if (label.startsWith('Focus ') || label.includes('Pane')) {
+		return 'Navigation';
+	}
+	if (label.includes('Sidebar') || label.includes('Detail') || label.includes('Command Mode')) {
+		return 'Views';
+	}
+	return 'System';
+}
+
+function getPaletteIcon(label: string): string {
+	if (label.startsWith('Add')) return '＋';
+	if (label.startsWith('Remove')) return '×';
+	if (label.includes('Sidebar')) return '◧';
+	if (label.startsWith('Focus')) return '◉';
+	if (label.includes('Pane')) return '▸';
+	return '⌘';
 }
 
 // =============================================================================

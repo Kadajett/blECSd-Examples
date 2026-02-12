@@ -5,7 +5,7 @@
  */
 
 import type { AppState } from '../types.js';
-import { ORCHESTRATOR_WIDTH_RATIO } from '../config.js';
+import { ORCHESTRATOR_WIDTH_RATIO, HEADER_HEIGHT } from '../config.js';
 import { calculateOrchestratorBounds, recalculateGrid } from '../state/gridState.js';
 
 /**
@@ -60,9 +60,9 @@ export function getWorkerArea(screenWidth: number, screenHeight: number, sidebar
 	const orchestratorWidth = Math.floor(usableWidth * ORCHESTRATOR_WIDTH_RATIO);
 	return {
 		x: orchestratorWidth + sidebarOffset,
-		y: 0,
+		y: HEADER_HEIGHT,
 		width: usableWidth - orchestratorWidth,
-		height: screenHeight - 1, // Reserve 1 line for status bar
+		height: screenHeight - 1 - HEADER_HEIGHT, // Reserve status bar + header
 	};
 }
 

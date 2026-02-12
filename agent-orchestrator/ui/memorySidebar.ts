@@ -8,15 +8,11 @@
  */
 
 import type { MemorySidebarState, SidebarTab, RagSearchResult, RagDocument, SharedContextEntry } from '../types.js';
-import { COLORS } from '../config.js';
+import { HEADER_HEIGHT } from '../config.js';
+import { THEME, getBorderChars } from './theme.js';
 
-const RESET = '\x1b[0m';
-const DIM = '\x1b[90m';
-const WHITE = '\x1b[37m';
-const BOLD = '\x1b[1m';
-const CYAN = '\x1b[36m';
-const YELLOW = '\x1b[33m';
-const GREEN = '\x1b[32m';
+const RESET = THEME.reset;
+const BORDER = getBorderChars('single');
 
 /**
  * Data needed to render the sidebar.
@@ -44,66 +40,70 @@ export function renderMemorySidebar(
 	if (!state.visible) return '';
 
 	const { width } = state;
-	const height = screenHeight - 1; // Reserve bottom row for status bar
+	const startRow = 1 + HEADER_HEIGHT; // Start below header bar
+	const height = screenHeight - 1 - HEADER_HEIGHT; // Reserve status bar + header
 	let output = '';
 
-	// Border
-	const borderColor = state.focused ? COLORS.borderFocused : COLORS.borderNormal;
+	const rowBgEven = THEME.surface.bg;
+	const rowBgOdd = THEME.overlay.bg;
+	const borderColor = state.focused ? THEME.accent2.fg : THEME.subtext.fg;
 
 	// Top border with "Memory" label
-	output += `\x1b[1;1H`;
+	output += `\x1b[${startRow};1H`;
 	output += borderColor;
-	output += '\u250C\u2500 ';
+	output += `${BORDER.tl}${BORDER.h} `;
 	output += RESET;
-	output += BOLD + 'Memory' + RESET;
+	output += `${THEME.bold}${THEME.text.fg}Memory${RESET}`;
 	output += borderColor;
 	output += ' ';
-	output += '\u2500'.repeat(Math.max(0, width - 11));
-	output += '\u2510';
+	output += BORDER.h.repeat(Math.max(0, width - 11));
+	output += BORDER.tr;
 	output += RESET;
 
-	// Tab bar (row 2)
-	output += `\x1b[2;1H`;
-	output += borderColor + '\u2502' + RESET;
+	// Tab bar
+	output += `\x1b[${startRow + 1};1H`;
+	output += borderColor + BORDER.v + RESET;
 	output += renderTabBar(state.tab, width - 2);
-	output += borderColor + '\u2502' + RESET;
+	output += borderColor + BORDER.v + RESET;
 
-	// Content area (rows 3 to height-1)
-	const contentHeight = height - 3; // Top border + tab bar + bottom border
+	// Content area
+	const contentHeight = height - 3;
 	const contentLines = renderContent(state, data, width - 2, contentHeight);
 
 	for (let row = 0; row < contentHeight; row++) {
-		output += `\x1b[${row + 3};1H`;
-		output += borderColor + '\u2502' + RESET;
+		output += `\x1b[${startRow + 2 + row};1H`;
+		output += borderColor + BORDER.v + RESET;
 
 		const line = contentLines[row] ?? '';
-		const visLen = stripAnsiLength(line);
-		output += line;
+		const rowBg = row % 2 === 0 ? rowBgEven : rowBgOdd;
+		const lineWithBg = applyRowBackground(line, rowBg);
+		const visLen = stripAnsiLength(lineWithBg);
+		output += rowBg + lineWithBg;
 		output += ' '.repeat(Math.max(0, width - 2 - visLen));
+		output += RESET;
 
-		output += borderColor + '\u2502' + RESET;
+		output += borderColor + BORDER.v + RESET;
 	}
 
 	// Bottom border with scroll indicator
 	const scrollInfo = getScrollInfo(state, data);
-	output += `\x1b[${height};1H`;
+	output += `\x1b[${startRow + height - 1};1H`;
 	output += borderColor;
-	output += '\u2514';
+	output += BORDER.bl;
 	if (scrollInfo) {
 		const infoStr = ` ${scrollInfo} `;
 		const padLen = Math.max(0, width - 2 - infoStr.length);
 		const leftPad = Math.floor(padLen / 2);
 		const rightPad = padLen - leftPad;
-		output += '\u2500'.repeat(leftPad);
-		output += RESET + DIM + infoStr + RESET + borderColor;
-		output += '\u2500'.repeat(rightPad);
+		output += BORDER.h.repeat(leftPad);
+		output += `${RESET}${THEME.subtext.fg}${infoStr}${RESET}${borderColor}`;
+		output += BORDER.h.repeat(rightPad);
 	} else {
-		output += '\u2500'.repeat(width - 2);
+		output += BORDER.h.repeat(width - 2);
 	}
-	output += '\u2518';
+	output += BORDER.br;
 	output += RESET;
 
-	// Side borders for rows already handled
 	return output;
 }
 
@@ -117,9 +117,9 @@ function renderTabBar(activeTab: SidebarTab, innerWidth: number): string {
 	let bar = '';
 	for (const tab of tabs) {
 		if (tab.key === activeTab) {
-			bar += BOLD + CYAN + `[${tab.label}]` + RESET;
+			bar += `${THEME.bold}${THEME.accent1.fg}${tab.label}${RESET}${THEME.accent1.fg} _${RESET}`;
 		} else {
-			bar += DIM + ` ${tab.label} ` + RESET;
+			bar += `${THEME.subtext.fg} ${tab.label} ${RESET}`;
 		}
 	}
 
@@ -155,12 +155,11 @@ function renderRagTab(
 ): string[] {
 	const lines: string[] = [];
 
-	// Header
-	lines.push(DIM + `RAG Memory (${totalCount} docs)` + RESET);
-	lines.push('');
+	lines.push(`${THEME.bold}${THEME.accent3.fg}RAG Memory (${totalCount} docs)${RESET}`);
+	lines.push(`${THEME.subtext.fg}${'\u2500'.repeat(Math.max(0, innerWidth))}${RESET}`);
 
 	if (docs.length === 0) {
-		lines.push(DIM + '[empty]' + RESET);
+		lines.push(`${THEME.subtext.fg}[empty]${RESET}`);
 		return lines;
 	}
 
@@ -168,9 +167,9 @@ function renderRagTab(
 	const visibleDocs = docs.slice(startIdx, startIdx + maxLines - 2);
 
 	for (const doc of visibleDocs) {
-		const pin = doc.pinned ? YELLOW + '\u{1F4CC}' + RESET : '';
-		const agentTag = DIM + `[${truncateStr(doc.sourceAgentId, 6)}]` + RESET;
-		const chunkText = WHITE + truncateStr(doc.chunk.replace(/\n/g, ' '), innerWidth - 10) + RESET;
+		const pin = doc.pinned ? `${THEME.accent5.fg}\u2605${RESET}` : ' ';
+		const agentTag = `${THEME.subtext.fg}[${truncateStr(doc.sourceAgentId, 6)}]${RESET}`;
+		const chunkText = `${THEME.text.fg}${truncateStr(doc.chunk.replace(/\n/g, ' '), innerWidth - 10)}${RESET}`;
 		lines.push(`${pin}${agentTag} ${chunkText}`);
 	}
 
@@ -185,11 +184,11 @@ function renderContextTab(
 ): string[] {
 	const lines: string[] = [];
 
-	lines.push(DIM + `Shared Context (${entries.length})` + RESET);
+	lines.push(`${THEME.subtext.fg}Shared Context (${entries.length})${RESET}`);
 	lines.push('');
 
 	if (entries.length === 0) {
-		lines.push(DIM + '[empty]' + RESET);
+		lines.push(`${THEME.subtext.fg}[empty]${RESET}`);
 		return lines;
 	}
 
@@ -197,14 +196,18 @@ function renderContextTab(
 	const visible = entries.slice(startIdx, startIdx + maxLines - 2);
 
 	for (const entry of visible) {
-		const key = BOLD + GREEN + truncateStr(entry.key, innerWidth - 2) + RESET;
+		const key = `${THEME.bold}${THEME.accent3.fg}${truncateStr(entry.key, innerWidth - 2)}${RESET}`;
 		lines.push(key);
 
-		const valLine = DIM + truncateStr(entry.value, innerWidth - 2) + RESET;
+		const valLine = `${THEME.text.fg}${truncateStr(entry.value, innerWidth - 2)}${RESET}`;
 		lines.push(valLine);
 
 		if (entry.tags) {
-			const tags = entry.tags.split(' ').filter(Boolean).map((t) => CYAN + `[${t}]` + RESET).join(' ');
+			const tags = entry.tags
+				.split(' ')
+				.filter(Boolean)
+				.map((t) => `${THEME.accent4.fg}(${t})${RESET}`)
+				.join(' ');
 			lines.push(tags);
 		}
 
@@ -223,18 +226,17 @@ function renderSearchTab(
 ): string[] {
 	const lines: string[] = [];
 
-	// Search input
-	const inputLine = WHITE + '> ' + query + RESET;
+	const inputLine = `${THEME.accent1.fg}> ${query}${RESET}`;
 	lines.push(inputLine);
 	lines.push('');
 
 	if (query.length === 0) {
-		lines.push(DIM + 'Type to search...' + RESET);
+		lines.push(`${THEME.subtext.fg}Type to search...${RESET}`);
 		return lines;
 	}
 
 	if (results.length === 0) {
-		lines.push(DIM + 'No results' + RESET);
+		lines.push(`${THEME.subtext.fg}No results${RESET}`);
 		return lines;
 	}
 
@@ -242,9 +244,11 @@ function renderSearchTab(
 	const visible = results.slice(startIdx, startIdx + maxLines - 2);
 
 	for (const result of visible) {
-		const score = DIM + `(${result.score.toFixed(2)})` + RESET;
-		const agentTag = DIM + `[${truncateStr(result.sourceAgentId, 6)}]` + RESET;
-		const text = WHITE + truncateStr(result.chunk.replace(/\n/g, ' '), innerWidth - 16) + RESET;
+		const scoreColor = result.score >= 0.5 ? THEME.success.fg : THEME.subtext.fg;
+		const score = `${scoreColor}(${result.score.toFixed(2)})${RESET}`;
+		const agentTag = `${THEME.subtext.fg}[${truncateStr(result.sourceAgentId, 6)}]${RESET}`;
+		const textColor = result.score >= 0.5 ? THEME.success.fg : THEME.subtext.fg;
+		const text = `${textColor}${truncateStr(result.chunk.replace(/\n/g, ' '), innerWidth - 16)}${RESET}`;
 		lines.push(`${score} ${agentTag} ${text}`);
 	}
 
@@ -273,4 +277,8 @@ function truncateStr(str: string, maxLen: number): string {
 
 function stripAnsiLength(str: string): number {
 	return str.replace(/\x1b\[[0-9;]*m/g, '').length;
+}
+
+function applyRowBackground(line: string, bg: string): string {
+	return line.replace(/\x1b\[[0-9;]*m/g, (m) => (m === RESET ? `${RESET}${bg}` : m));
 }

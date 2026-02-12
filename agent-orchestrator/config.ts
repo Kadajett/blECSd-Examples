@@ -6,6 +6,7 @@
 
 import { z } from 'zod';
 import type { AgentKind } from './types.js';
+import { THEME } from './ui/theme.js';
 
 // =============================================================================
 // DISPLAY CONSTANTS
@@ -22,6 +23,9 @@ export const ORCHESTRATOR_WIDTH_RATIO = 0.3;
 export const TARGET_FPS = 30;
 export const FRAME_MS = Math.floor(1000 / TARGET_FPS);
 
+/** Height of the header bar in rows. */
+export const HEADER_HEIGHT = 1;
+
 /** Terminal scrollback buffer size per agent. */
 export const SCROLLBACK_LINES = 1000;
 
@@ -30,27 +34,27 @@ export const SCROLLBACK_LINES = 1000;
 // =============================================================================
 
 export const COLORS = {
-	reset: '\x1b[0m',
-	bold: '\x1b[1m',
-	dim: '\x1b[2m',
-	reverse: '\x1b[7m',
+	reset: THEME.reset,
+	bold: THEME.bold,
+	dim: THEME.dim,
+	reverse: THEME.reverse,
 
-	borderNormal: '\x1b[90m',
-	borderFocused: '\x1b[1;36m',
-	borderOrchestrator: '\x1b[1;33m',
-	borderPassthrough: '\x1b[1;32m',
+	borderNormal: THEME.subtext.fg,
+	borderFocused: `${THEME.bold}${THEME.accent1.fg}`,
+	borderOrchestrator: `${THEME.bold}${THEME.accent4.fg}`,
+	borderPassthrough: `${THEME.bold}${THEME.accent3.fg}`,
 
-	statusBg: '\x1b[48;2;30;30;50m',
-	statusFg: '\x1b[38;2;200;200;220m',
+	statusBg: THEME.surface.bg,
+	statusFg: THEME.text.fg,
 
-	agentRunning: '\x1b[32m',
-	agentIdle: '\x1b[33m',
-	agentError: '\x1b[31m',
-	agentStopped: '\x1b[90m',
+	agentRunning: THEME.accent3.fg,
+	agentIdle: THEME.warning.fg,
+	agentError: THEME.error.fg,
+	agentStopped: THEME.subtext.fg,
 
-	modeNormal: '\x1b[1;37m',
-	modePassthrough: '\x1b[1;32m',
-	modeCommand: '\x1b[1;35m',
+	modeNormal: `${THEME.bold}${THEME.text.fg}`,
+	modePassthrough: `${THEME.bold}${THEME.accent3.fg}`,
+	modeCommand: `${THEME.bold}${THEME.accent4.fg}`,
 } as const;
 
 // =============================================================================
