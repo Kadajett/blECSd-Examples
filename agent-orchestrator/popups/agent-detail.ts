@@ -10,6 +10,7 @@
  */
 
 import { execSync } from 'node:child_process';
+import { parseTokensFromOutput } from '../utils/tokenTracker.js';
 
 // =============================================================================
 // ANSI HELPERS
@@ -108,6 +109,7 @@ const SOCKET = 'blecsd';
 // =============================================================================
 
 interface PaneInfo {
+	readonly paneId: string;
 	readonly index: string;
 	readonly title: string;
 	readonly width: number;
@@ -120,24 +122,53 @@ interface PaneInfo {
 function listPanes(): readonly PaneInfo[] {
 	try {
 		const out = execSync(
-			`tmux -L ${SOCKET} list-panes -t ${session} -F "#{pane_index}|#{pane_title}|#{pane_width}|#{pane_height}|#{pane_pid}|#{pane_active}|#{pane_current_command}"`,
+			`tmux -L ${SOCKET} list-panes -t ${session} -F "#{pane_id}|#{pane_index}|#{pane_title}|#{pane_width}|#{pane_height}|#{pane_pid}|#{pane_active}|#{pane_current_command}"`,
 			{ encoding: 'utf8', timeout: 3000 },
 		).trim();
 		return out.split('\n').filter(Boolean).map((line) => {
 			const parts = line.split('|');
 			return {
-				index: parts[0] ?? '?',
-				title: parts[1] ?? 'untitled',
-				width: parseInt(parts[2] ?? '0', 10),
-				height: parseInt(parts[3] ?? '0', 10),
-				pid: parseInt(parts[4] ?? '0', 10),
-				active: parts[5] === '1',
-				command: parts[6] ?? 'unknown',
+				paneId: parts[0] ?? '',
+				index: parts[1] ?? '?',
+				title: parts[2] ?? 'untitled',
+				width: parseInt(parts[3] ?? '0', 10),
+				height: parseInt(parts[4] ?? '0', 10),
+				pid: parseInt(parts[5] ?? '0', 10),
+				active: parts[6] === '1',
+				command: parts[7] ?? 'unknown',
 			};
 		});
 	} catch {
 		return [];
 	}
+}
+
+const paneTokenHistory = new Map<string, readonly number[]>();
+
+function capturePaneOutput(paneId: string): string {
+	if (!paneId) return '';
+	try {
+		return execSync(
+			`tmux -L ${SOCKET} capture-pane -t ${paneId} -p -S -200`,
+			{ encoding: 'utf8', timeout: 2000 },
+		);
+	} catch {
+		return '';
+	}
+}
+
+function formatTokens(tokens: number): string {
+	if (tokens >= 1000) {
+		return `${(tokens / 1000).toFixed(1)}k`;
+	}
+	return `${tokens}`;
+}
+
+function updatePaneTokenHistory(paneId: string, value: number, maxPoints: number): readonly number[] {
+	const existing = paneTokenHistory.get(paneId) ?? [];
+	const next = [...existing, value].slice(-Math.max(1, maxPoints));
+	paneTokenHistory.set(paneId, next);
+	return next;
 }
 
 function getSessionUptime(): string {
@@ -211,6 +242,9 @@ function render(): void {
 
 	// Generate fake activity data per pane for sparklines
 	const sparkWidth = Math.min(20, Math.floor(width / 4));
+	let totalInputTokens = 0;
+	let totalOutputTokens = 0;
+	let totalContextPercent = 0;
 
 	for (const pane of panes) {
 		const activeMarker = pane.active
@@ -227,13 +261,25 @@ function render(): void {
 		out += `  ${fg(C.subtext)}${DIM}pid:${pane.pid}${RESET}`;
 		out += `  ${fg(C.subtext)}${DIM}cmd:${pane.command}${RESET}\n`;
 
-		// Fake activity sparkline (based on pane pid LSBs for visual variety)
-		const fakeData: number[] = [];
-		for (let i = 0; i < sparkWidth; i++) {
-			fakeData.push(((pane.pid * (i + 1) * 7) % 100) / 100);
-		}
-		out += `    ${fg(C.subtext)}activity: ${sparkline(fakeData, sparkWidth)}${RESET}\n\n`;
+		const paneOutput = capturePaneOutput(pane.paneId);
+		const tokens = parseTokensFromOutput(paneOutput);
+		const paneTotalTokens = tokens.inputTokens + tokens.outputTokens;
+		const tokenHistory = updatePaneTokenHistory(pane.paneId, paneTotalTokens, sparkWidth);
+		totalInputTokens += tokens.inputTokens;
+		totalOutputTokens += tokens.outputTokens;
+		totalContextPercent += tokens.contextPercent;
+
+		out += `    ${fg(C.subtext)}Tokens: ${fg(C.text)}${formatTokens(tokens.inputTokens)} in${fg(C.subtext)} / ${fg(C.text)}${formatTokens(tokens.outputTokens)} out`;
+		out += `${fg(C.subtext)} | Context: ${fg(C.text)}${tokens.contextPercent}%${RESET}\n`;
+		out += `    ${fg(C.subtext)}tokens: ${sparkline(tokenHistory, sparkWidth)}${RESET}\n\n`;
 	}
+
+	const averageContextPercent = panes.length > 0
+		? Math.round(totalContextPercent / panes.length)
+		: 0;
+	out += `${fg(C.subtext)} Total Tokens: ${fg(C.text)}${formatTokens(totalInputTokens)} in`;
+	out += `${fg(C.subtext)} / ${fg(C.text)}${formatTokens(totalOutputTokens)} out`;
+	out += `${fg(C.subtext)} | Avg Context: ${fg(C.text)}${averageContextPercent}%${RESET}\n`;
 
 	// Footer
 	out += `${fg(C.overlay)}${'─'.repeat(width)}${RESET}\n`;

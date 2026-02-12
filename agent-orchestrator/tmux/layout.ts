@@ -53,8 +53,8 @@ export function createTmuxLayout(
 	tmux.setOption(session, 'mouse', 'on');
 	tmux.setOption(session, 'status', 'on');
 	tmux.setOption(session, 'status-style', 'bg=#1a1b26,fg=#565f89');
-	tmux.setOption(session, 'pane-border-style', 'fg=#3b4261');
-	tmux.setOption(session, 'pane-active-border-style', 'fg=#c0caf5');
+	tmux.setOption(session, 'pane-border-style', 'fg=#394b70');
+	tmux.setOption(session, 'pane-active-border-style', 'fg=#7aa2f7');
 	tmux.setOption(session, 'message-style', 'bg=#24283b,fg=#7dcfff');
 	tmux.setOption(session, 'message-command-style', 'bg=#24283b,fg=#c0caf5');
 	tmux.setOption(session, 'display-time', '2000');
@@ -63,7 +63,7 @@ export function createTmuxLayout(
 	tmux.setWindowOption(
 		session,
 		'pane-border-format',
-		'#[fg=#{@agent_color},bold] #{@agent_name} #[fg=#565f89,nobold]#{@agent_role} #[fg=#3b4261]| #[fg=#414868]#{@agent_task}',
+		'#{?pane_active,#[fg=#7aa2f7]● ,}#[fg=#{@agent_color},bold] #{@agent_name} #[fg=#565f89,nobold]#{@agent_role} #[fg=#394b70]| #[fg=#414868]#{@agent_task}',
 	);
 
 	// Status bar: left = title + keybinding hints, right = worker count + clock
