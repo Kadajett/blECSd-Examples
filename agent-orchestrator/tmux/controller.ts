@@ -269,3 +269,93 @@ export function resizePane(
 ): void {
 	tryRun(`resize-pane -t ${session}:${target} -x ${width} -y ${height}`);
 }
+
+// =============================================================================
+// POPUPS & NOTIFICATIONS
+// =============================================================================
+
+/** Border style mapping for tmux display-popup -b flag. */
+const POPUP_BORDER_MAP: Record<string, string> = {
+	single: 'simple',
+	double: 'double',
+	heavy: 'heavy',
+	rounded: 'rounded',
+	none: 'none',
+};
+
+/** Options for display-popup. */
+export interface PopupOptions {
+	readonly width: number;
+	readonly height: number;
+	readonly title?: string;
+	readonly borderStyle?: 'single' | 'double' | 'heavy' | 'rounded' | 'none';
+	readonly style?: string;
+	readonly borderStyle_fg?: string;
+	readonly command: string;
+}
+
+/**
+ * Opens a tmux popup window running a command.
+ *
+ * @param session - Session name
+ * @param opts - Popup configuration
+ */
+export function displayPopup(session: string, opts: PopupOptions): void {
+	const border = POPUP_BORDER_MAP[opts.borderStyle ?? 'rounded'] ?? 'rounded';
+	const parts = [
+		`display-popup -t ${session}`,
+		`-w ${opts.width}`,
+		`-h ${opts.height}`,
+		`-b ${border}`,
+		`-E`,
+	];
+	if (opts.title) {
+		parts.push(`-T " ${opts.title} "`);
+	}
+	if (opts.style) {
+		parts.push(`-s "${opts.style}"`);
+	}
+	if (opts.borderStyle_fg) {
+		parts.push(`-S "fg=${opts.borderStyle_fg}"`);
+	}
+	parts.push(`"${opts.command.replace(/"/g, '\\"')}"`);
+	tryRun(parts.join(' '));
+}
+
+/**
+ * Shows a tmux status-line message (toast-like notification).
+ *
+ * @param session - Session name
+ * @param message - Message text (supports tmux style tags like #[fg=...])
+ * @param durationMs - How long to show (milliseconds, default 3000)
+ */
+export function displayMessage(session: string, message: string, durationMs = 3000): void {
+	const seconds = Math.max(1, Math.ceil(durationMs / 1000));
+	tryRun(`set-option -t ${session} display-time "${seconds * 1000}"`);
+	const escaped = message.replace(/"/g, '\\"');
+	tryRun(`display-message -t ${session} "${escaped}"`);
+}
+
+/**
+ * Opens a tmux display-menu.
+ *
+ * @param session - Session name
+ * @param title - Menu title
+ * @param items - Menu entries as [label, shortcutKey, command] tuples.
+ *                Use ["", "", ""] for a separator.
+ */
+export function displayMenu(
+	session: string,
+	title: string,
+	items: ReadonlyArray<readonly [string, string, string]>,
+): void {
+	const parts = [`display-menu -t ${session} -T " ${title} "`];
+	for (const [label, key, command] of items) {
+		if (label === '' && key === '' && command === '') {
+			parts.push('""');
+		} else {
+			parts.push(`"${label}" "${key}" "${command.replace(/"/g, '\\"')}"`);
+		}
+	}
+	tryRun(parts.join(' '));
+}

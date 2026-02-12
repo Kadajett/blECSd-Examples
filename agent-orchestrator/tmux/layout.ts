@@ -46,36 +46,61 @@ export function createTmuxLayout(
 ): { orchPane: string; workerPanes: string[]; sidebarPane: string | null } {
 	tmux.createSession(session, width, height);
 	const firstPane = tmux.getFirstPane(session);
+	const { headerPane, contentPane } = createHeaderPane(session, firstPane, workerCount);
 
-	// Style the session
+	// Style the session: Tokyo Night palette
 	tmux.setOption(session, 'mouse', 'on');
 	tmux.setOption(session, 'status', 'on');
-	tmux.setOption(session, 'status-style', 'bg=#1a1b26,fg=#7aa2f7');
+	tmux.setOption(session, 'status-style', 'bg=#1a1b26,fg=#565f89');
 	tmux.setOption(session, 'pane-border-style', 'fg=#3b4261');
 	tmux.setOption(session, 'pane-active-border-style', 'fg=#7aa2f7');
-	tmux.setOption(session, 'status-left', ' [blECSd] Ctrl+B q:quit n:new d:kill ');
-	tmux.setOption(session, 'status-right', ` ${workerCount}W | %H:%M `);
+	tmux.setOption(session, 'message-style', 'bg=#24283b,fg=#7dcfff');
+	tmux.setOption(session, 'message-command-style', 'bg=#24283b,fg=#c0caf5');
+	tmux.setOption(session, 'display-time', '2000');
+	tmux.setWindowOption(session, 'pane-border-lines', 'double');
 	tmux.setWindowOption(session, 'pane-border-status', 'top');
-	tmux.setWindowOption(session, 'pane-border-format', ' #{pane_index}: #{pane_title} ');
+	tmux.setWindowOption(
+		session,
+		'pane-border-format',
+		'#[fg=#7dcfff,bold] #{pane_index} #[fg=#c0caf5,nobold]#{pane_title} #[fg=#3b4261]#{?pane_active,#[fg=#9ece6a]●,○}',
+	);
 
-	// Keybindings (prefix is Ctrl+B by default)
+	// Status bar: left = title + keybinding hints, right = worker count + clock
+	tmux.setOption(
+		session,
+		'status-left',
+		'#[fg=#1a1b26,bg=#7aa2f7,bold] blECSd #[fg=#7aa2f7,bg=#24283b] #[fg=#c0caf5,bg=#24283b] ?:help Space:cmd i:info #[fg=#24283b,bg=#1a1b26] ',
+	);
+	tmux.setOption(session, 'status-left-length', '60');
+	tmux.setOption(
+		session,
+		'status-right',
+		`#[fg=#24283b,bg=#1a1b26]#[fg=#565f89,bg=#24283b] ${workerCount}W #[fg=#3b4261]│#[fg=#7dcfff] %H:%M #[fg=#7aa2f7,bg=#24283b]#[fg=#1a1b26,bg=#7aa2f7,bold] %b %d `,
+	);
+	tmux.setOption(session, 'status-right-length', '50');
+
+	// Keybindings with toast notifications (prefix is Ctrl+B by default)
 	tmux.bindKeyGlobal('q', `kill-session -t ${session}`);
-	tmux.bindKeyGlobal('n', `split-window -t ${session} -h`);
-	tmux.bindKeyGlobal('d', 'kill-pane');
-	tmux.bindKeyGlobal('Tab', 'select-pane -t +');
-	tmux.bindKeyGlobal('BTab', 'select-pane -t -');
+	tmux.bindKeyGlobal('n', `split-window -t ${session} -h \\; display-message -t ${session} " Worker added"`);
+	tmux.bindKeyGlobal('d', `kill-pane \\; display-message -t ${session} " Pane removed"`);
+	tmux.bindKeyGlobal('Tab', `select-pane -t + \\; display-message -t ${session} " Pane #{pane_index}: #{pane_title}"`);
+	tmux.bindKeyGlobal('BTab', `select-pane -t - \\; display-message -t ${session} " Pane #{pane_index}: #{pane_title}"`);
+
+	// Popup keybindings
+	bindPopupKeys(session, options.dbPath);
 
 	// Step 1: Create the sidebar pane on the far left (if not disabled)
 	let sidebarPane: string | null = null;
-	let orchPane = firstPane;
+	let orchPane = contentPane;
 
 	if (!options.noSidebar) {
 		const sidebarPercent = Math.max(10, Math.min(30, Math.floor((SIDEBAR_WIDTH / width) * 100)));
-		tmux.splitWindow(session, firstPane, true, 100 - sidebarPercent);
+		tmux.splitWindow(session, contentPane, true, 100 - sidebarPercent);
 
 		const panesAfterSidebar = tmux.listPanes(session);
-		sidebarPane = panesAfterSidebar[0] ?? firstPane;
-		orchPane = panesAfterSidebar[1] ?? firstPane;
+		const nonHeader = panesAfterSidebar.filter((p) => p !== headerPane);
+		sidebarPane = nonHeader[0] ?? contentPane;
+		orchPane = nonHeader[1] ?? contentPane;
 	}
 
 	// Step 2: Split main area into orchestrator (left 30%) and worker area (right 70%)
@@ -126,6 +151,41 @@ export function createTmuxLayout(
 	tmux.selectPane(session, orchPane);
 
 	return { orchPane, workerPanes, sidebarPane };
+}
+
+/**
+ * Creates and starts a dedicated 1-line header pane at the top of the session.
+ *
+ * @param session - Tmux session name
+ * @param firstPane - Initial pane in the session
+ * @param workerCount - Number of workers to pass to header script
+ * @returns Header pane ID and the remaining content pane ID
+ */
+function createHeaderPane(
+	session: string,
+	firstPane: string,
+	workerCount: number,
+): { headerPane: string; contentPane: string } {
+	// Create top pane with fixed 1-line height above the main content.
+	tmux.tryRun(`split-window -v -b -t ${session}:${firstPane} -l 1`);
+
+	const panes = tmux.listPanes(session);
+	const headerPane = panes[0] ?? firstPane;
+	const contentPane = panes.find((p) => p !== headerPane) ?? firstPane;
+
+	const headerScriptPath = path.resolve(
+		path.dirname(new URL(import.meta.url).pathname),
+		'..',
+		'tmux-header.ts',
+	);
+	tmux.sendCommand(
+		session,
+		headerPane,
+		`npx tsx "${headerScriptPath}" --session "${session}" --workers "${workerCount}"`,
+	);
+	tmux.tryRun(`select-pane -t ${session}:${headerPane} -T "Header"`);
+
+	return { headerPane, contentPane };
 }
 
 /**
@@ -236,4 +296,63 @@ export function buildAgentCommand(spec: AgentPreset, workspace: string, mcpConfi
 	}
 	const args = extraArgs.length > 0 ? ` ${extraArgs.join(' ')}` : '';
 	return `cd "${workspace}" && ${spec.command}${args}`;
+}
+
+// =============================================================================
+// POPUP KEYBINDINGS
+// =============================================================================
+
+/**
+ * Resolves the absolute path to a popup script relative to this module.
+ *
+ * @param scriptName - Filename inside the popups/ directory
+ * @returns Absolute path to the script
+ */
+function resolvePopupScript(scriptName: string): string {
+	return path.resolve(
+		path.dirname(new URL(import.meta.url).pathname),
+		'..',
+		'popups',
+		scriptName,
+	);
+}
+
+/**
+ * Binds popup keybindings to the tmux session:
+ * - Ctrl+B Space: command palette
+ * - Ctrl+B ?: help overlay
+ * - Ctrl+B i: agent detail
+ * - Ctrl+B x: confirm quit menu
+ *
+ * @param session - Tmux session name
+ * @param dbPath - Path to the SQLite database (passed to popup scripts)
+ */
+export function bindPopupKeys(session: string, dbPath: string): void {
+	const palettePath = resolvePopupScript('command-palette.ts');
+	const helpPath = resolvePopupScript('help.ts');
+	const detailPath = resolvePopupScript('agent-detail.ts');
+
+	// Ctrl+B Space: command palette (centered, 60x20)
+	tmux.bindKeyGlobal(
+		'Space',
+		`display-popup -t ${session} -w 60 -h 20 -b rounded -T " Command Palette " -s "bg=#1a1b26" -S "fg=#7aa2f7" -E "npx tsx ${palettePath} --session ${session} --db ${dbPath}"`,
+	);
+
+	// Ctrl+B ?: help overlay (centered, 70x24)
+	tmux.bindKeyGlobal(
+		'?',
+		`display-popup -t ${session} -w 70 -h 24 -b rounded -T " Keybindings " -s "bg=#1a1b26" -S "fg=#7dcfff" -E "npx tsx ${helpPath}"`,
+	);
+
+	// Ctrl+B i: agent detail (centered, 80x30)
+	tmux.bindKeyGlobal(
+		'i',
+		`display-popup -t ${session} -w 80 -h 30 -b rounded -T " Agent Detail " -s "bg=#1a1b26" -S "fg=#9ece6a" -E "npx tsx ${detailPath} --session ${session} --db ${dbPath}"`,
+	);
+
+	// Ctrl+B x: confirm quit via display-menu
+	tmux.bindKeyGlobal(
+		'x',
+		`display-menu -t ${session} -T " Quit? " "Confirm quit" q "kill-session -t ${session}" "" "" "" "Cancel" c ""`,
+	);
 }
