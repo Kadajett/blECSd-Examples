@@ -200,6 +200,11 @@ export function renderFrame(state: AppState): void {
 		output += renderAgentPane(pane, isFocused, borderColor, workerActivity, borderStyle);
 	}
 
+	// Prefix mode resize handles and hints
+	if (state.inputMode === 'prefix' && state.overlay.kind === 'none') {
+		output += renderResizeHandles(state);
+	}
+
 	// 4. Render status bar
 	output += renderStatusBar(state);
 
@@ -230,6 +235,35 @@ export function renderFrame(state: AppState): void {
 	process.stdout.write(output);
 }
 
+function renderResizeHandles(state: AppState): string {
+	const pane = state.focusTarget === 'orchestrator'
+		? state.orchestratorPane
+		: state.workerPanes[state.focusedWorkerIndex] ?? null;
+	if (!pane) {
+		return '';
+	}
+
+	let output = '';
+	const centerX = pane.x + Math.floor(pane.width / 2) + 1;
+	const centerY = pane.y + Math.floor(pane.height / 2) + 1;
+	const leftX = pane.x + 1;
+	const rightX = pane.x + pane.width;
+	const topY = pane.y + 1;
+	const bottomY = pane.y + pane.height;
+
+	output += `\x1b[${topY};${centerX}H${THEME.accent5.fg}\u25B2${RESET}`;
+	output += `\x1b[${bottomY};${centerX}H${THEME.accent5.fg}\u25BC${RESET}`;
+	output += `\x1b[${centerY};${leftX}H${THEME.accent5.fg}\u25C0${RESET}`;
+	output += `\x1b[${centerY};${rightX}H${THEME.accent5.fg}\u25B6${RESET}`;
+
+	const hint = `${THEME.subtext.fg}Resize: Ctrl+A + arrows${RESET}`;
+	const hintX = Math.max(1, pane.x + 2);
+	const hintY = Math.max(2, pane.y);
+	output += `\x1b[${hintY};${hintX}H${hint}`;
+
+	return output;
+}
+
 // =============================================================================
 // OVERLAY RENDERING
 // =============================================================================
@@ -249,6 +283,9 @@ function renderOverlay(state: AppState, screenW: number, screenH: number): strin
 	}
 	if (overlay.kind === 'agent-detail') {
 		return renderAgentDetailOverlay(state, screenW, screenH);
+	}
+	if (overlay.kind === 'help') {
+		return renderHelpOverlay(screenW, screenH);
 	}
 	return '';
 }
@@ -503,6 +540,89 @@ function getAgentErrorCount(state: AppState, agentId: string): number | null {
 	} catch {
 		return null;
 	}
+}
+
+function renderHelpOverlay(screenW: number, screenH: number): string {
+	const rounded = getBorderChars('rounded');
+	const boxW = Math.min(screenW - 4, Math.max(64, Math.floor(screenW * 0.7)));
+	const boxH = Math.min(screenH - 4, Math.max(22, Math.floor(screenH * 0.75)));
+	const innerW = boxW - 2;
+	const innerH = boxH - 2;
+	const startX = Math.max(1, Math.floor((screenW - boxW) / 2));
+	const startY = Math.max(1, Math.floor((screenH - boxH) / 2));
+
+	const groups: ReadonlyArray<{ title: string; entries: ReadonlyArray<{ key: string; desc: string }> }> = [
+		{
+			title: 'Direct Mode',
+			entries: [
+				{ key: 'Ctrl+A', desc: 'Enter prefix mode' },
+				{ key: 'Ctrl+Q', desc: 'Quit application' },
+				{ key: 'Mouse', desc: 'Focus pane/sidebar' },
+			],
+		},
+		{
+			title: 'Prefix Mode (Ctrl+A)',
+			entries: [
+				{ key: 'Space', desc: 'Open command palette' },
+				{ key: 'h', desc: 'Open keyboard help overlay' },
+				{ key: 'd', desc: 'Open agent detail overlay' },
+				{ key: 'n / x', desc: 'Add/remove worker' },
+				{ key: 'm / s', desc: 'Toggle/focus sidebar' },
+				{ key: 'Arrow keys', desc: 'Resize focused pane' },
+				{ key: 'Tab / Shift+Tab', desc: 'Cycle focus' },
+				{ key: ':', desc: 'Enter command mode' },
+			],
+		},
+		{
+			title: 'Command Mode',
+			entries: [
+				{ key: 'Enter', desc: 'Execute command buffer' },
+				{ key: 'Esc', desc: 'Cancel command mode' },
+				{ key: 'Backspace', desc: 'Delete character' },
+			],
+		},
+		{
+			title: 'Sidebar Mode',
+			entries: [
+				{ key: 'Tab / Shift+Tab', desc: 'Switch tabs' },
+				{ key: 'Up/Down/PgUp/PgDn', desc: 'Scroll content' },
+				{ key: '/', desc: 'Jump to search tab' },
+				{ key: 'Esc', desc: 'Unfocus sidebar' },
+			],
+		},
+	];
+
+	let output = '';
+	output += `\x1b[${startY};${startX}H${THEME.accent2.fg}${THEME.overlay.bg}${rounded.tl}${rounded.h.repeat(innerW)}${rounded.tr}${RESET}`;
+	for (let row = 0; row < innerH; row++) {
+		output += `\x1b[${startY + 1 + row};${startX}H${THEME.accent2.fg}${THEME.overlay.bg}${rounded.v}${' '.repeat(innerW)}${rounded.v}${RESET}`;
+	}
+	output += `\x1b[${startY + boxH - 1};${startX}H${THEME.accent2.fg}${THEME.overlay.bg}${rounded.bl}${rounded.h.repeat(innerW)}${rounded.br}${RESET}`;
+
+	const title = `${THEME.bold}${THEME.accent2.fg}Keyboard Shortcuts${RESET}`;
+	output += writeCentered(startX + 1, startY + 1, innerW, title, THEME.overlay.bg);
+
+	let row = startY + 3;
+	const keyColX = startX + 3;
+	const descColX = startX + Math.floor(innerW * 0.32);
+	const maxRow = startY + boxH - 3;
+	for (const group of groups) {
+		if (row > maxRow) break;
+		output += renderSectionHeader(startX + 2, row, innerW - 2, group.title, THEME.accent4.fg);
+		row++;
+		for (const entry of group.entries) {
+			if (row > maxRow) break;
+			output += `\x1b[${row};${keyColX}H${THEME.bold}${THEME.accent1.fg}${entry.key}${RESET}`;
+			output += `\x1b[${row};${descColX}H${THEME.text.fg}${entry.desc}${RESET}`;
+			row++;
+		}
+		row++;
+	}
+
+	const footer = `${THEME.subtext.fg}Press Esc to close${RESET}`;
+	output += writeCentered(startX + 1, startY + boxH - 2, innerW, footer, THEME.overlay.bg);
+
+	return output;
 }
 
 // =============================================================================

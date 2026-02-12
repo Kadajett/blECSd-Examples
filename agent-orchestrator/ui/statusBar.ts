@@ -10,8 +10,6 @@ import { THEME } from './theme.js';
 /** Separator character between status bar sections. */
 const SEP = `${THEME.subtext.fg}\u2502${THEME.reset}`;
 
-/** App start time, used to calculate uptime. */
-const APP_START = Date.now();
 
 /**
  * Formats a duration in milliseconds as HH:MM:SS.
@@ -94,7 +92,7 @@ export function renderStatusBar(state: AppState): string {
 	}
 
 	// Uptime on the right
-	const uptime = formatUptime(Date.now() - APP_START);
+	const uptime = formatUptime(Date.now() - state.startTime);
 	const uptimeSection = ` ${SEP} ${THEME.subtext.fg}up ${THEME.accent5.fg}${uptime}${THEME.reset} `;
 	const uptimeVisLen = stripAnsi(uptimeSection).length;
 

@@ -81,6 +81,9 @@ export function createAppState(world: World, cliArgs: CliArgs): AppState {
 		workspacePath: cliArgs.workspace,
 		dbPath: cliArgs.db,
 
+		// Timing
+		startTime: Date.now(),
+
 		// Counters
 		nextAgentId: 0,
 	};

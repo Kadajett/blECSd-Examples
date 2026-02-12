@@ -150,6 +150,9 @@ export interface AppState {
 	readonly workspacePath: string;
 	readonly dbPath: string;
 
+	// Timing
+	readonly startTime: number;
+
 	// Counters
 	nextAgentId: number;
 }
@@ -191,7 +194,7 @@ export interface MemorySidebarState {
 // =============================================================================
 
 /** Which overlay is active. */
-export type OverlayKind = 'none' | 'command-palette' | 'agent-detail';
+export type OverlayKind = 'none' | 'command-palette' | 'agent-detail' | 'help';
 
 /** Overlay panel state. */
 export interface OverlayState {

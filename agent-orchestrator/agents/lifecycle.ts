@@ -8,6 +8,7 @@ import { createWorld } from 'blecsd';
 import { createTerminal, type TerminalWidget } from 'blecsd/widgets';
 import type { AppState, AgentPane, AgentSpawnConfig, AgentInfo } from '../types.js';
 import { parseAgentSpec, getMockBanner, SCROLLBACK_LINES } from '../config.js';
+import { addToast } from '../ui/toast.js';
 
 /**
  * Spawns a new agent terminal.
@@ -81,6 +82,9 @@ export function spawnAgent(state: AppState, config: AgentSpawnConfig): AgentPane
 		agent.status = code === 0 ? 'stopped' : 'error';
 		terminal.writeln('');
 		terminal.writeln(`\x1b[90mProcess exited (${code})\x1b[0m`);
+		if (code !== 0) {
+			addToast(`Worker error: ${agent.label}`, 'error');
+		}
 		state.needsRender = true;
 	});
 
@@ -114,10 +118,12 @@ export function spawnAgent(state: AppState, config: AgentSpawnConfig): AgentPane
 			} else {
 				agent.status = 'error';
 				terminal.writeln('\x1b[31mFailed to start agent.\x1b[0m');
+				addToast(`Worker error: ${agent.label}`, 'error');
 			}
 		} catch (err) {
 			agent.status = 'error';
 			terminal.writeln(`\x1b[31mError: ${String(err)}\x1b[0m`);
+			addToast(`Worker error: ${agent.label}`, 'error');
 		}
 	}
 

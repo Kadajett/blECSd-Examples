@@ -131,14 +131,24 @@ export function parseAgentSpec(spec: string): AgentPreset {
 
 /** Banner displayed in mock agent terminals. */
 export function getMockBanner(label: string, id: string): string {
+	const spinnerFrames = ['◐', '◓', '◑', '◒'] as const;
+	const spinner = spinnerFrames[Math.floor(Date.now() / 250) % spinnerFrames.length] ?? '◐';
+	const title = truncateBanner(`${label}`, 34);
+	const idText = truncateBanner(id, 30);
 	return [
-		'\x1b[1;36m╔══════════════════════════════════════╗\x1b[0m',
-		`\x1b[1;36m║\x1b[0m  \x1b[1;33m${label.padEnd(34)}\x1b[0m\x1b[1;36m║\x1b[0m`,
-		`\x1b[1;36m║\x1b[0m  \x1b[90mID: ${id.padEnd(31)}\x1b[0m\x1b[1;36m║\x1b[0m`,
-		'\x1b[1;36m║\x1b[0m  \x1b[90m[MOCK MODE]                       \x1b[0m\x1b[1;36m║\x1b[0m',
-		'\x1b[1;36m╚══════════════════════════════════════╝\x1b[0m',
+		`${THEME.bold}${THEME.accent2.fg}╭──────────────────────────────────────╮${THEME.reset}`,
+		`${THEME.bold}${THEME.accent2.fg}│${THEME.reset} ${THEME.bold}${THEME.text.fg}${title.padEnd(36)}${THEME.reset}${THEME.bold}${THEME.accent2.fg}│${THEME.reset}`,
+		`${THEME.bold}${THEME.accent2.fg}│${THEME.reset} ${THEME.subtext.fg}ID: ${idText.padEnd(32)}${THEME.reset}${THEME.bold}${THEME.accent2.fg}│${THEME.reset}`,
+		`${THEME.bold}${THEME.accent2.fg}│${THEME.reset} ${THEME.warning.fg}${spinner} Mock Mode - No real agents${' '.repeat(7)}${THEME.reset}${THEME.bold}${THEME.accent2.fg}│${THEME.reset}`,
+		`${THEME.bold}${THEME.accent2.fg}╰──────────────────────────────────────╯${THEME.reset}`,
 		'',
 	].join('\r\n');
+}
+
+function truncateBanner(text: string, maxLen: number): string {
+	if (text.length <= maxLen) return text;
+	if (maxLen <= 1) return text.slice(0, maxLen);
+	return `${text.slice(0, maxLen - 1)}…`;
 }
 
 /** Simulated agent output lines for mock mode. */

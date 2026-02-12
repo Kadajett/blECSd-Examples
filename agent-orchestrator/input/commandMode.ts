@@ -7,6 +7,7 @@
 import type { AppState } from '../types.js';
 import { sendToWorker } from '../agents/communication.js';
 import { addWorker, removeWorker } from '../agents/worker.js';
+import { addToast } from '../ui/toast.js';
 
 /**
  * Executes a command entered in command mode.
@@ -61,6 +62,7 @@ export function executeCommand(state: AppState, command: string): void {
 	if (cmd === 'add') {
 		const kind = parts[1] ?? 'claude';
 		addWorker(state, kind);
+		addToast('Worker added', 'success');
 		return;
 	}
 
@@ -72,11 +74,13 @@ export function executeCommand(state: AppState, command: string): void {
 			const index = Number.parseInt(indexStr, 10);
 			if (!Number.isNaN(index) && index >= 0 && index < state.workerPanes.length) {
 				removeWorker(state, index);
+				addToast('Worker removed', 'info');
 			}
 		} else {
 			// No index provided - remove focused worker
 			if (state.workerPanes.length > 0) {
 				removeWorker(state, state.focusedWorkerIndex);
+				addToast('Worker removed', 'info');
 			}
 		}
 		return;

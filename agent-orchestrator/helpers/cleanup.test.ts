@@ -56,6 +56,7 @@ function makeState(): AppState {
 		orchestratorKind: 'claude',
 		workspacePath: '/workspace',
 		dbPath: './orchestrator.db',
+		startTime: Date.now(),
 		nextAgentId: 0,
 	};
 }

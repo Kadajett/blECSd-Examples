@@ -14,6 +14,7 @@ import { parseInput } from './keyBindings.js';
 import { executeCommand } from './commandMode.js';
 import { addWorker, removeFocusedWorker } from '../agents/worker.js';
 import { resizeAllPanes } from '../ui/layout.js';
+import { addToast } from '../ui/toast.js';
 
 // =============================================================================
 // COMMAND PALETTE DEFINITIONS
@@ -72,6 +73,12 @@ const PALETTE_COMMANDS: readonly PaletteCommand[] = [
 		},
 	},
 	{
+		label: 'Keyboard Help',
+		action: (state) => {
+			state.overlay.kind = 'help';
+		},
+	},
+	{
 		label: 'Next Pane',
 		action: (state) => { cycleFocus(state, 1); },
 	},
@@ -113,6 +120,7 @@ function executePaletteItem(state: AppState, label: string): void {
 	const cmd = PALETTE_COMMANDS.find((c) => c.label === label);
 	if (cmd) {
 		cmd.action(state);
+		addToast(label, 'success');
 	}
 }
 
@@ -220,6 +228,28 @@ function handlePrefixMode(
 	data: string,
 	parsed: ReturnType<typeof parseInput>,
 ): void {
+	// Arrow keys: resize focused pane
+	if (parsed.key === 'left') {
+		resizeFocusedPane(state, -2, 0);
+		state.inputMode = 'direct';
+		return;
+	}
+	if (parsed.key === 'right') {
+		resizeFocusedPane(state, 2, 0);
+		state.inputMode = 'direct';
+		return;
+	}
+	if (parsed.key === 'up') {
+		resizeFocusedPane(state, 0, -1);
+		state.inputMode = 'direct';
+		return;
+	}
+	if (parsed.key === 'down') {
+		resizeFocusedPane(state, 0, 1);
+		state.inputMode = 'direct';
+		return;
+	}
+
 	// Tab: Cycle focus forward
 	if (parsed.key === 'tab' && !parsed.shift) {
 		cycleFocus(state, 1);
@@ -237,6 +267,7 @@ function handlePrefixMode(
 	// n: Add new worker
 	if (parsed.key === 'n' && !parsed.ctrl && !parsed.meta) {
 		addWorker(state, 'claude');
+		addToast('Worker added', 'success');
 		state.inputMode = 'direct';
 		return;
 	}
@@ -253,6 +284,7 @@ function handlePrefixMode(
 	if (parsed.key === 'x' && !parsed.ctrl && !parsed.meta) {
 		if (state.focusTarget === 'worker') {
 			removeFocusedWorker(state);
+			addToast('Worker removed', 'info');
 		}
 		state.inputMode = 'direct';
 		return;
@@ -262,14 +294,23 @@ function handlePrefixMode(
 	if (parsed.key === 'm' && !parsed.ctrl && !parsed.meta) {
 		state.sidebar.visible = !state.sidebar.visible;
 		resizeAllPanes(state);
+		addToast(state.sidebar.visible ? 'Sidebar shown' : 'Sidebar hidden', 'info');
 		state.inputMode = 'direct';
 		return;
 	}
 
-	// p: Command palette
-	if (parsed.key === 'p' && !parsed.ctrl && !parsed.meta) {
+	// Space or p: Command palette
+	if ((parsed.key === ' ' || parsed.key === 'p') && !parsed.ctrl && !parsed.meta) {
 		openCommandPalette(state);
 		state.inputMode = 'direct';
+		return;
+	}
+
+	// h: Keyboard shortcuts help overlay
+	if (parsed.key === 'h' && !parsed.ctrl && !parsed.meta) {
+		state.overlay.kind = 'help';
+		state.inputMode = 'direct';
+		state.needsRender = true;
 		return;
 	}
 
@@ -332,6 +373,73 @@ function handlePrefixMode(
 	if (focusedPane?.terminal.isRunning()) {
 		focusedPane.terminal.input(data);
 	}
+}
+
+function resizeFocusedPane(state: AppState, deltaWidth: number, deltaHeight: number): void {
+	const pane = getFocusedPane(state);
+	if (!pane) {
+		return;
+	}
+
+	const minWidth = 20;
+	const minHeight = 8;
+	const maxWidth = getMaxWidthForPane(state, pane);
+	const maxHeight = getMaxHeightForPane(state, pane);
+
+	const newWidth = clamp(pane.width + deltaWidth, minWidth, maxWidth);
+	const newHeight = clamp(pane.height + deltaHeight, minHeight, maxHeight);
+	if (newWidth === pane.width && newHeight === pane.height) {
+		return;
+	}
+
+	pane.width = newWidth;
+	pane.height = newHeight;
+
+	const innerWidth = Math.max(1, pane.width - 2);
+	const innerHeight = Math.max(1, pane.height - 2);
+	pane.terminal.resize(innerWidth, innerHeight);
+
+	// Best-effort backend resize hook for backends that map pane IDs directly.
+	if (state.backend) {
+		try {
+			state.backend.resizePane(pane.agent.id, innerWidth, innerHeight);
+		} catch {
+			// Ignore backend resize failures for locally-managed panes.
+		}
+	}
+
+	addToast(`Resized: ${pane.width}x${pane.height}`, 'info');
+	state.needsRender = true;
+}
+
+function getMaxWidthForPane(state: AppState, pane: AgentPane): number {
+	let maxRightExclusive = state.screenWidth;
+	const allPanes = [state.orchestratorPane, ...state.workerPanes].filter(Boolean) as AgentPane[];
+	for (const other of allPanes) {
+		if (other === pane) continue;
+		const overlapY = pane.y < other.y + other.height && other.y < pane.y + pane.height;
+		if (overlapY && other.x > pane.x) {
+			maxRightExclusive = Math.min(maxRightExclusive, other.x);
+		}
+	}
+	return Math.max(20, maxRightExclusive - pane.x);
+}
+
+function getMaxHeightForPane(state: AppState, pane: AgentPane): number {
+	let maxBottomExclusive = state.screenHeight - 1;
+	const allPanes = [state.orchestratorPane, ...state.workerPanes].filter(Boolean) as AgentPane[];
+	for (const other of allPanes) {
+		if (other === pane) continue;
+		const overlapX = pane.x < other.x + other.width && other.x < pane.x + pane.width;
+		if (overlapX && other.y > pane.y) {
+			maxBottomExclusive = Math.min(maxBottomExclusive, other.y);
+		}
+	}
+	return Math.max(8, maxBottomExclusive - pane.y);
+}
+
+function clamp(value: number, min: number, max: number): number {
+	return Math.min(max, Math.max(min, value));
 }
 
 // =============================================================================

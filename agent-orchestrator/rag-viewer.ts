@@ -25,14 +25,19 @@ const ESC = '\x1b';
 const RESET = `${ESC}[0m`;
 const BOLD = `${ESC}[1m`;
 const DIM = `${ESC}[2m`;
-const CYAN = `${ESC}[36m`;
-const YELLOW = `${ESC}[33m`;
-const GREEN = `${ESC}[32m`;
-const MAGENTA = `${ESC}[35m`;
-const GRAY = `${ESC}[90m`;
-const WHITE = `${ESC}[37m`;
-const BG_DARK = `${ESC}[48;2;20;20;35m`;
-const BG_ENTRY = `${ESC}[48;2;25;25;40m`;
+const FG_TEXT = `${ESC}[38;2;192;202;245m`;      // #c0caf5
+const FG_SUBTEXT = `${ESC}[38;2;86;95;137m`;     // #565f89
+const FG_ACCENT1 = `${ESC}[38;2;125;207;255m`;   // #7dcfff
+const FG_ACCENT2 = `${ESC}[38;2;122;162;247m`;   // #7aa2f7
+const FG_ACCENT3 = `${ESC}[38;2;158;206;106m`;   // #9ece6a
+const FG_ACCENT4 = `${ESC}[38;2;187;154;247m`;   // #bb9af7
+const FG_ACCENT5 = `${ESC}[38;2;255;158;100m`;   // #ff9e64
+const FG_WARNING = `${ESC}[38;2;224;175;104m`;   // #e0af68
+const FG_ERROR = `${ESC}[38;2;247;118;142m`;     // #f7768e
+const FG_SUCCESS = `${ESC}[38;2;115;218;202m`;   // #73daca
+const BG_MAIN = `${ESC}[48;2;26;27;38m`;         // #1a1b26
+const BG_SURFACE = `${ESC}[48;2;36;40;59m`;      // #24283b
+const BG_OVERLAY = `${ESC}[48;2;65;72;104m`;     // #414868
 const CLEAR = `${ESC}[2J${ESC}[H`;
 const HIDE_CURSOR = `${ESC}[?25l`;
 const SHOW_CURSOR = `${ESC}[?25h`;
@@ -195,16 +200,18 @@ function renderHeader(w: number): string {
 	let output = '';
 
 	// Title
-	const title = state.tab === 'ctx' ? 'Shared Memory' : 'RAG Index';
-	output += `${BG_DARK}${BOLD}${CYAN} ${truncate(title, w - 2)}${RESET}${BG_DARK}${' '.repeat(Math.max(0, w - title.length - 2))}${RESET}\n`;
+	const title = state.tab === 'ctx' ? ' Shared Memory ' : ' RAG Index ';
+	const titleContent = truncate(title, Math.max(1, w - 2));
+	output += `${BG_SURFACE}${' '.repeat(Math.max(0, w))}${RESET}\n`;
+	output += `${ESC}[1;1H${BG_SURFACE}${BOLD}${FG_ACCENT2}${padRight(titleContent, w)}${RESET}\n`;
 
 	// Tab bar
-	const ctxLabel = state.tab === 'ctx' ? `${BOLD}${CYAN}[MEM]` : `${GRAY} MEM `;
-	const ragLabel = state.tab === 'rag' ? `${BOLD}${CYAN}[RAG]` : `${GRAY} RAG `;
-	output += `${BG_DARK} ${ctxLabel}${RESET}${BG_DARK} ${ragLabel}${RESET}${BG_DARK}${' '.repeat(Math.max(0, w - 14))}${RESET}\n`;
+	const ctxLabel = state.tab === 'ctx' ? `${BOLD}${FG_ACCENT1}[MEM]` : `${FG_SUBTEXT} MEM `;
+	const ragLabel = state.tab === 'rag' ? `${BOLD}${FG_ACCENT1}[RAG]` : `${FG_SUBTEXT} RAG `;
+	output += `${BG_SURFACE} ${ctxLabel}${RESET}${BG_SURFACE} ${ragLabel}${RESET}${BG_SURFACE}${' '.repeat(Math.max(0, w - 14))}${RESET}\n`;
 
 	// Separator
-	output += `${GRAY}${'─'.repeat(w)}${RESET}\n`;
+	output += `${FG_SUBTEXT}${'─'.repeat(w)}${RESET}\n`;
 	return output;
 }
 
@@ -218,22 +225,20 @@ function renderContextTab(w: number, h: number): string {
 		count = getContextCount(state.db);
 	} catch (err) {
 		state.db = null; // Force reconnect on next refresh
-		return `\n${GRAY}  DB query failed${RESET}\n${DIM}  Reconnecting...${RESET}\n`;
+		return `\n${FG_ERROR}  DB query failed${RESET}\n${FG_SUBTEXT}${DIM}  Reconnecting...${RESET}\n`;
 	}
 
 	let output = '';
 	const contentW = Math.max(1, w - 1);
 
 	if (entries.length === 0) {
-		output += `\n${GRAY}  [empty]${RESET}\n`;
-		output += `\n${DIM}  No shared context.${RESET}\n`;
-		output += `${DIM}  Use write_memory MCP${RESET}\n`;
-		output += `${DIM}  tool to add entries.${RESET}\n`;
+		output += `\n${FG_ACCENT4}${BOLD}  ◇ No Shared Context Yet${RESET}\n`;
+		output += `\n${FG_SUBTEXT}${DIM}  Use write_memory to add entries.${RESET}\n`;
 		return output;
 	}
 
 	// Count line
-	output += `${GRAY} ${count} entries${RESET}\n`;
+	output += `${FG_SUBTEXT} ${count} entries${RESET}\n`;
 
 	let linesUsed = 1;
 	const maxLines = h - 5; // header(3) + footer(1) + count(1)
@@ -242,34 +247,34 @@ function renderContextTab(w: number, h: number): string {
 		if (linesUsed >= maxLines) break;
 
 		// Key (bold green)
-		output += `${GREEN}${BOLD} ${truncate(entry.key, contentW)}${RESET}\n`;
+		output += `${FG_ACCENT3}${BOLD} ${truncate(entry.key, contentW)}${RESET}\n`;
 		linesUsed++;
 
 		// Value (wrapped, white)
 		const valueLines = wrapText(entry.value, contentW - 1, 3);
 		for (const vline of valueLines) {
 			if (linesUsed >= maxLines) break;
-			output += `${WHITE} ${vline}${RESET}\n`;
+			output += `${FG_TEXT} ${vline}${RESET}\n`;
 			linesUsed++;
 		}
 
 		// Metadata line (dim)
 		if (linesUsed < maxLines) {
 			const meta = `${entry.agent_id} ${timeAgo(entry.updated_at)}`;
-			output += `${GRAY}${DIM} ${truncate(meta, contentW)}${RESET}\n`;
+			output += `${FG_SUBTEXT}${DIM} ${truncate(meta, contentW)}${RESET}\n`;
 			linesUsed++;
 		}
 
 		// Tags (if any)
 		if (entry.tags && linesUsed < maxLines) {
 			const tagDisplay = entry.tags.split(/\s+/).map((t) => `#${t}`).join(' ');
-			output += `${MAGENTA}${DIM} ${truncate(tagDisplay, contentW)}${RESET}\n`;
+			output += `${FG_ACCENT4}${DIM} ${truncate(tagDisplay, contentW)}${RESET}\n`;
 			linesUsed++;
 		}
 
 		// Separator
 		if (linesUsed < maxLines) {
-			output += `${GRAY}${DIM} ${'·'.repeat(Math.min(contentW - 1, 15))}${RESET}\n`;
+			output += `${FG_SUBTEXT}${DIM} ${'·'.repeat(Math.min(contentW - 1, 15))}${RESET}\n`;
 			linesUsed++;
 		}
 	}
@@ -293,21 +298,19 @@ function renderRagTab(w: number, h: number): string {
 		docs = getUniqueRagDocuments(state.db, docsPerPage, state.scrollOffset);
 	} catch (err) {
 		state.db = null; // Force reconnect on next refresh
-		return `\n${GRAY}  DB query failed${RESET}\n${DIM}  Reconnecting...${RESET}\n`;
+		return `\n${FG_ERROR}  DB query failed${RESET}\n${FG_SUBTEXT}${DIM}  Reconnecting...${RESET}\n`;
 	}
 
 	let output = '';
 
 	if (docs.length === 0 && state.scrollOffset === 0) {
-		output += `\n${GRAY}  [empty]${RESET}\n`;
-		output += `\n${DIM}  No RAG documents yet.${RESET}\n`;
-		output += `${DIM}  Agent output will be${RESET}\n`;
-		output += `${DIM}  indexed automatically.${RESET}\n`;
+		output += `\n${FG_ACCENT4}${BOLD}  ◇ No RAG Documents Yet${RESET}\n`;
+		output += `\n${FG_SUBTEXT}${DIM}  Agent output is indexed automatically.${RESET}\n`;
 		return output;
 	}
 
 	// Count line
-	output += `${GRAY} ${uniqueCount} unique / ${totalCount} total${RESET}\n`;
+	output += `${FG_SUBTEXT} ${uniqueCount} unique / ${totalCount} total${RESET}\n`;
 
 	let linesUsed = 1;
 
@@ -316,7 +319,7 @@ function renderRagTab(w: number, h: number): string {
 
 		// Source agent (dim yellow)
 		const srcLine = `${doc.source_agent_id} ${timeAgo(doc.created_at)}`;
-		output += `${YELLOW}${DIM} ${truncate(srcLine, contentW)}${RESET}\n`;
+		output += `${colorForAgentId(doc.source_agent_id)}${DIM} ${truncate(srcLine, contentW)}${RESET}\n`;
 		linesUsed++;
 
 		// Chunk text (wrapped, white, up to 3 lines)
@@ -324,13 +327,13 @@ function renderRagTab(w: number, h: number): string {
 		const textLines = wrapText(chunkText, contentW - 1, 3);
 		for (const tline of textLines) {
 			if (linesUsed >= maxLines) break;
-			output += `${WHITE} ${tline}${RESET}\n`;
+			output += `${FG_TEXT} ${tline}${RESET}\n`;
 			linesUsed++;
 		}
 
 		// Separator
 		if (linesUsed < maxLines) {
-			output += `${GRAY}${DIM} ${'·'.repeat(Math.min(contentW - 1, 15))}${RESET}\n`;
+			output += `${FG_SUBTEXT}${DIM} ${'·'.repeat(Math.min(contentW - 1, 15))}${RESET}\n`;
 			linesUsed++;
 		}
 	}
@@ -353,7 +356,9 @@ function renderFooter(w: number): string {
 
 	const hint = 'Tab:switch j/k:scroll';
 	const line = `${info} ${truncate(hint, Math.max(0, w - info.length - 2))}`;
-	return `${BG_DARK}${GRAY}${padRight(` ${line}`, w)}${RESET}`;
+	const progress = renderScrollProgressBar(Math.max(8, Math.min(16, Math.floor(w * 0.28))));
+	const footerText = padRight(` ${line}`, Math.max(0, w - progress.length - 1));
+	return `${BG_SURFACE}${FG_SUBTEXT}${footerText} ${progress}${RESET}`;
 }
 
 function render(): void {
@@ -362,17 +367,17 @@ function render(): void {
 
 	if (!state.db) {
 		process.stdout.write(`${CLEAR}${HIDE_CURSOR}`);
-		process.stdout.write(`${CYAN}${BOLD} Memory Sidebar${RESET}\n`);
-		process.stdout.write(`${GRAY}${'─'.repeat(w)}${RESET}\n`);
-		process.stdout.write(`\n${YELLOW}  Waiting for DB...${RESET}\n`);
+		process.stdout.write(`${FG_ACCENT2}${BOLD} Memory Sidebar${RESET}\n`);
+		process.stdout.write(`${FG_SUBTEXT}${'─'.repeat(w)}${RESET}\n`);
+		process.stdout.write(`\n${FG_WARNING}  Waiting for DB...${RESET}\n`);
 		process.stdout.write(`${DIM}  ${state.dbPath}${RESET}\n`);
-		process.stdout.write(`\n${GRAY}  The orchestrator will${RESET}\n`);
-		process.stdout.write(`${GRAY}  create the database${RESET}\n`);
-		process.stdout.write(`${GRAY}  on first run.${RESET}\n`);
+		process.stdout.write(`\n${FG_SUBTEXT}  The orchestrator will${RESET}\n`);
+		process.stdout.write(`${FG_SUBTEXT}  create the database${RESET}\n`);
+		process.stdout.write(`${FG_SUBTEXT}  on first run.${RESET}\n`);
 		return;
 	}
 
-	let output = `${CLEAR}${HIDE_CURSOR}`;
+	let output = `${CLEAR}${HIDE_CURSOR}${BG_MAIN}`;
 	output += renderHeader(w);
 
 	if (state.tab === 'ctx') {
@@ -491,6 +496,31 @@ function cleanup(): void {
 		process.stdin.setRawMode(false);
 	}
 	process.exit(0);
+}
+
+function colorForAgentId(agentId: string): string {
+	const palette = [FG_ACCENT1, FG_ACCENT2, FG_ACCENT3, FG_ACCENT4, FG_ACCENT5, FG_SUCCESS, FG_WARNING, FG_ERROR];
+	let hash = 0;
+	for (let i = 0; i < agentId.length; i++) {
+		hash = ((hash << 5) - hash + agentId.charCodeAt(i)) | 0;
+	}
+	const idx = Math.abs(hash) % palette.length;
+	return palette[idx] ?? FG_ACCENT1;
+}
+
+function renderScrollProgressBar(width: number): string {
+	const safeWidth = Math.max(6, width);
+	const total = state.tab === 'rag'
+		? (state.db ? getUniqueRagCount(state.db) : 0)
+		: (state.db ? getContextCount(state.db) : 0);
+	if (total <= 0) {
+		return `${FG_SUBTEXT}[${'·'.repeat(safeWidth - 2)}]${RESET}`;
+	}
+
+	const current = Math.max(0, Math.min(total - 1, state.scrollOffset));
+	const ratio = total > 1 ? current / (total - 1) : 1;
+	const fill = Math.max(1, Math.min(safeWidth - 2, Math.round(ratio * (safeWidth - 2))));
+	return `${FG_ACCENT1}[${FG_ACCENT3}${'█'.repeat(fill)}${FG_SUBTEXT}${'·'.repeat(Math.max(0, safeWidth - 2 - fill))}${FG_ACCENT1}]${RESET}`;
 }
 
 function main(): void {
