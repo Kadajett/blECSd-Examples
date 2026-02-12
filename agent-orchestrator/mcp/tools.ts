@@ -8,8 +8,89 @@
  * @module agent-orchestrator/mcp/tools
  */
 
+import { z } from 'zod';
 import type { McpToolDef } from '../types.js';
 import type { PaneBackend } from '../backend/interface.js';
+
+// =============================================================================
+// ZOD INPUT SCHEMAS
+// =============================================================================
+
+const SendPromptInput = z.object({
+	pane: z.string().min(1, 'Missing pane ID'),
+	text: z.string().min(1, 'Missing text'),
+});
+
+const PaneIdInput = z.object({
+	pane: z.string().min(1, 'Missing pane ID'),
+});
+
+const AddWorkerInput = z.object({
+	agent: z.string().default('claude'),
+	workspace: z.string().optional(),
+	mock: z.boolean().optional().default(false),
+	name: z.string().min(1).optional(),
+	worktree: z.boolean().optional().default(false),
+});
+
+const RemoveWorkerInput = z.object({
+	pane: z.string().optional().default(''),
+	name: z.string().min(1).optional(),
+	cleanup_worktree: z.boolean().optional().default(false),
+});
+
+const RestartWorkerInput = z.object({
+	pane: z.string().min(1, 'Missing pane ID'),
+	agent: z.string().optional().default('claude'),
+});
+
+const QueryMemoryInput = z.object({
+	query: z.string().min(1, 'Missing query'),
+	limit: z.number().int().positive().optional().default(10),
+});
+
+const WriteMemoryInput = z.object({
+	key: z.string().min(1, 'Missing key'),
+	value: z.string().min(1, 'Missing value'),
+	tags: z.string().optional().default(''),
+	agent_id: z.string().min(1).optional().default('orchestrator'),
+});
+
+const ListMemoriesInput = z.object({
+	tag: z.string().optional(),
+	limit: z.number().int().positive().optional().default(50),
+});
+
+const KeyInput = z.object({
+	key: z.string().min(1, 'Missing key'),
+});
+
+const DocIdInput = z.object({
+	doc_id: z.number().int().positive('Invalid doc_id'),
+});
+
+const ListPinnedInput = z.object({
+	limit: z.number().int().positive().optional().default(50),
+});
+
+/**
+ * Validates tool input with a Zod schema.
+ * Returns parsed data on success, or a { success: false, error } response on failure.
+ */
+function validateInput<T>(
+	schema: z.ZodType<T>,
+	params: Record<string, unknown>,
+): { ok: true; data: T } | { ok: false; error: { success: false; error: string } } {
+	const result = schema.safeParse(params);
+	if (result.success) {
+		return { ok: true, data: result.data };
+	}
+	const firstIssue = result.error.issues[0];
+	const message = firstIssue
+		? `${firstIssue.path.join('.')}: ${firstIssue.message}`.replace(/^: /, '')
+		: 'Invalid input';
+	return { ok: false, error: { success: false, error: message } };
+}
 
 // =============================================================================
 // TOOL DEFINITIONS
@@ -250,22 +331,19 @@ export function createToolHandlers(
 ): ReadonlyMap<string, (params: Record<string, unknown>) => unknown> {
 	const handlers = new Map<string, (params: Record<string, unknown>) => unknown>();
 
-	// -- Pane tools --
+	// -- Pane tools (Zod-validated) --
 
 	handlers.set('send_prompt', (params) => {
-		const pane = String(params['pane'] ?? '');
-		const text = String(params['text'] ?? '');
-		if (!pane) return { success: false, error: 'Missing pane ID' };
-		if (!text) return { success: false, error: 'Missing text' };
-
-		backend.sendPrompt(pane, text);
-		return { success: true, pane, sent: `${text.length} chars` };
+		const v = validateInput(SendPromptInput, params);
+		if (!v.ok) return v.error;
+		backend.sendPrompt(v.data.pane, v.data.text);
+		return { success: true, pane: v.data.pane, sent: `${v.data.text.length} chars` };
 	});
 
 	handlers.set('read_output', (params) => {
-		const pane = String(params['pane'] ?? '');
-		if (!pane) return { success: false, error: 'Missing pane ID' };
-		return { success: true, pane, output: backend.captureOutput(pane) };
+		const v = validateInput(PaneIdInput, params);
+		if (!v.ok) return v.error;
+		return { success: true, pane: v.data.pane, output: backend.captureOutput(v.data.pane) };
 	});
 
 	handlers.set('list_panes', () => {
@@ -280,14 +358,11 @@ export function createToolHandlers(
 	});
 
 	handlers.set('add_worker', async (params) => {
-		const agentKind = String(params['agent'] ?? 'claude');
-		const mock = params['mock'] === true;
-		const name = typeof params['name'] === 'string' && params['name'].length > 0
-			? params['name']
-			: undefined;
-		const useWorktree = params['worktree'] === true;
+		const v = validateInput(AddWorkerInput, params);
+		if (!v.ok) return v.error;
+		const { agent: agentKind, mock, name, worktree: useWorktree } = v.data;
 
-		let workspace = params['workspace'] ? String(params['workspace']) : '';
+		let workspace = v.data.workspace ?? '';
 		let worktreePath: string | undefined;
 
 		if (useWorktree && name) {
@@ -300,7 +375,6 @@ export function createToolHandlers(
 		const newPaneId = backend.addPane(agentKind, workspace || process.cwd(), mock);
 
 		if (name && backend.findPaneByName) {
-			// Set pane title via terminal escape sequence (best-effort)
 			backend.sendInput(newPaneId, `\x1b]2;${name}\x07`);
 		}
 
@@ -314,11 +388,10 @@ export function createToolHandlers(
 	});
 
 	handlers.set('remove_worker', async (params) => {
-		let pane = String(params['pane'] ?? '');
-		const name = typeof params['name'] === 'string' && params['name'].length > 0
-			? params['name']
-			: undefined;
-		const cleanupWorktree = params['cleanup_worktree'] === true;
+		const v = validateInput(RemoveWorkerInput, params);
+		if (!v.ok) return v.error;
+		let { pane } = v.data;
+		const { name, cleanup_worktree: cleanupWorktree } = v.data;
 
 		if (!pane && name && backend.findPaneByName) {
 			const found = backend.findPaneByName(name);
@@ -345,9 +418,9 @@ export function createToolHandlers(
 	});
 
 	handlers.set('restart_worker', (params) => {
-		const pane = String(params['pane']);
-		const agentKind = String(params['agent'] ?? 'claude');
-		if (!pane) return { success: false, error: 'Missing pane ID' };
+		const v = validateInput(RestartWorkerInput, params);
+		if (!v.ok) return v.error;
+		const { pane, agent: agentKind } = v.data;
 		if (pane === orchestratorPaneId) return { success: false, error: 'Cannot restart the orchestrator pane' };
 
 		backend.removePane(pane);
@@ -356,10 +429,10 @@ export function createToolHandlers(
 	});
 
 	handlers.set('send_ctrl_c', (params) => {
-		const pane = String(params['pane'] ?? '');
-		if (!pane) return { success: false, error: 'Missing pane ID' };
-		backend.sendInput(pane, '\x03');
-		return { success: true, pane };
+		const v = validateInput(PaneIdInput, params);
+		if (!v.ok) return v.error;
+		backend.sendInput(v.data.pane, '\x03');
+		return { success: true, pane: v.data.pane };
 	});
 
 	handlers.set('shutdown_all', async () => {
@@ -381,20 +454,19 @@ export function createToolHandlers(
 		return { success: true, killed };
 	});
 
-	// -- Memory tools (read from holder.deps at call time) --
+	// -- Memory tools (Zod-validated, read from holder.deps at call time) --
 
 	handlers.set('query_memory', (params) => {
 		const deps = memoryDepsHolder?.deps;
 		if (!deps) return { success: false, error: 'Database not available' };
 
-		const query = String(params['query'] ?? '');
-		if (!query) return { success: false, error: 'Missing query' };
-		const limit = typeof params['limit'] === 'number' ? params['limit'] : 10;
+		const v = validateInput(QueryMemoryInput, params);
+		if (!v.ok) return v.error;
 
 		const results = deps.ragOps.searchIndex(
 			deps.ragIndex as import('../db/rag.js').RagIndex,
-			query,
-			limit,
+			v.data.query,
+			v.data.limit,
 		);
 
 		return {
@@ -411,38 +483,32 @@ export function createToolHandlers(
 		const deps = memoryDepsHolder?.deps;
 		if (!deps) return { success: false, error: 'Database not available' };
 
-		const key = String(params['key'] ?? '');
-		const value = String(params['value'] ?? '');
-		if (!key) return { success: false, error: 'Missing key' };
-		if (!value) return { success: false, error: 'Missing value' };
-		const tags = String(params['tags'] ?? '');
-		const agentId = typeof params['agent_id'] === 'string' && params['agent_id'].length > 0
-			? params['agent_id']
-			: 'orchestrator';
+		const v = validateInput(WriteMemoryInput, params);
+		if (!v.ok) return v.error;
 
 		deps.dbOps.setSharedContext(
 			deps.db as import('better-sqlite3').Database,
-			key, value, tags, agentId,
+			v.data.key, v.data.value, v.data.tags, v.data.agent_id,
 		);
 
-		return { success: true, key };
+		return { success: true, key: v.data.key };
 	});
 
 	handlers.set('list_memories', (params) => {
 		const deps = memoryDepsHolder?.deps;
 		if (!deps) return { success: false, error: 'Database not available' };
 
-		const tag = params['tag'] ? String(params['tag']) : undefined;
-		const limit = typeof params['limit'] === 'number' ? params['limit'] : 50;
+		const v = validateInput(ListMemoriesInput, params);
+		if (!v.ok) return v.error;
 
 		const entries = deps.dbOps.listSharedContext(
 			deps.db as import('better-sqlite3').Database,
-			tag,
+			v.data.tag,
 		);
 
 		return {
 			success: true,
-			entries: entries.slice(0, limit).map((e) => ({
+			entries: entries.slice(0, v.data.limit).map((e) => ({
 				key: e.key,
 				value: e.value,
 				tags: e.tags,
@@ -456,15 +522,15 @@ export function createToolHandlers(
 		const deps = memoryDepsHolder?.deps;
 		if (!deps) return { success: false, error: 'Database not available' };
 
-		const key = String(params['key'] ?? '');
-		if (!key) return { success: false, error: 'Missing key' };
+		const v = validateInput(KeyInput, params);
+		if (!v.ok) return v.error;
 
 		const entry = deps.dbOps.getSharedContext(
 			deps.db as import('better-sqlite3').Database,
-			key,
+			v.data.key,
 		);
 
-		if (!entry) return { success: false, error: `Key "${key}" not found` };
+		if (!entry) return { success: false, error: `Key "${v.data.key}" not found` };
 
 		return {
 			success: true,
@@ -480,55 +546,54 @@ export function createToolHandlers(
 		const deps = memoryDepsHolder?.deps;
 		if (!deps) return { success: false, error: 'Database not available' };
 
-		const key = String(params['key'] ?? '');
-		if (!key) return { success: false, error: 'Missing key' };
+		const v = validateInput(KeyInput, params);
+		if (!v.ok) return v.error;
 
 		const deleted = deps.dbOps.deleteSharedContext(
 			deps.db as import('better-sqlite3').Database,
-			key,
+			v.data.key,
 		);
 
-		return { success: true, key, deleted };
+		return { success: true, key: v.data.key, deleted };
 	});
 
-	// -- Pinned document tools --
+	// -- Pinned document tools (Zod-validated) --
 
 	handlers.set('pin_document', (params) => {
 		const deps = memoryDepsHolder?.deps;
 		if (!deps) return { success: false, error: 'Database not available' };
 
-		const docId = typeof params['doc_id'] === 'number' ? params['doc_id'] : Number(params['doc_id']);
-		if (!Number.isFinite(docId) || docId < 1) return { success: false, error: 'Invalid doc_id' };
+		const v = validateInput(DocIdInput, params);
+		if (!v.ok) return v.error;
 
-		deps.dbOps.pinDocument(deps.db as import('better-sqlite3').Database, docId);
-		return { success: true, doc_id: docId, pinned: true };
+		deps.dbOps.pinDocument(deps.db as import('better-sqlite3').Database, v.data.doc_id);
+		return { success: true, doc_id: v.data.doc_id, pinned: true };
 	});
 
 	handlers.set('unpin_document', (params) => {
 		const deps = memoryDepsHolder?.deps;
 		if (!deps) return { success: false, error: 'Database not available' };
 
-		const docId = typeof params['doc_id'] === 'number' ? params['doc_id'] : Number(params['doc_id']);
-		if (!Number.isFinite(docId) || docId < 1) return { success: false, error: 'Invalid doc_id' };
+		const v = validateInput(DocIdInput, params);
+		if (!v.ok) return v.error;
 
-		deps.dbOps.unpinDocument(deps.db as import('better-sqlite3').Database, docId);
-		return { success: true, doc_id: docId, pinned: false };
+		deps.dbOps.unpinDocument(deps.db as import('better-sqlite3').Database, v.data.doc_id);
+		return { success: true, doc_id: v.data.doc_id, pinned: false };
 	});
 
 	handlers.set('list_pinned', (params) => {
 		const deps = memoryDepsHolder?.deps;
 		if (!deps) return { success: false, error: 'Database not available' };
 
-		const limit = typeof params['limit'] === 'number' ? params['limit'] : 50;
-		const db = deps.db as import('better-sqlite3').Database;
+		const v = validateInput(ListPinnedInput, params);
+		if (!v.ok) return v.error;
 
+		const db = deps.db as import('better-sqlite3').Database;
 		const pinnedIds = deps.dbOps.getPinnedDocumentIds(db);
 		if (pinnedIds.size === 0) return { success: true, documents: [] };
 
-		// Get full documents with pin status, pinned first.
-		// Note: SQLite returns snake_case columns; the cast to RagDocument uses camelCase.
-		// Access both forms for runtime safety.
-		const docs = deps.dbOps.getRagDocumentsWithPins(db, limit, 0);
+		// Note: SQLite returns snake_case columns; access both forms for runtime safety.
+		const docs = deps.dbOps.getRagDocumentsWithPins(db, v.data.limit, 0);
 		const pinned = docs.filter((d) => pinnedIds.has(d.id));
 
 		return {

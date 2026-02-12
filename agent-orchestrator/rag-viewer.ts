@@ -48,6 +48,7 @@ interface ViewerState {
 	width: number;
 	height: number;
 	tab: 'ctx' | 'rag';
+	dbPath: string;
 }
 
 const state: ViewerState = {
@@ -57,6 +58,7 @@ const state: ViewerState = {
 	width: process.stdout.columns ?? 25,
 	height: process.stdout.rows ?? 30,
 	tab: 'ctx',
+	dbPath: DEFAULT_DB_PATH,
 };
 
 // =============================================================================
@@ -208,8 +210,16 @@ function renderHeader(w: number): string {
 
 function renderContextTab(w: number, h: number): string {
 	if (!state.db) return '';
-	const entries = getContextEntries(state.db);
-	const count = getContextCount(state.db);
+
+	let entries: ContextRow[];
+	let count: number;
+	try {
+		entries = getContextEntries(state.db);
+		count = getContextCount(state.db);
+	} catch (err) {
+		state.db = null; // Force reconnect on next refresh
+		return `\n${GRAY}  DB query failed${RESET}\n${DIM}  Reconnecting...${RESET}\n`;
+	}
 
 	let output = '';
 	const contentW = Math.max(1, w - 1);
@@ -270,13 +280,21 @@ function renderContextTab(w: number, h: number): string {
 function renderRagTab(w: number, h: number): string {
 	if (!state.db) return '';
 
-	const uniqueCount = getUniqueRagCount(state.db);
-	const totalCount = getRagDocumentCount(state.db);
+	let uniqueCount: number;
+	let totalCount: number;
+	let docs: RagRow[];
 	const contentW = Math.max(1, w - 1);
 	const maxLines = h - 5;
 	const docsPerPage = Math.max(1, Math.floor(maxLines / 5));
 
-	const docs = getUniqueRagDocuments(state.db, docsPerPage, state.scrollOffset);
+	try {
+		uniqueCount = getUniqueRagCount(state.db);
+		totalCount = getRagDocumentCount(state.db);
+		docs = getUniqueRagDocuments(state.db, docsPerPage, state.scrollOffset);
+	} catch (err) {
+		state.db = null; // Force reconnect on next refresh
+		return `\n${GRAY}  DB query failed${RESET}\n${DIM}  Reconnecting...${RESET}\n`;
+	}
 
 	let output = '';
 
@@ -323,11 +341,13 @@ function renderRagTab(w: number, h: number): string {
 function renderFooter(w: number): string {
 	let info: string;
 	if (state.tab === 'rag') {
-		const total = state.db ? getUniqueRagCount(state.db) : 0;
+		let total = 0;
+		try { total = state.db ? getUniqueRagCount(state.db) : 0; } catch { /* use 0 */ }
 		const pos = total > 0 ? `${state.scrollOffset + 1}/${total}` : '0/0';
 		info = pos;
 	} else {
-		const count = state.db ? getContextCount(state.db) : 0;
+		let count = 0;
+		try { count = state.db ? getContextCount(state.db) : 0; } catch { /* use 0 */ }
 		info = `${count} entries`;
 	}
 
@@ -344,8 +364,11 @@ function render(): void {
 		process.stdout.write(`${CLEAR}${HIDE_CURSOR}`);
 		process.stdout.write(`${CYAN}${BOLD} Memory Sidebar${RESET}\n`);
 		process.stdout.write(`${GRAY}${'─'.repeat(w)}${RESET}\n`);
-		process.stdout.write(`\n${GRAY}  Connecting to DB...${RESET}\n`);
-		process.stdout.write(`${DIM}  ${DEFAULT_DB_PATH}${RESET}\n`);
+		process.stdout.write(`\n${YELLOW}  Waiting for DB...${RESET}\n`);
+		process.stdout.write(`${DIM}  ${state.dbPath}${RESET}\n`);
+		process.stdout.write(`\n${GRAY}  The orchestrator will${RESET}\n`);
+		process.stdout.write(`${GRAY}  create the database${RESET}\n`);
+		process.stdout.write(`${GRAY}  on first run.${RESET}\n`);
 		return;
 	}
 
@@ -444,7 +467,13 @@ function connectDb(dbPath: string): Database.Database | null {
 			return null;
 		}
 		return db;
-	} catch {
+	} catch (err) {
+		// File doesn't exist yet, or is locked, or is corrupted.
+		// The refresh loop will retry, so just return null.
+		const code = (err as NodeJS.ErrnoException).code;
+		if (code !== 'SQLITE_CANTOPEN' && code !== 'ENOENT') {
+			process.stderr.write(`rag-viewer: DB connect failed: ${err instanceof Error ? err.message : String(err)}\n`);
+		}
 		return null;
 	}
 }
@@ -475,6 +504,8 @@ function main(): void {
 		}
 	}
 
+	state.dbPath = dbPath;
+
 	// Setup raw mode
 	if (process.stdin.isTTY) {
 		process.stdin.setRawMode(true);
@@ -504,7 +535,7 @@ function main(): void {
 	// Initial render
 	render();
 
-	// Refresh loop
+	// Refresh loop with error recovery
 	const refreshTimer = setInterval(() => {
 		if (!state.running) {
 			clearInterval(refreshTimer);
@@ -516,7 +547,12 @@ function main(): void {
 			state.db = connectDb(dbPath);
 		}
 
-		render();
+		try {
+			render();
+		} catch (err) {
+			// Render failures should not crash the viewer
+			process.stderr.write(`rag-viewer: render error: ${err instanceof Error ? err.message : String(err)}\n`);
+		}
 	}, REFRESH_INTERVAL);
 }
 

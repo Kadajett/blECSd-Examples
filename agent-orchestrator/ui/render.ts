@@ -4,7 +4,7 @@
  * @module agent-orchestrator/ui/render
  */
 
-import type { AppState, AgentPane, RagDocument, SharedContextEntry } from '../types.js';
+import type { AppState, AgentPane, OverlayState, RagDocument, SharedContextEntry } from '../types.js';
 import { COLORS } from '../config.js';
 import { renderPaneBorder } from './agentPanel.js';
 import { renderStatusBar } from './statusBar.js';
@@ -187,8 +187,13 @@ export function renderFrame(state: AppState): void {
 	// 3. Render status bar
 	output += renderStatusBar(state);
 
-	// 4. Position cursor in the focused pane (only show cursor in focused pane)
-	if (!state.sidebar.focused) {
+	// 4. Render overlay (command palette, agent detail) on top of everything
+	if (state.overlay.kind !== 'none') {
+		output += renderOverlay(state.overlay, state.screenWidth, state.screenHeight);
+	}
+
+	// 5. Position cursor in the focused pane (only show cursor in focused pane)
+	if (!state.sidebar.focused && state.overlay.kind === 'none') {
 		const focusedPane = orchFocused
 			? state.orchestratorPane
 			: state.workerPanes[state.focusedWorkerIndex];
@@ -205,6 +210,90 @@ export function renderFrame(state: AppState): void {
 	// Write to stdout
 	process.stdout.write(output);
 }
+
+// =============================================================================
+// OVERLAY RENDERING
+// =============================================================================
+
+/**
+ * Renders an overlay (command palette or agent detail) centered on screen.
+ *
+ * @param overlay - Overlay state
+ * @param screenW - Screen width
+ * @param screenH - Screen height
+ * @returns ANSI string for the overlay
+ */
+function renderOverlay(overlay: OverlayState, screenW: number, screenH: number): string {
+	if (overlay.kind === 'command-palette') {
+		return renderCommandPalette(overlay, screenW, screenH);
+	}
+	return '';
+}
+
+/**
+ * Renders the command palette overlay: search box, items, hints.
+ */
+function renderCommandPalette(overlay: OverlayState, screenW: number, screenH: number): string {
+	const boxW = Math.min(50, screenW - 4);
+	const maxItems = Math.min(overlay.filteredItems.length, Math.min(10, screenH - 8));
+	const boxH = maxItems + 4; // search(1) + separator(1) + items + hints(1) + border(1)
+	const startX = Math.max(1, Math.floor((screenW - boxW) / 2));
+	const startY = Math.max(1, Math.floor((screenH - boxH) / 2));
+
+	const contentW = boxW - 2; // inside borders
+
+	let output = '';
+
+	// Colors
+	const border = '\x1b[36m'; // cyan
+	const bg = '\x1b[48;2;25;25;45m';
+	const searchFg = '\x1b[97m'; // bright white
+	const itemFg = '\x1b[37m'; // white
+	const selectedBg = '\x1b[48;2;60;60;100m';
+	const dimFg = '\x1b[90m'; // gray
+	const hintFg = '\x1b[33m'; // yellow
+
+	// Top border
+	output += `\x1b[${startY};${startX}H${border}${bg}\u250C${'\u2500'.repeat(contentW)}\u2510${RESET}`;
+
+	// Search box row
+	const searchLabel = '> ';
+	const queryDisplay = overlay.searchQuery.slice(0, contentW - searchLabel.length);
+	const searchPad = contentW - searchLabel.length - queryDisplay.length;
+	output += `\x1b[${startY + 1};${startX}H${border}${bg}\u2502${searchFg}${bg}${searchLabel}${queryDisplay}${' '.repeat(Math.max(0, searchPad))}${border}${bg}\u2502${RESET}`;
+
+	// Separator
+	output += `\x1b[${startY + 2};${startX}H${border}${bg}\u251C${'\u2500'.repeat(contentW)}\u2524${RESET}`;
+
+	// Items
+	for (let i = 0; i < maxItems; i++) {
+		const item = overlay.filteredItems[i] ?? '';
+		const isSelected = i === overlay.selectedIndex;
+		const rowY = startY + 3 + i;
+		const indicator = isSelected ? '\u25B8 ' : '  ';
+		const label = (indicator + item).slice(0, contentW);
+		const pad = contentW - label.length;
+		const rowBg = isSelected ? selectedBg : bg;
+		const rowFg = isSelected ? searchFg : itemFg;
+		output += `\x1b[${rowY};${startX}H${border}${bg}\u2502${rowFg}${rowBg}${label}${' '.repeat(Math.max(0, pad))}${border}${bg}\u2502${RESET}`;
+	}
+
+	// Hints row
+	const hintsY = startY + 3 + maxItems;
+	const hints = '\u2191\u2193 navigate  Enter select  Esc close';
+	const hintText = hints.slice(0, contentW);
+	const hintPad = contentW - hintText.length;
+	output += `\x1b[${hintsY};${startX}H${border}${bg}\u2502${hintFg}${bg}${hintText}${' '.repeat(Math.max(0, hintPad))}${border}${bg}\u2502${RESET}`;
+
+	// Bottom border
+	output += `\x1b[${hintsY + 1};${startX}H${border}${bg}\u2514${'\u2500'.repeat(contentW)}\u2518${RESET}`;
+
+	return output;
+}
+
+// =============================================================================
+// SIDEBAR DATA
+// =============================================================================
 
 // Raw row shapes from SQLite (snake_case column names)
 interface RawRagRow {

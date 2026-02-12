@@ -101,12 +101,52 @@ describe('agents/healthCheck restart behavior', () => {
 		spawnAgent.mockReturnValue(replacement);
 
 		const state = makeState(crashed);
+		let lastResult = checkAgentHealth(state);
 
 		for (let i = 0; i < AGENT_MAX_RESTARTS + 2; i++) {
-			checkAgentHealth(state);
+			lastResult = checkAgentHealth(state);
 			state.workerPanes[0] = makePane(`old-${i + 10}`, false, 'running', 'Worker B');
 		}
 
 		expect((spawnAgent as unknown as ReturnType<typeof vi.fn>).mock.calls.length).toBe(AGENT_MAX_RESTARTS);
+		state.workerPanes[0] = makePane('old-final', false, 'running', 'Worker B');
+		lastResult = checkAgentHealth(state);
+		expect(state.workerPanes[0]?.agent.status).toBe('error');
+		expect(lastResult.changed[0]?.to).toBe('error');
+		expect((spawnAgent as unknown as ReturnType<typeof vi.fn>).mock.calls.length).toBe(AGENT_MAX_RESTARTS);
+	});
+
+	it('resets restart count after the agent is healthy and running again', () => {
+		const crashed = makePane('old-reset-1', false, 'running', 'Worker Reset');
+		const replacementDown = makePane('new-reset-1', false, 'starting', 'Worker Reset');
+		const replacementUp = makePane('new-reset-2', true, 'starting', 'Worker Reset');
+		const spawnAgentMock = spawnAgent as unknown as ReturnType<typeof vi.fn>;
+
+		spawnAgentMock
+			.mockReturnValueOnce(replacementDown)
+			.mockReturnValueOnce(replacementDown)
+			.mockReturnValueOnce(replacementDown)
+			.mockReturnValueOnce(replacementUp);
+
+		const state = makeState(crashed);
+
+		// Consume all restart attempts.
+		for (let i = 0; i < AGENT_MAX_RESTARTS; i++) {
+			checkAgentHealth(state);
+			state.workerPanes[0] = makePane(`old-reset-${i + 10}`, false, 'running', 'Worker Reset');
+		}
+
+		// No restarts left => error.
+		checkAgentHealth(state);
+		expect(state.workerPanes[0]?.agent.status).toBe('error');
+
+		// Running again should clear restart counter.
+		state.workerPanes[0] = makePane('old-reset-running', true, 'running', 'Worker Reset');
+		checkAgentHealth(state);
+
+		// Crash once more should restart again.
+		state.workerPanes[0] = makePane('old-reset-crash-again', false, 'running', 'Worker Reset');
+		checkAgentHealth(state);
+		expect(spawnAgentMock.mock.calls.length).toBe(AGENT_MAX_RESTARTS + 1);
 	});
 });

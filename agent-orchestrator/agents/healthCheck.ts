@@ -116,6 +116,11 @@ export function checkAgentHealth(state: AppState): HealthCheckResult {
 		const running = isPaneRunning(pane);
 		const prev = pane.agent.status;
 		const next = nextStatusForProcessState(prev, running);
+		const restartKey = paneRestartKey(pane);
+
+		if (running) {
+			restartCounts.delete(restartKey);
+		}
 
 		// If process died unexpectedly, try restarting before marking final error/stopped.
 		if (!running && prev !== 'stopped' && prev !== 'error') {
