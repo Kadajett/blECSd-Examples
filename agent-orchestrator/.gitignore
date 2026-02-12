@@ -1,0 +1,6 @@
+*.db
+*.db-shm
+*.db-wal
+.blecsd-orchestrator.md
+.blecsd-worker-context.md
+.blecsd-mcp.json

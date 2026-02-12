@@ -1,0 +1,35 @@
+{
+	"name": "agent-orchestrator-example",
+	"version": "0.0.1",
+	"description": "Multi-agent orchestrator - Codex-controlled leader with dynamic worker grid, SQLite shared memory, and RAG context retrieval",
+	"type": "module",
+	"main": "dist/index.js",
+	"bin": {
+		"agent-orchestrator": "dist/index.js"
+	},
+	"scripts": {
+		"build": "tsup index.ts mcp/bridge.ts rag-viewer.ts --format esm --dts",
+		"start": "node dist/index.js",
+		"dev": "tsx index.ts",
+		"dev:mock": "tsx index.ts --mock",
+		"dev:demo": "tsx index.ts --worker claude --worker claude --worker claude",
+		"dev:demo:mock": "tsx index.ts --mock --worker claude --worker claude --worker claude",
+		"dev:blecsd": "tsx index.ts --blecsd",
+		"dev:blecsd:mock": "tsx index.ts --blecsd --mock"
+	},
+	"dependencies": {
+		"better-sqlite3": "^11.0.0",
+		"blecsd": "^0.2.0",
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"@types/better-sqlite3": "^7.6.0",
+		"@types/node": "^25.2.1",
+		"tsup": "^8.5.1",
+		"tsx": "^4.21.0",
+		"typescript": "^5.8.2"
+	},
+	"optionalDependencies": {
+		"node-pty": "^1.1.0"
+	}
+}
