@@ -8,7 +8,7 @@
 
 import * as path from 'node:path';
 import * as tmux from './controller.js';
-import { parseAgentSpec } from '../config.js';
+import { parseAgentSpec, HEADER_HEIGHT } from '../config.js';
 import { writeWorkerMemoryContextFile } from '../agents/communication.js';
 
 import { getAgentPalette, ROLE_COLORS } from '../ui/agentColors.js';
@@ -44,7 +44,7 @@ export function createTmuxLayout(
 	width: number,
 	height: number,
 	options: { noSidebar: boolean; dbPath: string },
-): { orchPane: string; workerPanes: string[]; sidebarPane: string | null } {
+): { orchPane: string; workerPanes: string[]; sidebarPane: string | null; headerPane: string } {
 	tmux.createSession(session, width, height);
 	const firstPane = tmux.getFirstPane(session);
 	const { headerPane, contentPane } = createHeaderPane(session, firstPane, workerCount);
@@ -151,11 +151,15 @@ export function createTmuxLayout(
 	// Focus the orchestrator pane
 	tmux.selectPane(session, orchPane);
 
-	return { orchPane, workerPanes, sidebarPane };
+	return { orchPane, workerPanes, sidebarPane, headerPane };
 }
 
 /**
- * Creates and starts a dedicated 1-line header pane at the top of the session.
+ * Creates and starts a dedicated header pane at the top of the session.
+ *
+ * The header renders a 3D rotating cube, token sparklines, and session stats.
+ * Worker pane IDs are not known at creation time, so the header script
+ * discovers them by querying tmux list-panes and filtering out its own pane.
  *
  * @param session - Tmux session name
  * @param firstPane - Initial pane in the session
@@ -167,8 +171,8 @@ function createHeaderPane(
 	firstPane: string,
 	workerCount: number,
 ): { headerPane: string; contentPane: string } {
-	// Create top pane with fixed 1-line height above the main content.
-	tmux.tryRun(`split-window -v -b -t ${session}:${firstPane} -l 1`);
+	// Create top pane with fixed 10-row height above the main content.
+	tmux.tryRun(`split-window -v -b -t ${session}:${firstPane} -l ${HEADER_HEIGHT}`);
 
 	const panes = tmux.listPanes(session);
 	const headerPane = panes[0] ?? firstPane;
@@ -191,6 +195,39 @@ function createHeaderPane(
 	tmux.setPaneUserOption(session, headerPane, 'agent_task', '');
 
 	return { headerPane, contentPane };
+}
+
+/**
+ * Sends the worker pane IDs to the header script after workers are created.
+ *
+ * This restarts the header script with the --panes argument so it can
+ * track token usage from worker panes.
+ *
+ * @param session - Tmux session name
+ * @param headerPane - Header pane ID
+ * @param workerCount - Number of workers
+ * @param workerPanes - Worker pane IDs
+ */
+export function updateHeaderWithPanes(
+	session: string,
+	headerPane: string,
+	workerCount: number,
+	workerPanes: readonly string[],
+): void {
+	// Kill the existing header process and restart with pane info
+	tmux.tryRun(`send-keys -t ${session}:${headerPane} C-c`);
+	// Small delay then restart
+	const headerScriptPath = path.resolve(
+		path.dirname(new URL(import.meta.url).pathname),
+		'..',
+		'tmux-header.ts',
+	);
+	const panesArg = workerPanes.join(',');
+	tmux.sendCommand(
+		session,
+		headerPane,
+		`npx tsx "${headerScriptPath}" --session "${session}" --workers "${workerCount}" --panes "${panesArg}"`,
+	);
 }
 
 /**

@@ -37,7 +37,7 @@ import { warn, error as logError } from './utils/logger.js';
 import { startAgentHealthCheckInterval, stopAgentHealthCheckInterval } from './agents/healthCheck.js';
 
 // Extracted modules
-import { createTmuxLayout, startSidebarViewer, startAgentsInPanes } from './tmux/layout.js';
+import { createTmuxLayout, startSidebarViewer, startAgentsInPanes, updateHeaderWithPanes } from './tmux/layout.js';
 import { cleanupBlecsd, cleanupTmux, setDbModuleForCleanup } from './helpers/cleanup.js';
 import { writeMcpConfig, writeOrchestratorContext, writeBlecsdOrchestratorContext } from './helpers/context.js';
 import { startTmuxRagIngestion, startBlecsdRagIngestion } from './helpers/ragIngestion.js';
@@ -307,7 +307,7 @@ async function mainTmux(): Promise<void> {
 	tmux.killSession(SESSION);
 
 	const workerCount = cliArgs.workers.length > 0 ? cliArgs.workers.length : 1;
-	const { orchPane, workerPanes, sidebarPane } = createTmuxLayout(
+	const { orchPane, workerPanes, sidebarPane, headerPane } = createTmuxLayout(
 		SESSION,
 		workerCount,
 		width,
@@ -375,6 +375,10 @@ async function mainTmux(): Promise<void> {
 
 	// Start agents in their panes
 	startAgentsInPanes(SESSION, cliArgs, orchPane, workerPanes, mcpConfigPath);
+
+	// Restart the header script with worker pane IDs for token tracking
+	updateHeaderWithPanes(SESSION, headerPane, workerCount, workerPanes);
+
 	writeOrchestratorContext(SESSION, cliArgs.workspace, orchPane, workerPanes, mcpState?.port ?? 0);
 
 	// Print session info

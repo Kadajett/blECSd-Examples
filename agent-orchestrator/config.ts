@@ -23,8 +23,8 @@ export const ORCHESTRATOR_WIDTH_RATIO = 0.3;
 export const TARGET_FPS = 30;
 export const FRAME_MS = Math.floor(1000 / TARGET_FPS);
 
-/** Height of the header bar in rows. */
-export const HEADER_HEIGHT = 1;
+/** Height of the header bar in rows (3D cube + sparklines + stats). */
+export const HEADER_HEIGHT = 10;
 
 /** Terminal scrollback buffer size per agent. */
 export const SCROLLBACK_LINES = 1000;
