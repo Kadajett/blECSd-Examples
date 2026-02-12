@@ -11,6 +11,7 @@ import * as tmux from './controller.js';
 import { parseAgentSpec } from '../config.js';
 import { writeWorkerMemoryContextFile } from '../agents/communication.js';
 
+import { getAgentPalette, ROLE_COLORS } from '../ui/agentColors.js';
 import type { AgentPreset } from '../config.js';
 
 // =============================================================================
@@ -53,16 +54,16 @@ export function createTmuxLayout(
 	tmux.setOption(session, 'status', 'on');
 	tmux.setOption(session, 'status-style', 'bg=#1a1b26,fg=#565f89');
 	tmux.setOption(session, 'pane-border-style', 'fg=#3b4261');
-	tmux.setOption(session, 'pane-active-border-style', 'fg=#7aa2f7');
+	tmux.setOption(session, 'pane-active-border-style', 'fg=#c0caf5');
 	tmux.setOption(session, 'message-style', 'bg=#24283b,fg=#7dcfff');
 	tmux.setOption(session, 'message-command-style', 'bg=#24283b,fg=#c0caf5');
 	tmux.setOption(session, 'display-time', '2000');
 	tmux.setWindowOption(session, 'pane-border-lines', 'double');
-	tmux.setWindowOption(session, 'pane-border-status', 'top');
+	tmux.setWindowOption(session, 'pane-border-status', 'bottom');
 	tmux.setWindowOption(
 		session,
 		'pane-border-format',
-		'#[fg=#7dcfff,bold] #{pane_index} #[fg=#c0caf5,nobold]#{pane_title} #[fg=#3b4261]#{?pane_active,#[fg=#9ece6a]●,○}',
+		'#[fg=#{@agent_color},bold] #{@agent_name} #[fg=#565f89,nobold]#{@agent_role} #[fg=#3b4261]| #[fg=#414868]#{@agent_task}',
 	);
 
 	// Status bar: left = title + keybinding hints, right = worker count + clock
@@ -184,6 +185,10 @@ function createHeaderPane(
 		`npx tsx "${headerScriptPath}" --session "${session}" --workers "${workerCount}"`,
 	);
 	tmux.tryRun(`select-pane -t ${session}:${headerPane} -T "Header"`);
+	tmux.setPaneUserOption(session, headerPane, 'agent_color', ROLE_COLORS.header.primary);
+	tmux.setPaneUserOption(session, headerPane, 'agent_name', 'Header');
+	tmux.setPaneUserOption(session, headerPane, 'agent_role', '');
+	tmux.setPaneUserOption(session, headerPane, 'agent_task', '');
 
 	return { headerPane, contentPane };
 }
@@ -221,6 +226,10 @@ export function startSidebarViewer(session: string, sidebarPane: string, dbPath:
 
 	tmux.sendCommand(session, sidebarPane, `npx tsx "${viewerPath}" --db "${dbPath}"`);
 	tmux.tryRun(`select-pane -t ${session}:${sidebarPane} -T "RAG Memory"`);
+	tmux.setPaneUserOption(session, sidebarPane, 'agent_color', ROLE_COLORS.sidebar.primary);
+	tmux.setPaneUserOption(session, sidebarPane, 'agent_name', 'RAG Memory');
+	tmux.setPaneUserOption(session, sidebarPane, 'agent_role', 'Sidebar');
+	tmux.setPaneUserOption(session, sidebarPane, 'agent_task', 'Monitoring documents');
 }
 
 /**
@@ -263,10 +272,19 @@ export function startAgentsInPanes(
 	}
 
 	tmux.tryRun(`select-pane -t ${session}:${orchPane} -T "${orchSpec.label} (Orchestrator)"`);
+	tmux.setPaneUserOption(session, orchPane, 'agent_color', ROLE_COLORS.orchestrator.primary);
+	tmux.setPaneUserOption(session, orchPane, 'agent_name', orchSpec.label);
+	tmux.setPaneUserOption(session, orchPane, 'agent_role', 'Orchestrator');
+	tmux.setPaneUserOption(session, orchPane, 'agent_task', 'Coordinating agents');
+
 	for (let i = 0; i < workerSpecs.length && i < workerPanes.length; i++) {
 		const pane = workerPanes[i]!;
 		const spec = workerSpecs[i]!;
 		tmux.tryRun(`select-pane -t ${session}:${pane} -T "${spec.label} (Worker ${i + 1})"`);
+		tmux.setPaneUserOption(session, pane, 'agent_color', getAgentPalette(i).primary);
+		tmux.setPaneUserOption(session, pane, 'agent_name', spec.label);
+		tmux.setPaneUserOption(session, pane, 'agent_role', `Worker ${i + 1}`);
+		tmux.setPaneUserOption(session, pane, 'agent_task', 'Ready');
 	}
 	for (let i = 0; i < workerSpecs.length && i < workerPanes.length; i++) {
 		const pane = workerPanes[i]!;
@@ -355,4 +373,19 @@ export function bindPopupKeys(session: string, dbPath: string): void {
 		'x',
 		`display-menu -t ${session} -T " Quit? " "Confirm quit" q "kill-session -t ${session}" "" "" "" "Cancel" c ""`,
 	);
+}
+
+// =============================================================================
+// PANE TASK UPDATES
+// =============================================================================
+
+/**
+ * Updates the current task text shown in a pane's bottom border tag.
+ *
+ * @param session - Tmux session name
+ * @param pane - Target pane ID
+ * @param task - Task description text
+ */
+export function updatePaneTask(session: string, pane: string, task: string): void {
+	tmux.setPaneUserOption(session, pane, 'agent_task', task);
 }

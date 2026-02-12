@@ -336,6 +336,35 @@ export function displayMessage(session: string, message: string, durationMs = 30
 	tryRun(`display-message -t ${session} "${escaped}"`);
 }
 
+// =============================================================================
+// PANE USER OPTIONS
+// =============================================================================
+
+/**
+ * Sets a per-pane user option (prefixed with @).
+ *
+ * @param session - Session name
+ * @param target - Target pane (e.g. "0.2")
+ * @param key - Option key (without @ prefix)
+ * @param value - Option value
+ */
+export function setPaneUserOption(session: string, target: string, key: string, value: string): void {
+	const escaped = value.replace(/"/g, '\\"');
+	tryRun(`set-option -p -t ${session}:${target} @${key} "${escaped}"`);
+}
+
+/**
+ * Gets a per-pane user option value.
+ *
+ * @param session - Session name
+ * @param target - Target pane (e.g. "0.2")
+ * @param key - Option key (without @ prefix)
+ * @returns Option value or empty string
+ */
+export function getPaneUserOption(session: string, target: string, key: string): string {
+	return tryRun(`display-message -p -t ${session}:${target} "#{@${key}}"`);
+}
+
 /**
  * Opens a tmux display-menu.
  *
