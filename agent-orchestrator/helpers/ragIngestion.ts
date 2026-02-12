@@ -48,6 +48,32 @@ function quickHash(text: string): string {
 // =============================================================================
 
 /**
+ * Strips all ANSI escape sequences from a string.
+ * Handles CSI sequences, OSC sequences, and cursor positioning.
+ */
+function stripAnsi(text: string): string {
+	return text
+		// CSI sequences: \x1b[ ... <letter> (e.g., colors, cursor movement)
+		.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
+		// Cursor position sequences: \x1b[row;colH or \x1b[row;colf
+		.replace(/\x1b\[\d+;\d+[Hf]/g, '')
+		// OSC sequences: \x1b] ... \x07 or \x1b] ... \x1b\\
+		.replace(/\x1b\][^\x07]*(?:\x07|\x1b\\)/g, '')
+		// Single-char escapes: \x1b followed by one char
+		.replace(/\x1b[^[\]]/g, '');
+}
+
+/**
+ * Unicode box-drawing characters (U+2500-U+257F) and related decorative chars.
+ */
+const BOX_DRAWING_REGEX = /^[\u2500-\u257F\u2580-\u259F\u25A0-\u25FF\-=|+·•*_~╌╍╎╏]{3,}$/;
+
+/**
+ * Common TUI frame characters (borders, corners, pipes, bullets).
+ */
+const TUI_FRAME_REGEX = /^[│─┌┐└┘├┤┬┴┼╔╗╚╝╠╣╦╩╬║═╒╓╘╙╛╜╝╞╟╡╢╤╥╧╨╪╫\s]{3,}$/;
+
+/**
  * Filters out terminal noise lines that are not useful for RAG indexing.
  * Keeps only meaningful content lines.
  *
@@ -61,25 +87,42 @@ export function filterNoiseLines(lines: string[]): string[] {
 		// Too short to be meaningful
 		if (trimmed.length < 15) return false;
 
-		// Box-drawing / separator lines
+		// Box-drawing / separator lines (ASCII)
 		if (/^[─═│┌┐└┘├┤┬┴┼╔╗╚╝╠╣╦╩╬\-=|+·•*_~]{3,}$/.test(trimmed)) return false;
+
+		// Unicode box-drawing range (U+2500-U+257F) and block elements
+		if (BOX_DRAWING_REGEX.test(trimmed)) return false;
+
+		// TUI frame lines (mixed box-drawing + whitespace)
+		if (TUI_FRAME_REGEX.test(trimmed)) return false;
 
 		// Shell prompts and cd commands
 		if (/^([$#>%]\s*$|cd\s+["']|bash\s*$|exit\s*$)/.test(trimmed)) return false;
 		if (/^\$\s/.test(trimmed) && trimmed.length < 40) return false;
 
-		// ANSI-only content (escape sequences with no visible text)
-		const stripped = trimmed.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '').trim();
+		// Strip all ANSI escape sequences (including cursor positioning)
+		const stripped = stripAnsi(trimmed).trim();
+
+		// Purely whitespace after stripping ANSI
+		if (stripped.length === 0) return false;
+
+		// Too little visible content after stripping
 		if (stripped.length < 10) return false;
 
 		// Repeated dashes, dots, or equals
 		if (/^[.\-=~]{5,}$/.test(stripped)) return false;
+
+		// Repeated box-drawing after stripping ANSI
+		if (BOX_DRAWING_REGEX.test(stripped)) return false;
 
 		// Pure file path lines (no explanation)
 		if (/^[\/~][^\s]*$/.test(stripped) && stripped.length < 80) return false;
 
 		// tmux status / pane indicator lines
 		if (/^\[.*\]\s*$/.test(stripped) && stripped.length < 30) return false;
+
+		// Progress bars and spinner lines
+		if (/^[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏|\\\/\-]\s/.test(stripped) && stripped.length < 40) return false;
 
 		return true;
 	});

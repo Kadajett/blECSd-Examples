@@ -34,6 +34,7 @@ import { handleInput } from './input/handlers.js';
 import { renderFrame } from './ui/render.js';
 import { resizeAllPanes } from './ui/layout.js';
 import { warn, error as logError } from './utils/logger.js';
+import { startAgentHealthCheckInterval, stopAgentHealthCheckInterval } from './agents/healthCheck.js';
 
 // Extracted modules
 import { createTmuxLayout, startSidebarViewer, startAgentsInPanes } from './tmux/layout.js';
@@ -267,10 +268,13 @@ async function mainBlecsd(): Promise<void> {
 		tickActivityHistory(state);
 	}, 1000);
 
+	// Agent health check (every 30 seconds, auto-restarts crashed agents)
+	const healthTimer = startAgentHealthCheckInterval(state);
+
 	// Render loop: always render at 30fps to pick up terminal output changes.
 	function renderLoop(): void {
 		if (!state.running) {
-			cleanupBlecsd(state, db, ragTimer, activityTicker, mcpState);
+			cleanupBlecsd(state, db, ragTimer, activityTicker, healthTimer, mcpState);
 			return;
 		}
 

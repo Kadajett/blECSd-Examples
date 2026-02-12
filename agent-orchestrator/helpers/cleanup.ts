@@ -30,6 +30,7 @@ export function setDbModuleForCleanup(mod: typeof import('../db/index.js') | nul
  * @param db - SQLite database (null if unavailable)
  * @param ragTimer - RAG ingestion interval (null if not running)
  * @param activityTicker - Activity tracking interval
+ * @param healthTimer - Agent health check interval
  * @param mcpState - MCP server state (null if not running)
  */
 export function cleanupBlecsd(
@@ -37,9 +38,11 @@ export function cleanupBlecsd(
 	db: BetterSqlite3.Database | null,
 	ragTimer: NodeJS.Timeout | null,
 	activityTicker: NodeJS.Timeout,
+	healthTimer: NodeJS.Timeout,
 	mcpState: McpServerState | null,
 ): void {
 	clearInterval(activityTicker);
+	clearInterval(healthTimer);
 	if (ragTimer) clearInterval(ragTimer);
 
 	// Kill all terminals
