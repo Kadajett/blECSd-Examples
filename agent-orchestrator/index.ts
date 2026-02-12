@@ -341,7 +341,12 @@ async function mainTmux(): Promise<void> {
 		const toolDefs = getToolDefinitions();
 		const tmuxBackend = createTmuxBackend(SESSION, cliArgs.workspace, cliArgs.mock, orchPane);
 		const memoryDepsHolder = createMemoryDepsHolder();
-		const toolHandlers = createToolHandlers(tmuxBackend, orchPane, memoryDepsHolder);
+		const toolHandlers = createToolHandlers(
+			tmuxBackend,
+			orchPane,
+			memoryDepsHolder,
+			(message, durationMs) => tmux.displayMessage(SESSION, message, durationMs),
+		);
 		mcpState = await startMcpServer(toolDefs, toolHandlers);
 		mcpConfigPath = writeMcpConfig(cliArgs.workspace, mcpState.port);
 

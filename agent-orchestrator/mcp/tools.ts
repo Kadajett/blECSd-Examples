@@ -305,6 +305,9 @@ export interface MemoryDepsHolder {
 	deps: MemoryDeps | null;
 }
 
+/** Optional hook for emitting tmux status-line toast notifications. */
+export type ToolToastFn = (message: string, durationMs?: number) => void;
+
 /**
  * Creates a new empty memory deps holder.
  */
@@ -328,15 +331,25 @@ export function createToolHandlers(
 	backend: PaneBackend,
 	orchestratorPaneId: string,
 	memoryDepsHolder?: MemoryDepsHolder,
+	onToast?: ToolToastFn,
 ): ReadonlyMap<string, (params: Record<string, unknown>) => unknown> {
 	const handlers = new Map<string, (params: Record<string, unknown>) => unknown>();
+	const toast = (message: string, durationMs = 2500): void => {
+		if (onToast) {
+			onToast(message, durationMs);
+		}
+	};
 
 	// -- Pane tools (Zod-validated) --
 
 	handlers.set('send_prompt', (params) => {
 		const v = validateInput(SendPromptInput, params);
-		if (!v.ok) return v.error;
+		if (!v.ok) {
+			toast(`#[fg=red]Error: ${v.error.error}`, 3500);
+			return v.error;
+		}
 		backend.sendPrompt(v.data.pane, v.data.text);
+		toast(`#[fg=colour244]Prompt sent to ${v.data.pane}`, 2000);
 		return { success: true, pane: v.data.pane, sent: `${v.data.text.length} chars` };
 	});
 
@@ -359,7 +372,10 @@ export function createToolHandlers(
 
 	handlers.set('add_worker', async (params) => {
 		const v = validateInput(AddWorkerInput, params);
-		if (!v.ok) return v.error;
+		if (!v.ok) {
+			toast(`#[fg=red]Error: ${v.error.error}`, 3500);
+			return v.error;
+		}
 		const { agent: agentKind, mock, name, worktree: useWorktree } = v.data;
 
 		let workspace = v.data.workspace ?? '';
@@ -377,6 +393,7 @@ export function createToolHandlers(
 		if (name && backend.findPaneByName) {
 			backend.sendInput(newPaneId, `\x1b]2;${name}\x07`);
 		}
+		toast(`#[fg=green]Worker added: ${name ?? newPaneId}`);
 
 		return {
 			success: true,
@@ -389,20 +406,36 @@ export function createToolHandlers(
 
 	handlers.set('remove_worker', async (params) => {
 		const v = validateInput(RemoveWorkerInput, params);
-		if (!v.ok) return v.error;
+		if (!v.ok) {
+			toast(`#[fg=red]Error: ${v.error.error}`, 3500);
+			return v.error;
+		}
 		let { pane } = v.data;
 		const { name, cleanup_worktree: cleanupWorktree } = v.data;
 
 		if (!pane && name && backend.findPaneByName) {
 			const found = backend.findPaneByName(name);
-			if (!found) return { success: false, error: `No pane found matching name "${name}"` };
+			if (!found) {
+				const error = `No pane found matching name "${name}"`;
+				toast(`#[fg=red]Error: ${error}`, 3500);
+				return { success: false, error };
+			}
 			pane = found;
 		}
 
-		if (!pane) return { success: false, error: 'Missing pane ID or name' };
-		if (pane === orchestratorPaneId) return { success: false, error: 'Cannot kill the orchestrator pane' };
+		if (!pane) {
+			const error = 'Missing pane ID or name';
+			toast(`#[fg=red]Error: ${error}`, 3500);
+			return { success: false, error };
+		}
+		if (pane === orchestratorPaneId) {
+			const error = 'Cannot kill the orchestrator pane';
+			toast(`#[fg=red]Error: ${error}`, 3500);
+			return { success: false, error };
+		}
 
 		backend.removePane(pane);
+		toast(`#[fg=orange]Worker removed: ${pane}`);
 
 		if (cleanupWorktree && name) {
 			const { removeWorktree } = await import('../worktrees.js');

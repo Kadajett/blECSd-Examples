@@ -12,6 +12,7 @@
  */
 
 import Database from 'better-sqlite3';
+import { THEME, hexToAnsi } from './ui/theme.js';
 
 // =============================================================================
 // CONFIGURATION
@@ -22,22 +23,21 @@ const DEFAULT_DB_PATH = './orchestrator.db';
 
 // ANSI escape codes
 const ESC = '\x1b';
-const RESET = `${ESC}[0m`;
-const BOLD = `${ESC}[1m`;
-const DIM = `${ESC}[2m`;
-const FG_TEXT = `${ESC}[38;2;192;202;245m`;      // #c0caf5
-const FG_SUBTEXT = `${ESC}[38;2;86;95;137m`;     // #565f89
-const FG_ACCENT1 = `${ESC}[38;2;125;207;255m`;   // #7dcfff
-const FG_ACCENT2 = `${ESC}[38;2;122;162;247m`;   // #7aa2f7
-const FG_ACCENT3 = `${ESC}[38;2;158;206;106m`;   // #9ece6a
-const FG_ACCENT4 = `${ESC}[38;2;187;154;247m`;   // #bb9af7
-const FG_ACCENT5 = `${ESC}[38;2;255;158;100m`;   // #ff9e64
-const FG_WARNING = `${ESC}[38;2;224;175;104m`;   // #e0af68
-const FG_ERROR = `${ESC}[38;2;247;118;142m`;     // #f7768e
-const FG_SUCCESS = `${ESC}[38;2;115;218;202m`;   // #73daca
-const BG_MAIN = `${ESC}[48;2;26;27;38m`;         // #1a1b26
-const BG_SURFACE = `${ESC}[48;2;36;40;59m`;      // #24283b
-const BG_OVERLAY = `${ESC}[48;2;65;72;104m`;     // #414868
+const RESET = THEME.reset;
+const BOLD = THEME.bold;
+const DIM = THEME.dim;
+const FG_TEXT = THEME.text.fg;
+const FG_SUBTEXT = THEME.subtext.fg;
+const FG_ACCENT1 = hexToAnsi(THEME.accent1.hex, false);
+const FG_ACCENT2 = hexToAnsi(THEME.accent2.hex, false);
+const FG_ACCENT3 = hexToAnsi(THEME.accent3.hex, false);
+const FG_ACCENT4 = hexToAnsi(THEME.accent4.hex, false);
+const FG_ACCENT5 = hexToAnsi(THEME.accent5.hex, false);
+const FG_WARNING = THEME.warning.fg;
+const FG_ERROR = THEME.error.fg;
+const FG_SUCCESS = THEME.success.fg;
+const BG_MAIN = THEME.bg.bg;
+const BG_SURFACE = THEME.surface.bg;
 const CLEAR = `${ESC}[2J${ESC}[H`;
 const HIDE_CURSOR = `${ESC}[?25l`;
 const SHOW_CURSOR = `${ESC}[?25h`;
