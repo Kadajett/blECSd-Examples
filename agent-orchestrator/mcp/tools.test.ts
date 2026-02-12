@@ -19,6 +19,7 @@ function createBackend(): PaneBackend {
 		sendInput: vi.fn(),
 		sendEnter: vi.fn(),
 		sendPrompt: vi.fn(),
+		updatePaneTask: vi.fn(),
 		captureOutput: vi.fn(() => 'captured output'),
 		listPanes: vi.fn(() => panes),
 		addPane: vi.fn(() => 'w2'),
@@ -42,6 +43,7 @@ describe('mcp/tools', () => {
 		const names = getToolDefinitions().map((t) => t.name);
 		expect(names).toEqual([
 			'send_prompt',
+			'update_agent_task',
 			'read_output',
 			'list_panes',
 			'add_worker',
@@ -64,6 +66,7 @@ describe('mcp/tools', () => {
 		const backend = createBackend();
 		const handlers = createToolHandlers(backend, 'orch');
 		const sendPrompt = handlers.get('send_prompt');
+		const updateAgentTask = handlers.get('update_agent_task');
 		const listPanes = handlers.get('list_panes');
 		const readOutput = handlers.get('read_output');
 		const addWorker = handlers.get('add_worker');
@@ -71,12 +74,20 @@ describe('mcp/tools', () => {
 		const restartWorker = handlers.get('restart_worker');
 		const sendCtrlC = handlers.get('send_ctrl_c');
 		const shutdownAll = handlers.get('shutdown_all');
-		if (!sendPrompt || !listPanes || !readOutput || !addWorker || !removeWorker || !restartWorker || !sendCtrlC || !shutdownAll) {
+		if (!sendPrompt || !updateAgentTask || !listPanes || !readOutput || !addWorker || !removeWorker || !restartWorker || !sendCtrlC || !shutdownAll) {
 			throw new Error('missing handlers');
 		}
 
 		expect(sendPrompt({ pane: 'w1', text: 'hello' })).toEqual({ success: true, pane: 'w1', sent: '5 chars' });
 		expect((backend.sendPrompt as ReturnType<typeof vi.fn>).mock.calls[0]).toEqual(['w1', 'hello']);
+		expect((backend.updatePaneTask as ReturnType<typeof vi.fn>).mock.calls[0]).toEqual(['w1', 'hello']);
+
+		expect(updateAgentTask({ pane: 'w1', task: 'Review PR #42' })).toEqual({
+			success: true,
+			pane: 'w1',
+			task: 'Review PR #42',
+		});
+		expect((backend.updatePaneTask as ReturnType<typeof vi.fn>).mock.calls[1]).toEqual(['w1', 'Review PR #42']);
 
 		expect(readOutput({ pane: 'w1' })).toEqual({ success: true, pane: 'w1', output: 'captured output' });
 		expect(listPanes({})).toMatchObject({ success: true });

@@ -25,6 +25,11 @@ const PaneIdInput = z.object({
 	pane: z.string().min(1, 'Missing pane ID'),
 });
 
+const UpdateTaskInput = z.object({
+	pane: z.string().min(1, 'Missing pane ID'),
+	task: z.string().max(80, 'Task must be 80 characters or fewer').optional().default('Ready'),
+});
+
 const AddWorkerInput = z.object({
 	agent: z.string().default('claude'),
 	workspace: z.string().optional(),
@@ -108,6 +113,18 @@ const PANE_TOOLS: readonly McpToolDef[] = [
 				text: { type: 'string', description: 'The prompt text to send to the worker.' },
 			},
 			required: ['pane', 'text'],
+		},
+	},
+	{
+		name: 'update_agent_task',
+		description: 'Update the current task label shown on an agent pane bottom border tag',
+		inputSchema: {
+			type: 'object',
+			properties: {
+				pane: { type: 'string', description: 'Pane ID.' },
+				task: { type: 'string', description: 'Task label to display in the pane border tag.' },
+			},
+			required: ['pane', 'task'],
 		},
 	},
 	{
@@ -349,8 +366,21 @@ export function createToolHandlers(
 			return v.error;
 		}
 		backend.sendPrompt(v.data.pane, v.data.text);
+		const taskPreview = v.data.text.length > 50 ? `${v.data.text.slice(0, 47)}...` : v.data.text;
+		backend.updatePaneTask(v.data.pane, taskPreview);
 		toast(`#[fg=colour244]Prompt sent to ${v.data.pane}`, 2000);
 		return { success: true, pane: v.data.pane, sent: `${v.data.text.length} chars` };
+	});
+
+	handlers.set('update_agent_task', (params) => {
+		const v = validateInput(UpdateTaskInput, params);
+		if (!v.ok) {
+			toast(`#[fg=red]Error: ${v.error.error}`, 3500);
+			return v.error;
+		}
+		backend.updatePaneTask(v.data.pane, v.data.task);
+		toast(`#[fg=colour244]Task updated for ${v.data.pane}`, 2000);
+		return { success: true, pane: v.data.pane, task: v.data.task };
 	});
 
 	handlers.set('read_output', (params) => {

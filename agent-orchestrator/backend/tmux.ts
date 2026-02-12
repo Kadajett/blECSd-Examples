@@ -39,6 +39,10 @@ export function createTmuxBackend(
 			tmux.sendCommand(session, paneId, text);
 		},
 
+		updatePaneTask(paneId: string, task: string): void {
+			tmux.setPaneUserOption(session, paneId, 'agent_task', task);
+		},
+
 		captureOutput(paneId: string): string {
 			return tmux.capturePane(session, paneId);
 		},

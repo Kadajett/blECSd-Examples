@@ -119,6 +119,10 @@ export function createBlecsdBackend(
 			}
 		},
 
+		updatePaneTask(_paneId: string, _task: string): void {
+			// Task border tags are a tmux-only concern for now.
+		},
+
 		captureOutput(paneId: string): string {
 			const managed = panes.get(paneId);
 			if (!managed) return '';

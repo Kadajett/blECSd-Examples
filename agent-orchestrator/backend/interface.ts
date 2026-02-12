@@ -42,6 +42,9 @@ export interface PaneBackend {
 	 */
 	sendPrompt(paneId: string, text: string): void;
 
+	/** Update the short task label shown for a pane. */
+	updatePaneTask(paneId: string, task: string): void;
+
 	/** Capture the visible text output of a pane. */
 	captureOutput(paneId: string): string;
 

@@ -7,7 +7,14 @@ vi.mock('node:child_process', () => ({
 	execSync: execSyncMock,
 }));
 
-import { displayPopup, displayMessage, displayMenu, type PopupOptions } from './controller.js';
+import {
+	displayPopup,
+	displayMessage,
+	displayMenu,
+	setPaneUserOption,
+	getPaneUserOption,
+	type PopupOptions,
+} from './controller.js';
 
 function lastCommandCall(): string {
 	const calls = execSyncMock.mock.calls as unknown[][];
@@ -97,5 +104,30 @@ describe('tmux/controller popup and menu helpers', () => {
 		expect(cmd).toContain('printf');
 		expect(cmd).toContain('\\"hello');
 		expect(cmd).toContain('\\"world\\"');
+	});
+});
+
+describe('tmux/controller pane user options', () => {
+	beforeEach(() => {
+		execSyncMock.mockReset();
+		execSyncMock.mockReturnValue(Buffer.from(''));
+	});
+
+	it('setPaneUserOption builds correct tmux set-option -p command', () => {
+		setPaneUserOption('sess-1', '0.2', 'agent_task', 'Review issue');
+		const cmd = lastCommandCall();
+		expect(cmd).toContain('tmux -L blecsd set-option -p -t sess-1:0.2 @agent_task "Review issue"');
+	});
+
+	it('setPaneUserOption escapes double quotes in value', () => {
+		setPaneUserOption('sess-1', '0.2', 'agent_task', 'Fix "critical" bug');
+		const cmd = lastCommandCall();
+		expect(cmd).toContain('@agent_task "Fix \\"critical\\" bug"');
+	});
+
+	it('getPaneUserOption builds correct display-message -p command', () => {
+		getPaneUserOption('sess-1', '0.2', 'agent_task');
+		const cmd = lastCommandCall();
+		expect(cmd).toContain('tmux -L blecsd display-message -p -t sess-1:0.2 "#{@agent_task}"');
 	});
 });
