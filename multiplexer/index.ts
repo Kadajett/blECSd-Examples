@@ -29,6 +29,7 @@
 
 import { createWorld, type World } from 'blecsd';
 import { createTerminal, type TerminalWidget } from 'blecsd/widgets';
+import { screen, cursor, mouse, style } from 'blecsd/terminal';
 
 // =============================================================================
 // CONFIGURATION
@@ -36,9 +37,6 @@ import { createTerminal, type TerminalWidget } from 'blecsd/widgets';
 
 const MIN_PANE_WIDTH = 40;
 const MIN_PANE_HEIGHT = 12;
-const BORDER_NORMAL = '\x1b[90m'; // Gray for unfocused
-const BORDER_FOCUSED = '\x1b[1;36m'; // Bright cyan for focused
-const RESET = '\x1b[0m';
 
 // =============================================================================
 // TYPES
@@ -99,8 +97,8 @@ function createPane(
 	};
 
 	// Welcome message
-	terminal.writeln(`\x1b[1;33mPane ${state.panes.length + 1}\x1b[0m`);
-	terminal.writeln('\x1b[90mSpawning shell...\x1b[0m');
+	terminal.writeln(`${style.bold()}${style.fg(3)}Pane ${state.panes.length + 1}${style.reset()}`);
+	terminal.writeln(`${style.dim()}Spawning shell...${style.reset()}`);
 
 	// Spawn shell
 	try {
@@ -109,17 +107,17 @@ function createPane(
 		});
 		terminal.onExit((code) => {
 			terminal.writeln('');
-			terminal.writeln(`\x1b[90mShell exited (${code})\x1b[0m`);
+			terminal.writeln(`${style.dim()}Shell exited (${code})${style.reset()}`);
 			state.needsRender = true;
 		});
 		terminal.spawn(process.env.SHELL || '/bin/bash');
 
 		if (!terminal.isRunning()) {
-			terminal.writeln('\x1b[31mFailed to spawn shell.\x1b[0m');
-			terminal.writeln('\x1b[90mnode-pty may not be installed.\x1b[0m');
+			terminal.writeln(`${style.fg(1)}Failed to spawn shell.${style.reset()}`);
+			terminal.writeln(`${style.dim()}node-pty may not be installed.${style.reset()}`);
 		}
 	} catch (err) {
-		terminal.writeln(`\x1b[31mError: ${String(err)}\x1b[0m`);
+		terminal.writeln(`${style.fg(1)}Error: ${String(err)}${style.reset()}`);
 	}
 
 	return pane;
@@ -268,23 +266,23 @@ function unpackRgba(color: number): { r: number; g: number; b: number; a: number
  */
 function renderPane(pane: Pane, isFocused: boolean): string {
 	let output = '';
-	const borderColor = isFocused ? BORDER_FOCUSED : BORDER_NORMAL;
+	const borderColor = isFocused ? style.bold() + style.fg(6) : style.dim();
 	const dims = pane.terminal.getDimensions();
 	const cells = pane.terminal.getCells();
 
 	// Top border
-	output += `\x1b[${pane.y + 1};${pane.x + 1}H`;
+	output += cursor.move(pane.x + 1, pane.y + 1);
 	output += borderColor;
 	output += '┌';
 	output += '─'.repeat(dims.width);
 	output += '┐';
-	output += RESET;
+	output += style.reset();
 
 	// Content rows
 	if (cells) {
 		for (let row = 0; row < dims.height; row++) {
-			output += `\x1b[${pane.y + row + 2};${pane.x + 1}H`;
-			output += borderColor + '│' + RESET;
+			output += cursor.move(pane.x + 1, pane.y + row + 2);
+			output += borderColor + '│' + style.reset();
 
 			for (let col = 0; col < dims.width; col++) {
 				const idx = row * dims.width + col;
@@ -295,38 +293,39 @@ function renderPane(pane: Pane, isFocused: boolean): string {
 					const bg = unpackRgba(cell.bg);
 					const attrs = cell.attrs;
 
-					const codes: string[] = [];
-					if (attrs & 1) codes.push('1');
-					if (attrs & 2) codes.push('2');
-					if (attrs & 4) codes.push('3');
-					if (attrs & 8) codes.push('4');
-					if (attrs & 16) codes.push('5');
-					if (attrs & 32) codes.push('7');
-					if (attrs & 64) codes.push('8');
-					if (attrs & 128) codes.push('9');
+					// Apply style attributes
+					let cellStyle = '';
+					if (attrs & 1) cellStyle += style.bold();
+					if (attrs & 2) cellStyle += style.dim();
+					if (attrs & 4) cellStyle += style.italic();
+					if (attrs & 8) cellStyle += style.underline();
+					if (attrs & 16) cellStyle += style.blink();
+					if (attrs & 32) cellStyle += style.inverse();
+					if (attrs & 64) cellStyle += style.hidden();
+					if (attrs & 128) cellStyle += style.strikethrough();
 
-					codes.push(`38;2;${fg.r};${fg.g};${fg.b}`);
-					codes.push(`48;2;${bg.r};${bg.g};${bg.b}`);
+					cellStyle += style.fg({ r: fg.r, g: fg.g, b: fg.b });
+					cellStyle += style.bg({ r: bg.r, g: bg.g, b: bg.b });
 
-					output += `\x1b[${codes.join(';')}m`;
+					output += cellStyle;
 					output += cell.char || ' ';
-					output += RESET;
+					output += style.reset();
 				} else {
 					output += ' ';
 				}
 			}
 
-			output += borderColor + '│' + RESET;
+			output += borderColor + '│' + style.reset();
 		}
 	}
 
 	// Bottom border
-	output += `\x1b[${pane.y + dims.height + 2};${pane.x + 1}H`;
+	output += cursor.move(pane.x + 1, pane.y + dims.height + 2);
 	output += borderColor;
 	output += '└';
 	output += '─'.repeat(dims.width);
 	output += '┘';
-	output += RESET;
+	output += style.reset();
 
 	return output;
 }
@@ -335,7 +334,7 @@ function renderPane(pane: Pane, isFocused: boolean): string {
  * Renders the entire multiplexer screen.
  */
 function render(state: MultiplexerState): void {
-	let output = '\x1b[?25l\x1b[H'; // Hide cursor, home
+	let output = cursor.hide() + cursor.home();
 
 	// Render all panes
 	for (let i = 0; i < state.panes.length; i++) {
@@ -347,27 +346,29 @@ function render(state: MultiplexerState): void {
 
 	// Status bar at bottom
 	const statusY = state.screenHeight;
-	output += `\x1b[${statusY};1H`;
-	output += '\x1b[7m'; // Reverse video for status bar
+	output += cursor.move(1, statusY);
+	output += style.inverse();
 
 	const focusedPane = state.panes[state.focusedIndex];
-	const paneInfo = focusedPane?.terminal.isRunning() ? '\x1b[32m●\x1b[0m\x1b[7m Shell' : '\x1b[31m○\x1b[0m\x1b[7m No shell';
+	const runningIndicator = focusedPane?.terminal.isRunning()
+		? `${style.fg(2)}●${style.reset()}${style.inverse()} Shell`
+		: `${style.fg(1)}○${style.reset()}${style.inverse()} No shell`;
 
-	const left = ` Pane ${state.focusedIndex + 1}/${state.panes.length} ${paneInfo} `;
+	const left = ` Pane ${state.focusedIndex + 1}/${state.panes.length} ${runningIndicator} `;
 	const right = ' Tab:Next  Ctrl+N:New  Ctrl+D:Close  Ctrl+Q:Quit ';
 	const padding = state.screenWidth - left.length - right.length + 14; // +14 accounts for ANSI codes
 
 	output += left;
 	output += ' '.repeat(Math.max(0, padding));
 	output += right;
-	output += RESET;
+	output += style.reset();
 
 	// Position cursor in focused pane
 	if (focusedPane) {
-		const cursor = focusedPane.terminal.getCursor();
-		const cursorX = focusedPane.x + cursor.x + 2;
-		const cursorY = focusedPane.y + cursor.y + 2;
-		output += `\x1b[${cursorY};${cursorX}H`;
+		const paneCursor = focusedPane.terminal.getCursor();
+		const cursorX = focusedPane.x + paneCursor.x + 2;
+		const cursorY = focusedPane.y + paneCursor.y + 2;
+		output += cursor.move(cursorX, cursorY);
 	}
 
 	process.stdout.write(output);
@@ -532,11 +533,11 @@ async function main(): Promise<void> {
 	}
 
 	// Terminal setup
-	stdout.write('\x1b[?1049h'); // Alt screen
-	stdout.write('\x1b[2J'); // Clear
-	stdout.write('\x1b[?25l'); // Hide cursor
-	stdout.write('\x1b[?1000h'); // Enable mouse tracking
-	stdout.write('\x1b[?1006h'); // Enable SGR mouse mode
+	stdout.write(screen.alternateOn());
+	stdout.write(screen.clear());
+	stdout.write(cursor.hide());
+	stdout.write(mouse.enableNormal());
+	stdout.write(mouse.enableSGR());
 
 	stdin.setRawMode?.(true);
 	stdin.resume();
@@ -564,11 +565,11 @@ async function main(): Promise<void> {
 				pane.terminal.kill();
 				pane.terminal.destroy();
 			}
-			stdout.write('\x1b[?1000l'); // Disable mouse
-			stdout.write('\x1b[?1006l'); // Disable SGR mouse
-			stdout.write('\x1b[?25h'); // Show cursor
-			stdout.write('\x1b[?1049l'); // Exit alt screen
-			stdout.write('\x1b[0m');
+			stdout.write(mouse.disableNormal());
+			stdout.write(mouse.disableSGR());
+			stdout.write(cursor.show());
+			stdout.write(screen.alternateOff());
+			stdout.write(style.reset());
 			process.exit(0);
 		}
 
@@ -588,11 +589,11 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-	process.stdout.write('\x1b[?1000l');
-	process.stdout.write('\x1b[?1006l');
-	process.stdout.write('\x1b[?25h');
-	process.stdout.write('\x1b[?1049l');
-	process.stdout.write('\x1b[0m');
+	process.stdout.write(mouse.disableNormal());
+	process.stdout.write(mouse.disableSGR());
+	process.stdout.write(cursor.show());
+	process.stdout.write(screen.alternateOff());
+	process.stdout.write(style.reset());
 	console.error('Error:', err);
 	process.exit(1);
 });

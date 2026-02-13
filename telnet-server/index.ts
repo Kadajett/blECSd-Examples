@@ -26,8 +26,17 @@
 import * as net from 'node:net';
 import { PassThrough } from 'node:stream';
 import { createWorld, type World } from 'blecsd';
-import { createProgram, type Program, type ProgramConfig } from 'blecsd/terminal';
-import { createInputHandler, type InputHandler } from 'blecsd/terminal';
+import {
+	createProgram,
+	type Program,
+	type ProgramConfig,
+	createInputHandler,
+	type InputHandler,
+	screen,
+	cursor,
+	style,
+	triggerResize,
+} from 'blecsd/terminal';
 
 // =============================================================================
 // TELNET PROTOCOL CONSTANTS
@@ -286,23 +295,23 @@ function createDemoUI(session: ClientSession, sessions: Map<number, ClientSessio
 	function render(): void {
 		const { width, height } = session;
 
-		// Clear screen
-		program.write('\x1b[2J\x1b[H');
+		// Clear screen and move cursor home
+		program.write(screen.clear() + cursor.home());
 
 		// Draw header
 		const title = ' blECSd Telnet Server Demo ';
 		const headerPad = Math.max(0, Math.floor((width - title.length) / 2));
-		program.write('\x1b[1;44;97m');
+		program.write(style.bold() + style.bg(4) + style.fg(15));
 		program.write(' '.repeat(width));
-		program.write('\x1b[H');
+		program.write(cursor.home());
 		program.write(' '.repeat(headerPad) + title);
-		program.write('\x1b[0m\n\n');
+		program.write(style.reset() + '\n\n');
 
 		// Draw menu
 		for (let i = 0; i < menuItems.length; i++) {
 			const item = menuItems[i] ?? '';
 			if (i === selectedItem) {
-				program.write(`  \x1b[1;46;30m > ${item} \x1b[0m\n`);
+				program.write(`  ${style.bold()}${style.bg(6)}${style.fg(0)} > ${item} ${style.reset()}\n`);
 			} else {
 				program.write(`    ${item}\n`);
 			}
@@ -314,10 +323,10 @@ function createDemoUI(session: ClientSession, sessions: Map<number, ClientSessio
 		drawContent(session, sessions, selectedItem);
 
 		// Draw footer
-		program.write(`\x1b[${height};1H`);
-		program.write('\x1b[7m');
+		program.write(cursor.move(1, height));
+		program.write(style.inverse());
 		program.write(` j/k: Navigate | Enter: Select | q: Quit `.padEnd(width));
-		program.write('\x1b[0m');
+		program.write(style.reset());
 
 		program.flush();
 	}
@@ -327,7 +336,7 @@ function createDemoUI(session: ClientSession, sessions: Map<number, ClientSessio
 		allSessions: Map<number, ClientSession>,
 		selection: number,
 	): void {
-		const divider = '\x1b[90m' + '─'.repeat(sess.width - 4) + '\x1b[0m\n';
+		const divider = style.dim() + '─'.repeat(sess.width - 4) + style.reset() + '\n';
 		program.write(divider);
 
 		switch (selection) {
@@ -372,7 +381,7 @@ function createDemoUI(session: ClientSession, sessions: Map<number, ClientSessio
 		for (const [id, clientSess] of allSessions) {
 			const uptime = Math.floor((Date.now() - clientSess.connectedAt.getTime()) / 1000);
 			const isCurrent = id === session.id;
-			const marker = isCurrent ? '\x1b[32m*\x1b[0m' : ' ';
+			const marker = isCurrent ? `${style.fg(2)}*${style.reset()}` : ' ';
 			program.write(`  ${marker} Client #${id}: ${clientSess.width}x${clientSess.height} (${uptime}s)\n`);
 		}
 	}
@@ -380,11 +389,11 @@ function createDemoUI(session: ClientSession, sessions: Map<number, ClientSessio
 	function drawColorTest(): void {
 		program.write('  Standard Colors:\n  ');
 		for (let i = 0; i < 8; i++) {
-			program.write(`\x1b[48;5;${i}m  \x1b[0m`);
+			program.write(style.bg(i) + '  ' + style.reset());
 		}
 		program.write('\n  ');
 		for (let i = 8; i < 16; i++) {
-			program.write(`\x1b[48;5;${i}m  \x1b[0m`);
+			program.write(style.bg(i) + '  ' + style.reset());
 		}
 
 		program.write('\n\n  256-Color Cube:\n  ');
@@ -392,14 +401,14 @@ function createDemoUI(session: ClientSession, sessions: Map<number, ClientSessio
 			program.write('  ');
 			for (let col = 0; col < 36; col++) {
 				const color = 16 + row * 36 + col;
-				program.write(`\x1b[48;5;${color}m \x1b[0m`);
+				program.write(style.bg(color) + ' ' + style.reset());
 			}
 			program.write('\n');
 		}
 
 		program.write('\n  Grayscale:\n  ');
 		for (let i = 232; i < 256; i++) {
-			program.write(`\x1b[48;5;${i}m \x1b[0m`);
+			program.write(style.bg(i) + ' ' + style.reset());
 		}
 		program.write('\n');
 	}
@@ -525,7 +534,7 @@ const server = net.createServer((socket) => {
 		telnetStream.onResize((cols, rows) => {
 			session.width = cols;
 			session.height = rows;
-			(program as unknown as { emit(event: string, data: unknown): void }).emit('resize', { cols, rows });
+			triggerResize(world, cols, rows);
 		});
 
 		// Initialize program and create UI

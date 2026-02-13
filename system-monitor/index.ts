@@ -20,7 +20,15 @@
  */
 
 import * as os from 'node:os';
-import { createWorld, type World } from 'blecsd';
+import {
+	clearScreen,
+	cursorHome,
+	enterAlternateScreen,
+	hideCursor,
+	leaveAlternateScreen,
+	showCursor,
+	writeRaw,
+} from 'blecsd';
 
 // =============================================================================
 // CONFIGURATION
@@ -93,7 +101,6 @@ interface SystemStats {
 }
 
 interface MonitorState {
-	world: World;
 	stats: SystemStats;
 	previousCpuTimes: CpuTimes[];
 	running: boolean;
@@ -453,7 +460,9 @@ function renderHelpBar(state: MonitorState): string {
  * Renders the entire dashboard.
  */
 function render(state: MonitorState): void {
-	let output = '\x1b[?25l\x1b[H'; // Hide cursor, home
+	hideCursor();
+	cursorHome();
+	let output = '';
 
 	const { screenWidth, screenHeight } = state;
 
@@ -471,7 +480,7 @@ function render(state: MonitorState): void {
 	// Help bar
 	output += renderHelpBar(state);
 
-	process.stdout.write(output);
+	writeRaw(output);
 }
 
 // =============================================================================
@@ -512,7 +521,6 @@ async function main(): Promise<void> {
 
 	// Initialize state
 	const state: MonitorState = {
-		world: createWorld() as World,
 		stats: {
 			cpuUsage: [],
 			cpuHistory: [],
@@ -538,9 +546,9 @@ async function main(): Promise<void> {
 	};
 
 	// Terminal setup
-	stdout.write('\x1b[?1049h'); // Alt screen
-	stdout.write('\x1b[2J'); // Clear
-	stdout.write('\x1b[?25l'); // Hide cursor
+	enterAlternateScreen();
+	clearScreen();
+	hideCursor();
 
 	stdin.setRawMode?.(true);
 	stdin.resume();
@@ -572,9 +580,8 @@ async function main(): Promise<void> {
 	const loop = (): void => {
 		if (!state.running) {
 			clearInterval(pollInterval);
-			stdout.write('\x1b[?25h'); // Show cursor
-			stdout.write('\x1b[?1049l'); // Exit alt screen
-			stdout.write('\x1b[0m');
+			showCursor();
+			leaveAlternateScreen();
 			process.exit(0);
 		}
 
@@ -592,9 +599,8 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-	process.stdout.write('\x1b[?25h');
-	process.stdout.write('\x1b[?1049l');
-	process.stdout.write('\x1b[0m');
+	showCursor();
+	leaveAlternateScreen();
 	console.error('Error:', err);
 	process.exit(1);
 });

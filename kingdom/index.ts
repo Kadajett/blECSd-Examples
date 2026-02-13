@@ -9,6 +9,7 @@
  */
 
 import { createWorld, getPosition } from 'blecsd';
+import { screen, cursor, style } from 'blecsd/terminal';
 import {
   type GameState,
   type IslandSaveState,
@@ -296,8 +297,8 @@ function main(): void {
   const stdout = process.stdout;
 
   // Terminal setup
-  stdout.write('\x1b[?1049h'); // Alt screen
-  stdout.write('\x1b[?25l');   // Hide cursor
+  stdout.write(screen.alternateOn());
+  stdout.write(cursor.hide());
 
   const state = createInitialState();
 
@@ -322,9 +323,9 @@ function main(): void {
   const cleanup = (): void => {
     saveGame(state);
     cleanupInput();
-    stdout.write('\x1b[?25h');   // Show cursor
-    stdout.write('\x1b[?1049l'); // Exit alt screen
-    stdout.write('\x1b[0m');     // Reset attributes
+    stdout.write(cursor.show());
+    stdout.write(screen.alternateOff());
+    stdout.write(style.reset());
   };
 
   process.on('SIGINT', () => { cleanup(); process.exit(0); });
