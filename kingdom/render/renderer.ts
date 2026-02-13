@@ -4,7 +4,7 @@
  * Dirty-rect double-buffered ANSI output.
  */
 
-import { createCellBuffer, getPosition } from 'blecsd';
+import { createCellBuffer, getPosition, writeRaw } from 'blecsd';
 import {
   type GameState,
   type StructureData,
@@ -1568,7 +1568,7 @@ function flushBuffer(buffer: CellBufferDirect, forceFullRedraw: boolean): void {
   const stdout = process.stdout;
 
   if (forceFullRedraw || !prevBuffer || prevBuffer.width !== buffer.width || prevBuffer.height !== buffer.height) {
-    stdout.write(bufferToAnsiFull(buffer));
+    writeRaw(bufferToAnsiFull(buffer));
     prevBuffer = cloneBufferDeep(buffer);
     return;
   }
@@ -1623,7 +1623,7 @@ function flushBuffer(buffer: CellBufferDirect, forceFullRedraw: boolean): void {
   }
 
   if (output) {
-    stdout.write(output);
+    writeRaw(output);
   }
 }
 

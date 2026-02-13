@@ -18,32 +18,39 @@ import {
 	type BoxChars,
 	charsetToBoxChars,
 	BORDER_SINGLE,
+	writeRaw,
+	setOutputStream,
+	enterAlternateScreen,
+	hideCursor,
+	showCursor,
+	leaveAlternateScreen,
 } from 'blecsd';
 
+setOutputStream(process.stdout);
+enterAlternateScreen();
+hideCursor();
 const stdout = process.stdout;
 const height = stdout.rows ?? 24;
 
-stdout.write('\x1b[?1049h\x1b[?25l');
-
 // Draw a box at the given position with label
 function drawBox(x: number, y: number, w: number, h: number, chars: BoxChars, label: string, color: string): void {
-	stdout.write(`\x1b[${y};${x}H${color}${chars.topLeft}${chars.horizontal.repeat(w - 2)}${chars.topRight}\x1b[0m`);
+	writeRaw(`\x1b[${y};${x}H${color}${chars.topLeft}${chars.horizontal.repeat(w - 2)}${chars.topRight}\x1b[0m`);
 	for (let row = 1; row < h - 1; row++) {
-		stdout.write(`\x1b[${y + row};${x}H${color}${chars.vertical}\x1b[0m`);
-		stdout.write(`\x1b[${y + row};${x + w - 1}H${color}${chars.vertical}\x1b[0m`);
+		writeRaw(`\x1b[${y + row};${x}H${color}${chars.vertical}\x1b[0m`);
+		writeRaw(`\x1b[${y + row};${x + w - 1}H${color}${chars.vertical}\x1b[0m`);
 	}
-	stdout.write(`\x1b[${y + h - 1};${x}H${color}${chars.bottomLeft}${chars.horizontal.repeat(w - 2)}${chars.bottomRight}\x1b[0m`);
+	writeRaw(`\x1b[${y + h - 1};${x}H${color}${chars.bottomLeft}${chars.horizontal.repeat(w - 2)}${chars.bottomRight}\x1b[0m`);
 	// Label inside the box
-	stdout.write(`\x1b[${y + 1};${x + 2}H\x1b[1m${label}\x1b[0m`);
+	writeRaw(`\x1b[${y + 1};${x + 2}H\x1b[1m${label}\x1b[0m`);
 	// Show charset characters
 	const info = `TL:${chars.topLeft} TR:${chars.topRight} H:${chars.horizontal} V:${chars.vertical}`;
-	stdout.write(`\x1b[${y + 2};${x + 2}H\x1b[90m${info}\x1b[0m`);
+	writeRaw(`\x1b[${y + 2};${x + 2}H\x1b[90m${info}\x1b[0m`);
 }
 
 function render(): void {
-	stdout.write('\x1b[H\x1b[2J');
-	stdout.write('\x1b[1;3H\x1b[1;36mBox Drawing Charsets\x1b[0m');
-	stdout.write('\x1b[2;3H\x1b[90mAll available border styles in blECSd\x1b[0m');
+	writeRaw('\x1b[H\x1b[2J');
+	writeRaw('\x1b[1;3H\x1b[1;36mBox Drawing Charsets\x1b[0m');
+	writeRaw('\x1b[2;3H\x1b[90mAll available border styles in blECSd\x1b[0m');
 
 	const boxW = 32;
 	const boxH = 5;
@@ -65,11 +72,11 @@ function render(): void {
 
 	// Verify charsetToBoxChars works correctly
 	const converted = charsetToBoxChars(BORDER_SINGLE);
-	stdout.write(`\x1b[${boxH + 17};3H\x1b[90mcharsetToBoxChars(BORDER_SINGLE).topLeft = "${converted.topLeft}"\x1b[0m`);
+	writeRaw(`\x1b[${boxH + 17};3H\x1b[90mcharsetToBoxChars(BORDER_SINGLE).topLeft = "${converted.topLeft}"\x1b[0m`);
 
 	// Controls
 	const row = Math.min(height - 1, 24);
-	stdout.write(`\x1b[${row};1H\x1b[33m[q] Quit\x1b[0m`);
+	writeRaw(`\x1b[${row};1H\x1b[33m[q] Quit\x1b[0m`);
 }
 
 render();
@@ -79,7 +86,8 @@ process.stdin.resume();
 process.stdin.on('data', (data: Buffer) => {
 	const key = data.toString();
 	if (key === 'q' || key === 'Q' || key === '\x03') {
-		stdout.write('\x1b[?25h\x1b[?1049l');
+		showCursor();
+		leaveAlternateScreen();
 		process.exit(0);
 	}
 });

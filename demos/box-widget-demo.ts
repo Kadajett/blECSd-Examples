@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 /** Box Widget Demo - borders, padding, content alignment, focus cycling.
  * Run: npx tsx examples/demos/box-widget-demo.ts | Quit: q or Ctrl+C */
-import { addEntity, createWorld } from 'blecsd';
+import { addEntity, createWorld, writeRaw, setOutputStream, enterAlternateScreen, hideCursor, showCursor, leaveAlternateScreen } from 'blecsd';
 import type { Entity, World } from 'blecsd';
 import { createBox } from 'blecsd/widgets';
 
+setOutputStream(process.stdout);
+enterAlternateScreen();
+hideCursor();
 const stdout = process.stdout;
 const height = stdout.rows ?? 24;
-stdout.write('\x1b[?1049h\x1b[?25l');
 const world = createWorld() as World;
 
 const boxes = [
@@ -41,19 +43,19 @@ let sel = 0, counter = 0;
 const labels = ['Single', 'Double', 'Rounded', 'Bold'];
 
 function render(): void {
-	stdout.write('\x1b[H\x1b[2J');
+	writeRaw('\x1b[H\x1b[2J');
 	for (let i = 0; i < boxes.length; i++) {
 		const box = boxes[i]; if (!box) continue;
 		const col = i % 2 === 0 ? 2 : 35;
 		const row = i < 2 ? 1 : 10;
 		const marker = i === sel ? '\x1b[33m>>>' : '\x1b[90m   ';
-		stdout.write(`\x1b[${row};${col}H${marker} ${labels[i]} Border\x1b[0m`);
+		writeRaw(`\x1b[${row};${col}H${marker} ${labels[i]} Border\x1b[0m`);
 		const lines = box.getContent().split('\n');
-		for (let j = 0; j < lines.length; j++) stdout.write(`\x1b[${row + 1 + j};${col + 4}H\x1b[37m${lines[j]}\x1b[0m`);
+		for (let j = 0; j < lines.length; j++) writeRaw(`\x1b[${row + 1 + j};${col + 4}H\x1b[37m${lines[j]}\x1b[0m`);
 	}
 	const r = Math.min(height - 2, 19);
-	stdout.write(`\x1b[${r};1H\x1b[33m[Tab] Switch box  [Space] Update content  [q] Quit\x1b[0m`);
-	stdout.write(`\x1b[${r + 1};1H\x1b[90mSelected: ${labels[sel]} | Boxes: ${boxes.length}\x1b[0m`);
+	writeRaw(`\x1b[${r};1H\x1b[33m[Tab] Switch box  [Space] Update content  [q] Quit\x1b[0m`);
+	writeRaw(`\x1b[${r + 1};1H\x1b[90mSelected: ${labels[sel]} | Boxes: ${boxes.length}\x1b[0m`);
 }
 
 render();
@@ -61,7 +63,7 @@ process.stdin.setRawMode?.(true);
 process.stdin.resume();
 process.stdin.on('data', (data: Buffer) => {
 	const key = data.toString();
-	if (key === 'q' || key === 'Q' || key === '\x03') { stdout.write('\x1b[?25h\x1b[?1049l'); process.exit(0); }
+	if (key === 'q' || key === 'Q' || key === '\x03') { showCursor(); leaveAlternateScreen(); process.exit(0); }
 	if (key === '\t') sel = (sel + 1) % boxes.length;
 	if (key === ' ') { counter++; boxes[sel]?.setContent(`Updated #${counter}\nBox: ${labels[sel]}\nPress Space again`); }
 	render();

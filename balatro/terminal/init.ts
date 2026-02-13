@@ -7,6 +7,15 @@
  */
 
 import type { WriteStream, ReadStream } from 'node:tty';
+import {
+	writeRaw,
+	enterAlternateScreen,
+	leaveAlternateScreen,
+	hideCursor,
+	showCursor,
+	clearScreen as blecsdClearScreen,
+	cursorHome,
+} from 'blecsd';
 
 // =============================================================================
 // TYPES
@@ -154,23 +163,23 @@ export function initializeTerminal(
 	config: TerminalConfig,
 ): TerminalState {
 	// Enter alternate screen buffer
-	stdout.write('\x1b[?1049h');
+	enterAlternateScreen();
 
 	// Hide cursor
-	stdout.write('\x1b[?25l');
+	hideCursor();
 
 	// Clear screen
-	stdout.write('\x1b[2J');
+	blecsdClearScreen();
 
 	// Move to top-left
-	stdout.write('\x1b[H');
+	cursorHome();
 
 	// Enable mouse tracking (if enabled)
 	if (config.mouseEnabled) {
 		// Enable SGR mouse mode (button events)
-		stdout.write('\x1b[?1000h'); // Mouse button tracking
-		stdout.write('\x1b[?1002h'); // Mouse button motion tracking
-		stdout.write('\x1b[?1006h'); // SGR extended coordinates
+		writeRaw('\x1b[?1000h'); // Mouse button tracking
+		writeRaw('\x1b[?1002h'); // Mouse button motion tracking
+		writeRaw('\x1b[?1006h'); // SGR extended coordinates
 	}
 
 	// Enable raw mode for keyboard
@@ -197,23 +206,23 @@ export function initializeTerminal(
  * @param state - Terminal state
  */
 export function cleanupTerminal(state: TerminalState): void {
-	const { stdout, stdin, config } = state;
+	const { stdin, config } = state;
 
 	// Disable mouse tracking
 	if (config.mouseEnabled) {
-		stdout.write('\x1b[?1006l');
-		stdout.write('\x1b[?1002l');
-		stdout.write('\x1b[?1000l');
+		writeRaw('\x1b[?1006l');
+		writeRaw('\x1b[?1002l');
+		writeRaw('\x1b[?1000l');
 	}
 
 	// Show cursor
-	stdout.write('\x1b[?25h');
+	showCursor();
 
 	// Reset colors/attributes
-	stdout.write('\x1b[0m');
+	writeRaw('\x1b[0m');
 
 	// Exit alternate screen buffer
-	stdout.write('\x1b[?1049l');
+	leaveAlternateScreen();
 
 	// Disable raw mode
 	if (stdin.setRawMode) {
@@ -334,44 +343,40 @@ export function isTTY(stdout: WriteStream): boolean {
 /**
  * Plays a terminal bell sound.
  *
- * @param stdout - Write stream
  * @param enabled - Whether sound is enabled
  */
-export function playBell(stdout: WriteStream, enabled: boolean): void {
+export function playBell(enabled: boolean): void {
 	if (enabled) {
-		stdout.write('\x07');
+		writeRaw('\x07');
 	}
 }
 
 /**
- * Writes directly to the terminal.
+ * Writes directly to the terminal via blECSd output system.
  *
- * @param stdout - Write stream
  * @param content - Content to write
  */
-export function writeToTerminal(stdout: WriteStream, content: string): void {
-	stdout.write(content);
+export function writeToTerminal(content: string): void {
+	writeRaw(content);
 }
 
 /**
  * Moves the cursor to a position.
  *
- * @param stdout - Write stream
  * @param x - X position (0-indexed)
  * @param y - Y position (0-indexed)
  */
-export function moveCursor(stdout: WriteStream, x: number, y: number): void {
+export function moveCursor(x: number, y: number): void {
 	// ANSI uses 1-indexed positions
-	stdout.write(`\x1b[${y + 1};${x + 1}H`);
+	writeRaw(`\x1b[${y + 1};${x + 1}H`);
 }
 
 /**
  * Clears the screen.
- *
- * @param stdout - Write stream
  */
-export function clearScreen(stdout: WriteStream): void {
-	stdout.write('\x1b[2J\x1b[H');
+export function clearScreen(): void {
+	blecsdClearScreen();
+	cursorHome();
 }
 
 // =============================================================================

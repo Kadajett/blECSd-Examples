@@ -813,7 +813,7 @@ async function main(): Promise<void> {
 		if (needsFullRedraw) {
 			// Full redraw for first frame or after resize
 			cursorHome();
-			stdout.write(bufferToAnsiFull(state.buffer));
+			writeRaw(bufferToAnsiFull(state.buffer));
 			state.dirtyCount = state.width * state.height;
 			needsFullRedraw = false;
 		} else {
@@ -821,7 +821,7 @@ async function main(): Promise<void> {
 			const { output, dirtyCount } = bufferToAnsiDirty(state.buffer, state.prevBuffer);
 			state.dirtyCount = dirtyCount;
 			if (output) {
-				stdout.write(output);
+				writeRaw(output);
 			}
 		}
 

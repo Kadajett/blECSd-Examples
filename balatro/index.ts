@@ -1978,7 +1978,7 @@ function createOutputSystem(stdout: WriteStream) {
 			process.exit(0);
 		}
 
-		stdout.write(bufferToAnsi(state.buffer));
+		writeRaw(bufferToAnsi(state.buffer));
 		return state;
 	});
 }

@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 /** Hierarchy Demo - parent-child tree with visibility cascade.
  * Run: npx tsx examples/demos/hierarchy-demo.ts | Quit: q or Ctrl+C */
-import { createWorld, addEntity, appendChild, getChildren, getParent, getDepth, isRoot, setVisible, isVisible, toggle } from 'blecsd';
+import { createWorld, addEntity, appendChild, getChildren, getParent, getDepth, isRoot, setVisible, isVisible, toggle, writeRaw, setOutputStream, enterAlternateScreen, hideCursor, showCursor, leaveAlternateScreen } from 'blecsd';
 import type { Entity, World } from 'blecsd';
 
+setOutputStream(process.stdout);
+enterAlternateScreen();
+hideCursor();
 const stdout = process.stdout;
 const height = stdout.rows ?? 24;
-stdout.write('\x1b[?1049h\x1b[?25l');
 const world = createWorld() as World;
 
 // Build tree: root -> [A, B] | A -> [A1, A2] | B -> [B1]
@@ -30,9 +32,9 @@ function effectiveVis(eid: Entity): boolean {
 }
 
 function render(): void {
-	stdout.write('\x1b[H\x1b[2J');
-	stdout.write('\x1b[1;3H\x1b[1;36mHierarchy Demo\x1b[0m');
-	stdout.write('\x1b[2;3H\x1b[90mParent-child tree with visibility cascade\x1b[0m');
+	writeRaw('\x1b[H\x1b[2J');
+	writeRaw('\x1b[1;3H\x1b[1;36mHierarchy Demo\x1b[0m');
+	writeRaw('\x1b[2;3H\x1b[90mParent-child tree with visibility cascade\x1b[0m');
 	// Tree view
 	const treeLines = [
 		{ depth: 0, name: 'Root', eid: root },
@@ -48,7 +50,7 @@ function render(): void {
 		const marker = i === sel ? '\x1b[33m> ' : '  ';
 		const color = eff ? '37' : '90';
 		const visTag = vis ? (eff ? '\x1b[32m[vis]' : '\x1b[33m[vis*]') : '\x1b[31m[hid]';
-		stdout.write(`\x1b[${4 + i};3H${marker}\x1b[${color}m${indent}${prefix}${t.name}\x1b[0m ${visTag}\x1b[0m`);
+		writeRaw(`\x1b[${4 + i};3H${marker}\x1b[${color}m${indent}${prefix}${t.name}\x1b[0m ${visTag}\x1b[0m`);
 	}
 	// Info panel
 	const n = nodes[sel]!;
@@ -56,10 +58,10 @@ function render(): void {
 	const depth = getDepth(world, n.eid);
 	const parent = getParent(world, n.eid);
 	const pName = parent === 0 ? 'none' : nodes.find((nd) => nd.eid === parent)?.name ?? '?';
-	stdout.write(`\x1b[12;3H\x1b[90mSelected: ${n.name} | Depth: ${depth} | Parent: ${pName}\x1b[0m`);
-	stdout.write(`\x1b[13;3H\x1b[90mChildren: ${children.length} | Root: ${isRoot(world, n.eid)}\x1b[0m`);
-	stdout.write(`\x1b[14;3H\x1b[90m*vis = locally visible but parent hidden\x1b[0m`);
-	stdout.write(`\x1b[${Math.min(height - 1, 17)};1H\x1b[33m[Up/Down] Select  [Space] Toggle visibility  [q] Quit\x1b[0m`);
+	writeRaw(`\x1b[12;3H\x1b[90mSelected: ${n.name} | Depth: ${depth} | Parent: ${pName}\x1b[0m`);
+	writeRaw(`\x1b[13;3H\x1b[90mChildren: ${children.length} | Root: ${isRoot(world, n.eid)}\x1b[0m`);
+	writeRaw(`\x1b[14;3H\x1b[90m*vis = locally visible but parent hidden\x1b[0m`);
+	writeRaw(`\x1b[${Math.min(height - 1, 17)};1H\x1b[33m[Up/Down] Select  [Space] Toggle visibility  [q] Quit\x1b[0m`);
 }
 
 render();
@@ -67,7 +69,7 @@ process.stdin.setRawMode?.(true);
 process.stdin.resume();
 process.stdin.on('data', (data: Buffer) => {
 	const key = data.toString();
-	if (key === 'q' || key === 'Q' || key === '\x03') { stdout.write('\x1b[?25h\x1b[?1049l'); process.exit(0); }
+	if (key === 'q' || key === 'Q' || key === '\x03') { showCursor(); leaveAlternateScreen(); process.exit(0); }
 	if (key === '\x1b[A' || key === 'k') sel = (sel - 1 + nodes.length) % nodes.length;
 	if (key === '\x1b[B' || key === 'j') sel = (sel + 1) % nodes.length;
 	if (key === ' ') toggle(world, nodes[sel]!.eid);

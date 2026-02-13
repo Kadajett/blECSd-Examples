@@ -27,7 +27,7 @@
  * @module examples/multiplexer
  */
 
-import { createWorld, type World } from 'blecsd';
+import { createWorld, setOutputStream, writeRaw, type World } from 'blecsd';
 import { createTerminal, type TerminalWidget } from 'blecsd/widgets';
 import { screen, cursor, mouse, style } from 'blecsd/terminal';
 
@@ -371,7 +371,7 @@ function render(state: MultiplexerState): void {
 		output += cursor.move(cursorX, cursorY);
 	}
 
-	process.stdout.write(output);
+	writeRaw(output);
 }
 
 // =============================================================================
@@ -533,11 +533,12 @@ async function main(): Promise<void> {
 	}
 
 	// Terminal setup
-	stdout.write(screen.alternateOn());
-	stdout.write(screen.clear());
-	stdout.write(cursor.hide());
-	stdout.write(mouse.enableNormal());
-	stdout.write(mouse.enableSGR());
+	setOutputStream(process.stdout);
+	writeRaw(screen.alternateOn());
+	writeRaw(screen.clear());
+	writeRaw(cursor.hide());
+	writeRaw(mouse.enableNormal());
+	writeRaw(mouse.enableSGR());
 
 	stdin.setRawMode?.(true);
 	stdin.resume();
@@ -565,11 +566,11 @@ async function main(): Promise<void> {
 				pane.terminal.kill();
 				pane.terminal.destroy();
 			}
-			stdout.write(mouse.disableNormal());
-			stdout.write(mouse.disableSGR());
-			stdout.write(cursor.show());
-			stdout.write(screen.alternateOff());
-			stdout.write(style.reset());
+			writeRaw(mouse.disableNormal());
+			writeRaw(mouse.disableSGR());
+			writeRaw(cursor.show());
+			writeRaw(screen.alternateOff());
+			writeRaw(style.reset());
 			process.exit(0);
 		}
 
@@ -589,11 +590,11 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-	process.stdout.write(mouse.disableNormal());
-	process.stdout.write(mouse.disableSGR());
-	process.stdout.write(cursor.show());
-	process.stdout.write(screen.alternateOff());
-	process.stdout.write(style.reset());
+	writeRaw(mouse.disableNormal());
+	writeRaw(mouse.disableSGR());
+	writeRaw(cursor.show());
+	writeRaw(screen.alternateOff());
+	writeRaw(style.reset());
 	console.error('Error:', err);
 	process.exit(1);
 });

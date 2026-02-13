@@ -875,7 +875,7 @@ async function main(): Promise<void> {
 			out += '\x1b[?25l'; // Hide cursor when list is focused
 		}
 
-		stdout.write(out);
+		writeRaw(out);
 
 		setTimeout(render, FRAME_TIME);
 	}

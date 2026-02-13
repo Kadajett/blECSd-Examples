@@ -813,7 +813,7 @@ function main(): void {
 		state.animFrame++;
 		updateCamera(state);
 		renderGame(state);
-		stdout.write(bufferToAnsi(state.buffer));
+		writeRaw(bufferToAnsi(state.buffer));
 
 		setTimeout(loop, FRAME_TIME);
 	};

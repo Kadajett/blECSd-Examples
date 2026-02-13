@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 /** Scheduler Demo - phase-ordered system execution.
  * Run: npx tsx examples/demos/scheduler-demo.ts | Quit: q or Ctrl+C */
-import { createWorld, createScheduler, LoopPhase, getDeltaTime } from 'blecsd';
+import { createWorld, createScheduler, LoopPhase, getDeltaTime, writeRaw, setOutputStream, enterAlternateScreen, hideCursor, showCursor, leaveAlternateScreen } from 'blecsd';
 import type { World, System } from 'blecsd';
 
+setOutputStream(process.stdout);
+enterAlternateScreen();
+hideCursor();
 const stdout = process.stdout;
 const height = stdout.rows ?? 24;
-stdout.write('\x1b[?1049h\x1b[?25l');
 const world = createWorld() as World;
 const scheduler = createScheduler();
 
@@ -38,24 +40,24 @@ for (let i = 1; i <= 6; i++) {
 let paused = false, sel = 0;
 
 function render(): void {
-	stdout.write('\x1b[H\x1b[2J');
-	stdout.write('\x1b[1;3H\x1b[1;36mScheduler Demo\x1b[0m');
-	stdout.write(`\x1b[2;3H\x1b[90mFrame: ${frameCount} | Total: ${totalDt.toFixed(2)}s | ${paused ? 'PAUSED' : 'RUNNING'}\x1b[0m`);
+	writeRaw('\x1b[H\x1b[2J');
+	writeRaw('\x1b[1;3H\x1b[1;36mScheduler Demo\x1b[0m');
+	writeRaw(`\x1b[2;3H\x1b[90mFrame: ${frameCount} | Total: ${totalDt.toFixed(2)}s | ${paused ? 'PAUSED' : 'RUNNING'}\x1b[0m`);
 	// Phase pipeline
-	stdout.write('\x1b[4;3H\x1b[90mPhase pipeline (fixed order):\x1b[0m');
-	stdout.write(`\x1b[5;3H\x1b[${phaseColors[0]}m${phaseNames[0]} (protected)\x1b[0m`);
+	writeRaw('\x1b[4;3H\x1b[90mPhase pipeline (fixed order):\x1b[0m');
+	writeRaw(`\x1b[5;3H\x1b[${phaseColors[0]}m${phaseNames[0]} (protected)\x1b[0m`);
 	for (let i = 0; i < systems.length; i++) {
 		const s = systems[i]!;
 		const pi = s.phase;
 		const marker = i === sel ? '\x1b[33m> ' : '  ';
 		const en = enabled[i]! ? `\x1b[${phaseColors[pi]}m` : '\x1b[90m';
 		const tag = enabled[i]! ? '' : ' [OFF]';
-		stdout.write(`\x1b[${6 + i};3H${marker}${en}${s.name}${tag}\x1b[0m`);
+		writeRaw(`\x1b[${6 + i};3H${marker}${en}${s.name}${tag}\x1b[0m`);
 	}
 	// Execution log
-	stdout.write('\x1b[13;3H\x1b[90mExecution log:\x1b[0m');
-	for (let i = 0; i < log.length; i++) stdout.write(`\x1b[${14 + i};5H\x1b[90m${log[i]}\x1b[0m`);
-	stdout.write(`\x1b[${Math.min(height - 1, 28)};1H\x1b[33m[Up/Down] Select  [Space] Toggle  [p] Pause  [s] Step  [q] Quit\x1b[0m`);
+	writeRaw('\x1b[13;3H\x1b[90mExecution log:\x1b[0m');
+	for (let i = 0; i < log.length; i++) writeRaw(`\x1b[${14 + i};5H\x1b[90m${log[i]}\x1b[0m`);
+	writeRaw(`\x1b[${Math.min(height - 1, 28)};1H\x1b[33m[Up/Down] Select  [Space] Toggle  [p] Pause  [s] Step  [q] Quit\x1b[0m`);
 }
 
 function step(): void {
@@ -71,7 +73,7 @@ process.stdin.setRawMode?.(true);
 process.stdin.resume();
 process.stdin.on('data', (data: Buffer) => {
 	const key = data.toString();
-	if (key === 'q' || key === 'Q' || key === '\x03') { clearInterval(timer); stdout.write('\x1b[?25h\x1b[?1049l'); process.exit(0); }
+	if (key === 'q' || key === 'Q' || key === '\x03') { clearInterval(timer); showCursor(); leaveAlternateScreen(); process.exit(0); }
 	if (key === '\x1b[A' || key === 'k') sel = (sel - 1 + systems.length) % systems.length;
 	if (key === '\x1b[B' || key === 'j') sel = (sel + 1) % systems.length;
 	if (key === ' ') {

@@ -20,6 +20,12 @@
 import {
 	createWorld,
 	createCellBuffer,
+	writeRaw,
+	setOutputStream,
+	enterAlternateScreen,
+	hideCursor,
+	showCursor,
+	leaveAlternateScreen,
 } from 'blecsd';
 import type { World } from 'blecsd';
 
@@ -590,8 +596,9 @@ function main(): void {
 	selectContent(state);
 
 	// Terminal setup
-	stdout.write('\x1b[?1049h');
-	stdout.write('\x1b[?25l');
+	setOutputStream(stdout);
+	enterAlternateScreen();
+	hideCursor();
 	stdin.setRawMode?.(true);
 	stdin.resume();
 
@@ -661,9 +668,9 @@ function main(): void {
 	});
 
 	const cleanup = (): void => {
-		stdout.write('\x1b[?25h');
-		stdout.write('\x1b[?1049l');
-		stdout.write('\x1b[0m');
+		showCursor();
+		leaveAlternateScreen();
+		writeRaw('\x1b[0m');
 		process.exit(0);
 	};
 
@@ -676,7 +683,7 @@ function main(): void {
 			return;
 		}
 		renderUI(state);
-		stdout.write(bufferToAnsi(state.buffer));
+		writeRaw(bufferToAnsi(state.buffer));
 		setTimeout(loop, FRAME_TIME);
 	};
 

@@ -8,7 +8,7 @@
  * Controls: Arrow keys to move, Shift+Arrow to sprint, Space to drop coin, Q to quit.
  */
 
-import { createWorld, getPosition } from 'blecsd';
+import { createWorld, getPosition, setOutputStream, writeRaw } from 'blecsd';
 import { screen, cursor, style } from 'blecsd/terminal';
 import {
   type GameState,
@@ -297,8 +297,9 @@ function main(): void {
   const stdout = process.stdout;
 
   // Terminal setup
-  stdout.write(screen.alternateOn());
-  stdout.write(cursor.hide());
+  setOutputStream(process.stdout);
+  writeRaw(screen.alternateOn());
+  writeRaw(cursor.hide());
 
   const state = createInitialState();
 
@@ -323,9 +324,9 @@ function main(): void {
   const cleanup = (): void => {
     saveGame(state);
     cleanupInput();
-    stdout.write(cursor.show());
-    stdout.write(screen.alternateOff());
-    stdout.write(style.reset());
+    writeRaw(cursor.show());
+    writeRaw(screen.alternateOff());
+    writeRaw(style.reset());
   };
 
   process.on('SIGINT', () => { cleanup(); process.exit(0); });
