@@ -39,7 +39,7 @@ function getViewportPosition(index: number): { left: number; top: number } {
 }
 
 // Create ECS world
-const world = createWorld() as World;
+const world = createWorld();
 
 // Create a shared cube mesh
 const cubeId = three.createCubeMesh({ size: 1.5 });
@@ -49,10 +49,12 @@ const viewports: Array<{ vpEntity: Entity; widget: ReturnType<typeof createViewp
 const cubeEntities: Entity[] = [];
 
 for (let i = 0; i < BACKENDS.length; i++) {
-	const backend = BACKENDS[i]!;
+	const backend = BACKENDS[i];
+	if (!backend) continue;
+
 	const pos = getViewportPosition(i);
 
-	const vpEntity = addEntity(world) as Entity;
+	const vpEntity = addEntity(world);
 	const widget = createViewport3D(world, vpEntity, {
 		left: pos.left,
 		top: pos.top,
@@ -92,7 +94,9 @@ process.stdout.write(`\x1B[1;${LEFT_MARGIN}H\x1B[1;36m${title}\x1B[0m`);
 
 // Draw backend labels (static, drawn once)
 for (let i = 0; i < viewports.length; i++) {
-	const vp = viewports[i]!;
+	const vp = viewports[i];
+	if (!vp) continue;
+
 	const pos = getViewportPosition(i);
 	const label = `[${vp.backend}]`;
 	process.stdout.write(`\x1B[${pos.top};${pos.left}H\x1B[1;33m${label}\x1B[0m`);
@@ -111,6 +115,14 @@ function bgColor(rgb: number): string {
 	const g = (rgb >> 8) & 0xff;
 	const b = rgb & 0xff;
 	return `\x1B[48;2;${r};${g};${b}m`;
+}
+
+/** Check if a character is the "empty" character for the given backend. */
+function isBlankChar(char: string, backend: string): boolean {
+	if (backend === 'braille') {
+		return char === '\u2800'; // Braille empty pattern
+	}
+	return char === ' ';
 }
 
 function frame(): void {
@@ -139,29 +151,27 @@ function frame(): void {
 		const output = three.outputStore.get(vpEntity);
 		if (!output) continue;
 
+		// Cell-based backends: braille, halfblock, sextant
 		if (output.encoded.cells) {
-			// Cell-based backends: braille, halfblock, sextant
 			for (const cell of output.encoded.cells) {
 				ansi += `\x1B[${cell.y + 1};${cell.x + 1}H`;
 
-				// Determine if it's a "blank" cell based on backend type
 				const isBlank = isBlankChar(cell.char, backend);
-
-				if (!isBlank) {
-					ansi += fgColor(cell.fg);
-					if (cell.bg > 0) {
-						ansi += bgColor(cell.bg);
-					}
-					ansi += `${cell.char}\x1B[0m`;
-				} else {
+				if (isBlank) {
 					ansi += ' ';
+					continue;
 				}
+
+				ansi += fgColor(cell.fg);
+				if (cell.bg > 0) {
+					ansi += bgColor(cell.bg);
+				}
+				ansi += `${cell.char}\x1B[0m`;
 			}
 		}
 
+		// Escape-based backends: sixel, kitty
 		if (output.encoded.escape) {
-			// Escape-based backends: sixel, kitty
-			// Position cursor at viewport top-left, then write the escape sequence
 			const pos = getViewportPosition(BACKENDS.indexOf(backend as BackendName));
 			ansi += `\x1B[${pos.top + 1};${pos.left}H`;
 			ansi += output.encoded.escape;
@@ -174,20 +184,6 @@ function frame(): void {
 	ansi += `\x1B[${bottomRow};${LEFT_MARGIN}H\x1B[90mFPS: ${fps}  Press Ctrl+C to quit\x1B[0m`;
 
 	process.stdout.write(ansi);
-}
-
-/** Check if a character is the "empty" character for the given backend. */
-function isBlankChar(char: string, backend: string): boolean {
-	switch (backend) {
-		case 'braille':
-			return char === '\u2800'; // Braille empty pattern
-		case 'halfblock':
-			return char === ' ';
-		case 'sextant':
-			return char === ' ';
-		default:
-			return char === ' ';
-	}
 }
 
 // Run frame loop
