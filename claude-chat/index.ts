@@ -26,7 +26,16 @@
  * @module examples/claude-chat
  */
 
-import { createWorld, parseMouseSequence, isMouseBuffer } from 'blecsd';
+import {
+	createWorld,
+	parseMouseSequence,
+	isMouseBuffer,
+	enterAlternateScreen,
+	leaveAlternateScreen,
+	hideCursor,
+	showCursor as showTerminalCursor,
+	writeRaw,
+} from 'blecsd';
 import type { ParsedMouseEvent } from 'blecsd';
 import { createVirtualizedList, handleVirtualizedListKey } from 'blecsd/widgets';
 
@@ -543,9 +552,10 @@ async function main(): Promise<void> {
 	// -------------------------------------------------------------------------
 	// Terminal setup
 	// -------------------------------------------------------------------------
-	stdout.write('\x1b[?1049h'); // Alt screen
-	stdout.write('\x1b[?1003h'); // Enable any-event mouse tracking
-	stdout.write('\x1b[?1006h'); // Enable SGR mouse protocol
+	enterAlternateScreen();
+	hideCursor();
+	writeRaw('\x1b[?1003h'); // Enable any-event mouse tracking
+	writeRaw('\x1b[?1006h'); // Enable SGR mouse protocol
 	stdin.setRawMode?.(true);
 	stdin.resume();
 
@@ -719,7 +729,10 @@ async function main(): Promise<void> {
 
 	function render(): void {
 		if (!running) {
-			stdout.write('\x1b[?1006l\x1b[?1003l\x1b[?25h\x1b[?1049l\x1b[0m');
+			writeRaw('\x1b[?1006l'); // Disable SGR mouse protocol
+			writeRaw('\x1b[?1003l'); // Disable mouse tracking
+			showTerminalCursor();
+			leaveAlternateScreen();
 			process.exit(0);
 		}
 
@@ -859,7 +872,10 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-	process.stdout.write('\x1b[?1006l\x1b[?1003l\x1b[?25h\x1b[?1049l\x1b[0m');
+	writeRaw('\x1b[?1006l'); // Disable SGR mouse protocol
+	writeRaw('\x1b[?1003l'); // Disable mouse tracking
+	showTerminalCursor();
+	leaveAlternateScreen();
 	console.error('Error:', err);
 	process.exit(1);
 });
