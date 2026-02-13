@@ -15,6 +15,7 @@
  * @module agent-orchestrator/mcp/bridge
  */
 
+import { writeRaw } from 'blecsd';
 import * as http from 'node:http';
 import * as readline from 'node:readline';
 
@@ -42,12 +43,12 @@ interface JsonRpcMessage {
 
 function sendResponse(id: number | string, result: unknown): void {
 	const msg = JSON.stringify({ jsonrpc: '2.0', id, result });
-	process.stdout.write(msg + '\n');
+	writeRaw(msg + '\n');
 }
 
 function sendError(id: number | string, code: number, message: string): void {
 	const msg = JSON.stringify({ jsonrpc: '2.0', id, error: { code, message } });
-	process.stdout.write(msg + '\n');
+	writeRaw(msg + '\n');
 }
 
 // =============================================================================

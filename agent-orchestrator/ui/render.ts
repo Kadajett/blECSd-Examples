@@ -4,6 +4,7 @@
  * @module agent-orchestrator/ui/render
  */
 
+import { writeRaw } from 'blecsd';
 import type { AppState, AgentPane, OverlayState, RagDocument, SharedContextEntry } from '../types.js';
 import { renderPaneBorder, type BorderStyle } from './agentPanel.js';
 import { renderStatusBar } from './statusBar.js';
@@ -234,7 +235,7 @@ export function renderFrame(state: AppState): void {
 
 	// End synchronized output and write to stdout
 	output += '\x1b[?2026l';
-	process.stdout.write(output);
+	writeRaw(output);
 }
 
 function renderResizeHandles(state: AppState): string {

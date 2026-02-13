@@ -9,6 +9,13 @@
  * @module render/terminal
  */
 
+import {
+	setOutputStream,
+	enterAlternateScreen,
+	leaveAlternateScreen,
+	hideCursor,
+	showCursor,
+} from 'blecsd';
 import type { KittyRenderer } from './kittyProtocol.js';
 
 // ─── Terminal Detection ──────────────────────────────────────────
@@ -48,8 +55,9 @@ let shuttingDown = false;
  */
 export function setupTerminal(): void {
 	shuttingDown = false;
-	process.stdout.write('\x1b[?1049h'); // alt screen
-	process.stdout.write('\x1b[?25l');   // hide cursor
+	setOutputStream(process.stdout);
+	enterAlternateScreen();
+	hideCursor();
 }
 
 /**
@@ -69,6 +77,6 @@ export function cleanupTerminal(kittyRenderer?: KittyRenderer): void {
 		kittyRenderer.cleanup();
 	}
 
-	process.stdout.write('\x1b[?25h');   // show cursor
-	process.stdout.write('\x1b[?1049l'); // exit alt screen
+	showCursor();
+	leaveAlternateScreen();
 }

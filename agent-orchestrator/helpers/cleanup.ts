@@ -4,6 +4,7 @@
  * @module agent-orchestrator/helpers/cleanup
  */
 
+import { writeRaw, showCursor, leaveAlternateScreen } from 'blecsd';
 import * as tmux from '../tmux/controller.js';
 import { stopMcpServer } from '../mcp/server.js';
 import { log, warn } from '../utils/logger.js';
@@ -56,10 +57,11 @@ export function cleanupBlecsd(
 	}
 
 	// Restore terminal
-	process.stdout.write('\x1b[?1000l'); // Disable button mouse tracking
-	process.stdout.write('\x1b[?1006l'); // Disable SGR mouse encoding
-	process.stdout.write('\x1b[?25h');   // Show cursor
-	process.stdout.write('\x1b[?1049l'); // Exit alt screen
+	// TODO: blECSd missing mouse tracking enable/disable API - using writeRaw
+	writeRaw('\x1b[?1000l'); // Disable button mouse tracking
+	writeRaw('\x1b[?1006l'); // Disable SGR mouse encoding
+	showCursor();
+	leaveAlternateScreen();
 
 	if (process.stdin.isTTY) {
 		process.stdin.setRawMode(false);

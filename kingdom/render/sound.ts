@@ -3,6 +3,11 @@
  * Terminal bell-based audio feedback with multiple patterns.
  */
 
+import { writeRaw, setOutputStream } from 'blecsd';
+
+// Initialize blECSd output stream
+setOutputStream(process.stdout);
+
 let soundEnabled = true;
 
 export function setSoundEnabled(enabled: boolean): void {
@@ -15,7 +20,8 @@ export function isSoundEnabled(): boolean {
 
 function bell(): void {
   if (!soundEnabled) return;
-  process.stdout.write('\x07');
+  // TODO: blECSd missing bell/BEL API - using writeRaw
+  writeRaw('\x07');
 }
 
 /**
