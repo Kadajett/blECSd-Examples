@@ -26,7 +26,15 @@
  * @module examples/terminal
  */
 
-import { createWorld, type World } from 'blecsd';
+import {
+	createWorld,
+	enterAlternateScreen,
+	leaveAlternateScreen,
+	hideCursor,
+	showCursor,
+	clearScreen,
+	writeRaw,
+} from 'blecsd';
 import { createTerminal, handleTerminalKey, type TerminalWidget } from 'blecsd/widgets';
 
 // =============================================================================
@@ -304,7 +312,7 @@ function renderTerminal(terminal: TerminalWidget, screenWidth: number, screenHei
 	}
 	// Cursor stays hidden (we hid it at start of render)
 
-	process.stdout.write(output);
+	writeRaw(output);
 }
 
 /**
@@ -376,7 +384,7 @@ async function main(): Promise<void> {
 	const termHeight = Math.min(24, screenHeight - 6);
 
 	// Create world and terminal
-	const world = createWorld() as World;
+	const world = createWorld();
 	const terminal = createTerminal(world, {
 		width: termWidth,
 		height: termHeight,
@@ -388,9 +396,9 @@ async function main(): Promise<void> {
 	writeDemoContent(terminal);
 
 	// Setup terminal
-	stdout.write('\x1b[?1049h'); // Alt screen
-	stdout.write('\x1b[2J'); // Clear screen once at start
-	stdout.write('\x1b[?25l'); // Hide cursor initially
+	enterAlternateScreen();
+	clearScreen();
+	hideCursor();
 	stdin.setRawMode?.(true);
 	stdin.resume();
 
@@ -447,14 +455,14 @@ async function main(): Promise<void> {
 					terminal.spawn(process.env.SHELL || '/bin/bash');
 					// Check if it actually started
 					if (!terminal.isRunning()) {
-						terminal.writeln('\x1b[1;31mFailed to spawn shell. node-pty may not be installed or built.\x1b[0m');
-						terminal.writeln('\x1b[90mRun: cd examples/terminal && pnpm approve-builds && pnpm install\x1b[0m');
+						terminal.writeln('\x1b[1;31mFailed to spawn shell. node-pty is required for live shell mode.\x1b[0m');
+						terminal.writeln('\x1b[90mInstall with: pnpm add node-pty\x1b[0m');
 					} else {
 						terminal.writeln('\x1b[1;32mShell started! Type commands or "exit" to quit shell.\x1b[0m');
 					}
 				} catch (err) {
 					terminal.writeln('\x1b[1;31mFailed to spawn shell: ' + String(err) + '\x1b[0m');
-					terminal.writeln('\x1b[90mRun: pnpm add node-pty && pnpm approve-builds\x1b[0m');
+					terminal.writeln('\x1b[90mnode-pty is required for live shell mode. Install with: pnpm add node-pty\x1b[0m');
 				}
 				break;
 
@@ -492,9 +500,9 @@ async function main(): Promise<void> {
 		if (!running) {
 			// Cleanup
 			terminal.kill();
-			stdout.write('\x1b[?25h'); // Show cursor
-			stdout.write('\x1b[?1049l'); // Exit alt screen
-			stdout.write('\x1b[0m'); // Reset colors
+			showCursor();
+			leaveAlternateScreen();
+			writeRaw('\x1b[0m');
 			process.exit(0);
 		}
 
@@ -518,9 +526,9 @@ async function main(): Promise<void> {
 
 main().catch((err) => {
 	// Restore terminal state on error
-	process.stdout.write('\x1b[?25h');
-	process.stdout.write('\x1b[?1049l');
-	process.stdout.write('\x1b[0m');
+	showCursor();
+	leaveAlternateScreen();
+	writeRaw('\x1b[0m');
 	console.error('Error:', err);
 	process.exit(1);
 });
