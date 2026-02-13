@@ -71,6 +71,12 @@ import {
 	getVisibleLines,
 	type ScrollbackBuffer,
 	type LineRange,
+	// Terminal control
+	hideCursor,
+	showCursor,
+	enterAlternateScreen,
+	leaveAlternateScreen,
+	writeRaw,
 } from 'blecsd';
 import { getIcon } from './ui/icons';
 import {
@@ -83,7 +89,18 @@ import {
 	DEFAULT_SCROLLBAR,
 } from './ui/scrollView';
 import { createConfig, type FileManagerConfig, formatDate, formatSize, nextSizeFormat, nextSortField, toggleSortDirection, SortField } from './config';
-import { createFileStore, type FileStore } from './data/fileStore';
+import {
+	createFileStore,
+	type FileStoreState,
+	fileStoreCount,
+	fileStoreLoadDirectory,
+	fileStoreGoUp,
+	fileStoreSetFilter,
+	fileStoreResort,
+	fileStoreGetEntryAt,
+	fileStoreGetMatchInfo,
+	fileStoreGetTotalSize,
+} from './data/fileStore';
 import { FileType, getFileCategory } from './data/fileEntry';
 import { getHomePath } from './data/filesystem';
 import { loadPreview, createQuickPreview, EMPTY_PREVIEW, type PreviewContent } from './data/preview';
@@ -152,7 +169,7 @@ interface TabState {
 	id: string;
 	title: string;
 	path: string;
-	fileStore: FileStore;
+	fileStore: FileStoreState;
 	listEid: Entity;
 	selection: Set<number>;
 	preview: PreviewState;
@@ -366,7 +383,7 @@ function getActiveTab(state: AppState): TabState | undefined {
 }
 
 function resetListForTab(world: World, tab: TabState, visibleCount: number): void {
-	const count = tab.fileStore.count;
+	const count = fileStoreCount(tab.fileStore);
 	// Set both itemCount and totalCount so selection functions work correctly
 	listStore.itemCount[tab.listEid] = count;
 	setTotalCount(world, tab.listEid, count);
@@ -414,22 +431,23 @@ async function createTab(
 	listHeight: number,
 ): Promise<TabState> {
 	const fileStore = createFileStore();
-	await fileStore.loadDirectory(path, config);
+	await fileStoreLoadDirectory(fileStore, path, config);
 
 	const listEid = addEntity(world);
+	const count = fileStoreCount(fileStore);
 	attachListBehavior(world, listEid, [], {
 		interactive: true,
 		mouse: true,
 		keys: true,
 		search: false,
 		visibleCount: listHeight,
-		selectedIndex: fileStore.count > 0 ? 0 : -1,
+		selectedIndex: count > 0 ? 0 : -1,
 	});
 
 	// Set both itemCount and totalCount so selection functions work correctly
 	// (we render directly from FileStore, not from ECS items)
-	listStore.itemCount[listEid] = fileStore.count;
-	setTotalCount(world, listEid, fileStore.count);
+	listStore.itemCount[listEid] = count;
+	setTotalCount(world, listEid, count);
 
 	const preview = createPreviewState();
 	buildPreviewScrollback(preview, EMPTY_PREVIEW);
@@ -504,7 +522,7 @@ async function createAppState(initialPath: string, width: number, height: number
 // =============================================================================
 
 function applyFilter(state: AppState, tab: TabState, query: string): void {
-	tab.fileStore.setFilter(query, state.config);
+	fileStoreSetFilter(tab.fileStore, query, state.config);
 	resetListForTab(state.world, tab, state.renderState.listHeight);
 	state.needsRedraw = true;
 	updatePreviewForSelection(state, tab).catch(() => undefined);
@@ -619,7 +637,7 @@ async function handleKeyInput(state: AppState, event: KeyEvent): Promise<void> {
 
 	if (key === '.' || (event.ctrl && key === 'h')) {
 		state.config = { ...state.config, showHidden: !state.config.showHidden };
-		tab.fileStore.resort(state.config);
+		fileStoreResort(tab.fileStore, state.config);
 		resetListForTab(state.world, tab, state.renderState.listHeight);
 		state.needsRedraw = true;
 		return;
@@ -627,7 +645,7 @@ async function handleKeyInput(state: AppState, event: KeyEvent): Promise<void> {
 
 	if (key === 's' && event.shift) {
 		state.config = { ...state.config, sortDirection: toggleSortDirection(state.config.sortDirection) };
-		tab.fileStore.resort(state.config);
+		fileStoreResort(tab.fileStore, state.config);
 		resetListForTab(state.world, tab, state.renderState.listHeight);
 		state.needsRedraw = true;
 		return;
@@ -635,7 +653,7 @@ async function handleKeyInput(state: AppState, event: KeyEvent): Promise<void> {
 
 	if (key === 's') {
 		state.config = { ...state.config, sortField: nextSortField(state.config.sortField) };
-		tab.fileStore.resort(state.config);
+		fileStoreResort(tab.fileStore, state.config);
 		resetListForTab(state.world, tab, state.renderState.listHeight);
 		state.needsRedraw = true;
 		return;
@@ -906,7 +924,7 @@ function toggleSelection(tab: TabState, index: number): void {
 
 async function openSelection(state: AppState, tab: TabState): Promise<void> {
 	const index = getListSelectedIndex(tab.listEid);
-	const entry = tab.fileStore.getEntryAt(index);
+	const entry = fileStoreGetEntryAt(tab.fileStore, index);
 	if (!entry) return;
 
 	if (entry.type === FileType.Directory) {
@@ -919,13 +937,13 @@ async function openSelection(state: AppState, tab: TabState): Promise<void> {
 }
 
 async function goUpDirectory(state: AppState, tab: TabState): Promise<void> {
-	const success = await tab.fileStore.goUp(state.config);
+	const success = await fileStoreGoUp(tab.fileStore, state.config);
 	if (!success) return;
 	await refreshTab(state, tab);
 }
 
 async function changeDirectory(state: AppState, tab: TabState, path: string): Promise<void> {
-	const success = await tab.fileStore.loadDirectory(path, state.config);
+	const success = await fileStoreLoadDirectory(tab.fileStore, path, state.config);
 	if (!success) return;
 	await refreshTab(state, tab);
 }
@@ -995,7 +1013,7 @@ async function updatePreviewForSelection(state: AppState, tab: TabState, force =
 		return;
 	}
 
-	const entry = tab.fileStore.getEntryAt(index);
+	const entry = fileStoreGetEntryAt(tab.fileStore, index);
 	if (!entry) return;
 
 	const quick = createQuickPreview(entry, state.config.sizeFormat);
@@ -1147,7 +1165,7 @@ function renderPathBar(state: AppState, tab: TabState, width: number): void {
 	const focusText = `${focusIcon} ${focusLabel}`;
 
 	// Item count
-	const countText = `${tab.fileStore.count} items`;
+	const countText = `${fileStoreCount(tab.fileStore)} items`;
 
 	const rightText = `${countText} │ ${focusText}`;
 	const maxPathWidth = width - rightText.length - 4;
@@ -1212,7 +1230,7 @@ function renderList(
 		// Calculate data index directly from scroll position, not from ECS items
 		const index = firstVisible + row;
 		const hasItem = index < totalCount;
-		const entry = hasItem ? tab.fileStore.getEntryAt(index) : undefined;
+		const entry = hasItem ? fileStoreGetEntryAt(tab.fileStore, index) : undefined;
 		const isSelected = hasItem && tab.selection.has(index);
 		const isCurrent = hasItem && index === selectedIndex;
 
@@ -1252,7 +1270,7 @@ function renderList(
 
 		// Name with match highlighting
 		const nameFg = isCurrent || isSelected ? fg : (entry.type === FileType.Directory ? COLORS.directoryFg : fg);
-		renderNameWithMatch(buffer, x + 4, y + row, nameText, nameWidth - 1, nameFg, bg, tab.fileStore.getMatchInfo(index)?.indices ?? []);
+		renderNameWithMatch(buffer, x + 4, y + row, nameText, nameWidth - 1, nameFg, bg, fileStoreGetMatchInfo(tab.fileStore, index)?.indices ?? []);
 
 		// Size (right-aligned, dimmer for directories)
 		const sizeFg = entry.type === FileType.Directory ? COLORS.previewMetaFg : fg;
@@ -1452,7 +1470,7 @@ function renderStatusBar(state: AppState, tab: TabState, width: number, y: numbe
 	fillRect(buffer, 0, y, width, 1, ' ', COLORS.statusFg, COLORS.statusBg);
 
 	const selectedIndex = getListSelectedIndex(tab.listEid);
-	const totalSize = formatSize(tab.fileStore.getTotalSize(), state.config.sizeFormat);
+	const totalSize = formatSize(fileStoreGetTotalSize(tab.fileStore), state.config.sizeFormat);
 	const selectedCount = tab.selection.size;
 
 	// Left side: selection info
@@ -1461,7 +1479,7 @@ function renderStatusBar(state: AppState, tab: TabState, width: number, y: numbe
 		leftParts.push(`✓ ${selectedCount} selected`);
 	}
 	if (selectedIndex >= 0) {
-		const entry = tab.fileStore.getEntryAt(selectedIndex);
+		const entry = fileStoreGetEntryAt(tab.fileStore, selectedIndex);
 		if (entry) {
 			const size = entry.type === FileType.Directory ? 'DIR' : formatSize(entry.size, state.config.sizeFormat);
 			leftParts.push(`${entry.name} (${size})`);
@@ -1470,7 +1488,7 @@ function renderStatusBar(state: AppState, tab: TabState, width: number, y: numbe
 	const left = leftParts.length > 0 ? leftParts.join(' │ ') : `Total: ${totalSize}`;
 
 	// Right side: position and filter
-	const position = selectedIndex >= 0 ? `${selectedIndex + 1}/${tab.fileStore.count}` : '─';
+	const position = selectedIndex >= 0 ? `${selectedIndex + 1}/${fileStoreCount(tab.fileStore)}` : '─';
 	const hiddenText = state.config.showHidden ? 'H:on' : 'H:off';
 	const filterText = state.filterQuery ? `🔍"${state.filterQuery}"` : '';
 	const rightParts = [position, hiddenText];
@@ -1563,18 +1581,18 @@ function setupTerminal(): void {
 		process.stdin.setRawMode(true);
 	}
 	process.stdin.resume();
-	process.stdout.write('\x1b[?25l');
-	process.stdout.write('\x1b[?1049h');
-	process.stdout.write('\x1b[?1000h');
-	process.stdout.write('\x1b[?1006h');
+	hideCursor();
+	enterAlternateScreen();
+	writeRaw('\x1b[?1000h');
+	writeRaw('\x1b[?1006h');
 }
 
 function restoreTerminal(): void {
-	process.stdout.write('\x1b[?1006l');
-	process.stdout.write('\x1b[?1000l');
-	process.stdout.write('\x1b[?1049l');
-	process.stdout.write('\x1b[?25h');
-	process.stdout.write('\x1b[0m');
+	writeRaw('\x1b[?1006l');
+	writeRaw('\x1b[?1000l');
+	leaveAlternateScreen();
+	showCursor();
+	writeRaw('\x1b[0m');
 	if (process.stdin.isTTY) {
 		process.stdin.setRawMode(false);
 	}
