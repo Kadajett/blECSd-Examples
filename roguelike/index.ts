@@ -28,6 +28,12 @@ import {
 	ZOrder,
 	setZIndex,
 	getZIndex,
+	enterAlternateScreen,
+	leaveAlternateScreen,
+	hideCursor,
+	showCursor,
+	clearScreen,
+	cursorHome,
 } from 'blecsd';
 import type { World, Entity } from 'blecsd';
 
@@ -752,8 +758,9 @@ function main(): void {
 	};
 
 	// Terminal setup
-	stdout.write('\x1b[?1049h');
-	stdout.write('\x1b[?25l');
+	enterAlternateScreen();
+	hideCursor();
+	clearScreen();
 	stdin.setRawMode?.(true);
 	stdin.resume();
 
@@ -785,9 +792,8 @@ function main(): void {
 
 	// Cleanup
 	const cleanup = (): void => {
-		stdout.write('\x1b[?25h');
-		stdout.write('\x1b[?1049l');
-		stdout.write('\x1b[0m');
+		showCursor();
+		leaveAlternateScreen();
 		process.exit(0);
 	};
 
