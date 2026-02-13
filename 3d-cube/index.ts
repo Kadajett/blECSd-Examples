@@ -20,10 +20,26 @@ import {
 	hideCursor,
 	showCursor,
 	clearScreen,
+	createPackedQueryAdapter,
+	setWorldAdapter,
+	syncWorldAdapter,
 } from 'blecsd';
 
 // Create ECS world
 const world = createWorld() as World;
+
+// Set up packed adapter for 3D performance
+const adapter = createPackedQueryAdapter({
+	queries: [
+		{ name: 'transforms', components: [three.Transform3D] },
+		{ name: 'cameras', components: [three.Camera3D] },
+		{ name: 'viewports', components: [three.Viewport3D] },
+		{ name: 'meshes', components: [three.Mesh] },
+	],
+	initialCapacity: 128,
+	syncMode: 'all',
+});
+setWorldAdapter(world, adapter);
 
 // Terminal dimensions
 const VIEWPORT_WIDTH = 60;
@@ -75,6 +91,9 @@ function frame(): void {
 	three.Transform3D.ry[cubeEid] = (three.Transform3D.ry[cubeEid] as number) + 1.2 * dt;
 	three.Transform3D.rz[cubeEid] = (three.Transform3D.rz[cubeEid] as number) + 0.3 * dt;
 	three.Transform3D.dirty[cubeEid] = 1;
+
+	// Sync packed adapter before running systems
+	syncWorldAdapter(world);
 
 	// Run 3D pipeline
 	three.sceneGraphSystem(world);
