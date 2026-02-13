@@ -9,8 +9,14 @@
  */
 
 import { readFileSync } from 'fs';
-import { addEntity, createWorld } from 'blecsd';
 import {
+	addEntity,
+	addComponent,
+	createWorld,
+	createDefaultPackedQueryAdapter,
+	setWorldAdapter,
+	syncWorldAdapter,
+	Renderable,
 	type Entity,
 	type World,
 	three,
@@ -23,11 +29,16 @@ const objPath = process.argv[2];
 // Create ECS world
 const world = createWorld() as World;
 
+// Set up packed query adapter for performance
+const adapter = createDefaultPackedQueryAdapter();
+setWorldAdapter(world, adapter);
+
 const VIEWPORT_WIDTH = 70;
 const VIEWPORT_HEIGHT = 24;
 
 // Create viewport
 const vpEntity = addEntity(world) as Entity;
+addComponent(world, vpEntity, Renderable);
 const viewport = createViewport3D(world, vpEntity, {
 	left: 2,
 	top: 1,
@@ -80,10 +91,12 @@ function frame(): void {
 	const dt = (now - lastTime) / 1000;
 	lastTime = now;
 
+	// Sync packed adapter
+	syncWorldAdapter(world);
+
 	// Rotate the model
 	rotationY += 0.8 * dt;
-	three.Transform3D.ry[meshEid] = rotationY;
-	three.Transform3D.dirty[meshEid] = 1;
+	three.setRotation(world, meshEid, 0, rotationY, 0);
 
 	// Run 3D pipeline
 	three.sceneGraphSystem(world);
