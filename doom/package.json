@@ -13,7 +13,7 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"blecsd": "file:../../blECSd"
+		"blecsd": "^0.4.0"
 	},
 	"devDependencies": {
 		"@types/node": "^25.2.1",
