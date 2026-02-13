@@ -15,6 +15,11 @@ import {
 	type World,
 	three,
 	createViewport3D,
+	enterAlternateScreen,
+	leaveAlternateScreen,
+	hideCursor,
+	showCursor,
+	clearScreen,
 } from 'blecsd';
 
 // Parse CLI args
@@ -72,8 +77,10 @@ const TARGET_FPS = 30;
 const FRAME_MS = 1000 / TARGET_FPS;
 let rotationY = 0;
 
-// Hide cursor and clear screen
-process.stdout.write('\x1B[?25l\x1B[2J');
+// Setup terminal
+enterAlternateScreen();
+hideCursor();
+clearScreen();
 
 function frame(): void {
 	const now = Date.now();
@@ -126,8 +133,8 @@ const interval = setInterval(frame, FRAME_MS);
 
 function cleanup(): void {
 	clearInterval(interval);
-	process.stdout.write('\x1B[?25h\x1B[0m');
-	process.stdout.write(`\x1B[${VIEWPORT_HEIGHT + 4};1H`);
+	showCursor();
+	leaveAlternateScreen();
 	process.exit(0);
 }
 
