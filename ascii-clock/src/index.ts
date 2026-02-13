@@ -233,7 +233,20 @@ hideCursor();
 clearScreen();
 
 async function main(): Promise<void> {
-	const font = await loadFont(options.skinny ? 'terminus-14-normal' : 'terminus-14-bold');
+	let font: FontDefinition;
+	try {
+		font = await loadFont(options.skinny ? 'terminus-14-normal' : 'terminus-14-bold');
+	} catch (err) {
+		// Fallback to the other font variant if the requested one fails
+		const fallbackFont = options.skinny ? 'terminus-14-bold' : 'terminus-14-normal';
+		try {
+			font = await loadFont(fallbackFont);
+		} catch (fallbackErr) {
+			console.error('Failed to load font:', err);
+			console.error('Fallback font also failed:', fallbackErr);
+			process.exit(1);
+		}
+	}
 	const timeEntity = addEntity(world) as Entity;
 
 	// BigText pre-renders the clock string into bitmap glyphs stored as Content.
@@ -303,7 +316,7 @@ async function main(): Promise<void> {
 		if (content) {
 			const style = getStyle(world, timeWidget.eid);
 			const fg = style?.fg ?? hexToColor(options.fg);
-			const bg = style?.bg ?? 0x000000ff;
+			const bg = style?.bg ?? hexToColor('#000000');
 			const fillChar = options.fillChar;
 			const lines = content.split('\n');
 
@@ -316,7 +329,7 @@ async function main(): Promise<void> {
 
 		if (options.showDate && dateText) {
 			const dateFg = hexToColor(options.dateFg);
-			writeString(buffer, dateLeft, dateTop, dateText, dateFg, 0x000000ff);
+			writeString(buffer, dateLeft, dateTop, dateText, dateFg, hexToColor('#000000'));
 		}
 	};
 
@@ -392,4 +405,7 @@ async function main(): Promise<void> {
 	process.on('SIGTERM', cleanup);
 }
 
-main();
+main().catch((err) => {
+	console.error('Fatal error:', err);
+	process.exit(1);
+});
