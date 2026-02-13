@@ -28,6 +28,7 @@ import {
 	leaveAlternateScreen,
 	showCursor,
 	writeRaw,
+	setOutputStream,
 } from 'blecsd';
 
 // =============================================================================
@@ -546,6 +547,7 @@ async function main(): Promise<void> {
 	};
 
 	// Terminal setup
+	setOutputStream(process.stdout);
 	enterAlternateScreen();
 	clearScreen();
 	hideCursor();

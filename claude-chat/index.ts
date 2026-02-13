@@ -38,6 +38,7 @@ import {
 	hideCursor,
 	showCursor as showTerminalCursor,
 	writeRaw,
+	setOutputStream,
 } from 'blecsd';
 import type { ParsedMouseEvent } from 'blecsd';
 import { createVirtualizedList, handleVirtualizedListKey } from 'blecsd/widgets';
@@ -558,13 +559,13 @@ async function main(): Promise<void> {
 	// -------------------------------------------------------------------------
 	// Terminal setup
 	// -------------------------------------------------------------------------
+	setOutputStream(process.stdout);
 	if (useBuffer) {
 		enterAlternateScreen();
 	}
 	hideCursor();
-	// Use process.stdout.write() directly for mouse tracking to ensure immediate flush
-	process.stdout.write('\x1b[?1003h'); // Enable any-event mouse tracking
-	process.stdout.write('\x1b[?1006h'); // Enable SGR mouse protocol
+	writeRaw('\x1b[?1003h'); // Enable any-event mouse tracking
+	writeRaw('\x1b[?1006h'); // Enable SGR mouse protocol
 	stdin.setRawMode?.(true);
 	stdin.resume();
 
@@ -738,8 +739,8 @@ async function main(): Promise<void> {
 
 	function render(): void {
 		if (!running) {
-			process.stdout.write('\x1b[?1006l'); // Disable SGR mouse protocol
-			process.stdout.write('\x1b[?1003l'); // Disable mouse tracking
+			writeRaw('\x1b[?1006l'); // Disable SGR mouse protocol
+			writeRaw('\x1b[?1003l'); // Disable mouse tracking
 			showTerminalCursor();
 			if (useBuffer) {
 				leaveAlternateScreen();
@@ -883,8 +884,8 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-	process.stdout.write('\x1b[?1006l'); // Disable SGR mouse protocol
-	process.stdout.write('\x1b[?1003l'); // Disable mouse tracking
+	writeRaw('\x1b[?1006l'); // Disable SGR mouse protocol
+	writeRaw('\x1b[?1003l'); // Disable mouse tracking
 	showTerminalCursor();
 	if (process.argv.includes('--buffer')) {
 		leaveAlternateScreen();

@@ -23,6 +23,8 @@ import {
 	createPackedQueryAdapter,
 	setWorldAdapter,
 	syncWorldAdapter,
+	setOutputStream,
+	writeRaw,
 } from 'blecsd';
 
 // Parse CLI args
@@ -94,6 +96,7 @@ const FRAME_MS = 1000 / TARGET_FPS;
 let rotationY = 0;
 
 // Setup terminal
+setOutputStream(process.stdout);
 enterAlternateScreen();
 hideCursor();
 clearScreen();
@@ -145,7 +148,7 @@ function frame(): void {
 	const vertCount = meshData?.vertexCount ?? 0;
 	ansi += `\x1B[${VIEWPORT_HEIGHT + 2};2H\x1B[90mFPS: ${fps}  Vertices: ${vertCount}  Press Ctrl+C to quit\x1B[0m`;
 
-	process.stdout.write(ansi);
+	writeRaw(ansi);
 }
 
 const interval = setInterval(frame, FRAME_MS);

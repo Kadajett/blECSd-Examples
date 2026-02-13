@@ -77,6 +77,7 @@ import {
 	enterAlternateScreen,
 	leaveAlternateScreen,
 	writeRaw,
+	setOutputStream,
 } from 'blecsd';
 import { getIcon } from './ui/icons';
 import {
@@ -1581,6 +1582,7 @@ function setupTerminal(): void {
 		process.stdin.setRawMode(true);
 	}
 	process.stdin.resume();
+	setOutputStream(process.stdout);
 	hideCursor();
 	enterAlternateScreen();
 	writeRaw('\x1b[?1000h');
@@ -1607,7 +1609,7 @@ function startRenderLoop(state: AppState): void {
 
 		if (state.needsRedraw) {
 			renderApp(state);
-			process.stdout.write(bufferToAnsi(state.renderState));
+			writeRaw(bufferToAnsi(state.renderState));
 			state.needsRedraw = false;
 		}
 	}, 50);
@@ -1634,7 +1636,7 @@ async function main(): Promise<void> {
 	setupTerminal();
 
 	renderApp(state);
-	process.stdout.write(bufferToAnsi(state.renderState));
+	writeRaw(bufferToAnsi(state.renderState));
 	state.needsRedraw = false;
 
 	stdin.on('data', (data: Buffer) => {

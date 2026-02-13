@@ -48,6 +48,7 @@ import {
 	clearScreen,
 	cursorHome,
 	writeRaw,
+	setOutputStream,
 } from 'blecsd';
 
 // =============================================================================
@@ -743,6 +744,7 @@ async function main(): Promise<void> {
 	};
 
 	// Setup terminal
+	setOutputStream(process.stdout);
 	enterAlternateScreen();
 	hideCursor();
 	stdin.setRawMode?.(true);

@@ -34,6 +34,7 @@ import {
 	showCursor,
 	clearScreen,
 	cursorHome,
+	setOutputStream,
 } from 'blecsd';
 import type { World, Entity } from 'blecsd';
 
@@ -758,6 +759,7 @@ function main(): void {
 	};
 
 	// Terminal setup
+	setOutputStream(process.stdout);
 	enterAlternateScreen();
 	hideCursor();
 	clearScreen();

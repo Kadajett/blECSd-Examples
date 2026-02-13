@@ -20,6 +20,7 @@ import {
 	showCursor,
 	clearScreen,
 	writeRaw,
+	setOutputStream,
 } from 'blecsd';
 
 // Backend names and their display labels
@@ -89,20 +90,21 @@ const TARGET_FPS = 30;
 const FRAME_MS = 1000 / TARGET_FPS;
 
 // Setup terminal
+setOutputStream(process.stdout);
 enterAlternateScreen();
 hideCursor();
 clearScreen();
 
 // Draw title
 const title = ' 3D Backend Comparison - blECSd ';
-process.stdout.write(`\x1B[1;${LEFT_MARGIN}H\x1B[1;36m${title}\x1B[0m`);
+writeRaw(`\x1B[1;${LEFT_MARGIN}H\x1B[1;36m${title}\x1B[0m`);
 
 // Draw backend labels (static, drawn once)
 for (let i = 0; i < viewports.length; i++) {
 	const vp = viewports[i]!;
 	const pos = getViewportPosition(i);
 	const label = `[${vp.backend}]`;
-	process.stdout.write(`\x1B[${pos.top};${pos.left}H\x1B[1;33m${label}\x1B[0m`);
+	writeRaw(`\x1B[${pos.top};${pos.left}H\x1B[1;33m${label}\x1B[0m`);
 }
 
 // Format a 24-bit RGB color as ANSI foreground escape
@@ -180,7 +182,7 @@ function frame(): void {
 	const bottomRow = TOP_MARGIN + 2 * (VP_HEIGHT + V_GAP + 1) + 1;
 	ansi += `\x1B[${bottomRow};${LEFT_MARGIN}H\x1B[90mFPS: ${fps}  Press Ctrl+C to quit\x1B[0m`;
 
-	process.stdout.write(ansi);
+	writeRaw(ansi);
 }
 
 /** Check if a character is the "empty" character for the given backend. */

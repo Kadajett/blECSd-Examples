@@ -23,6 +23,8 @@ import {
 	createPackedQueryAdapter,
 	setWorldAdapter,
 	syncWorldAdapter,
+	setOutputStream,
+	writeRaw,
 } from 'blecsd';
 
 // Create ECS world
@@ -76,6 +78,7 @@ const TARGET_FPS = 30;
 const FRAME_MS = 1000 / TARGET_FPS;
 
 // Setup terminal
+setOutputStream(process.stdout);
 enterAlternateScreen();
 hideCursor();
 clearScreen();
@@ -131,7 +134,7 @@ function frame(): void {
 	const fps = dt > 0 ? Math.round(1 / dt) : 0;
 	ansi += `\x1B[${VIEWPORT_HEIGHT + 2};2H\x1B[90mFPS: ${fps}  Press Ctrl+C to quit\x1B[0m`;
 
-	process.stdout.write(ansi);
+	writeRaw(ansi);
 }
 
 // Run frame loop

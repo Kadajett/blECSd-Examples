@@ -34,6 +34,7 @@ import {
 	showCursor,
 	clearScreen,
 	writeRaw,
+	setOutputStream,
 } from 'blecsd';
 import { createTerminal, handleTerminalKey, type TerminalWidget } from 'blecsd/widgets';
 
@@ -396,6 +397,7 @@ async function main(): Promise<void> {
 	writeDemoContent(terminal);
 
 	// Setup terminal
+	setOutputStream(process.stdout);
 	enterAlternateScreen();
 	clearScreen();
 	hideCursor();

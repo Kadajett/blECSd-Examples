@@ -22,6 +22,10 @@ import {
 	createCellBuffer,
 	renderText,
 	createWorld,
+	setOutputStream,
+	leaveAlternateScreen,
+	showCursor,
+	writeRaw,
 } from 'blecsd';
 import type { WriteStream, ReadStream } from 'node:tty';
 import { resolve } from 'node:path';
@@ -2132,9 +2136,10 @@ main().catch((err) => {
 	if (termState) {
 		cleanupTerminal(termState);
 	} else {
-		process.stdout.write('\x1b[?1049l');
-		process.stdout.write('\x1b[?25h');
-		process.stdout.write('\x1b[0m');
+		setOutputStream(process.stdout);
+		leaveAlternateScreen();
+		showCursor();
+		writeRaw('\x1b[0m');
 	}
 	console.error('Error:', err);
 	process.exit(1);

@@ -28,10 +28,12 @@
  * @module file-manager
  */
 
-import { leaveAlternateScreen, showCursor, writeRaw } from 'blecsd';
+import { leaveAlternateScreen, showCursor, writeRaw, setOutputStream } from 'blecsd';
 import { runTabbedApp } from './tabbedApp';
 
 async function main(): Promise<void> {
+	// Ensure output stream is set for error cleanup path
+	setOutputStream(process.stdout);
 	try {
 		await runTabbedApp();
 	} catch (error) {

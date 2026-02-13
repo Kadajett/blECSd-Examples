@@ -49,6 +49,7 @@ import {
 	showCursor,
 	clearScreen,
 	writeRaw,
+	setOutputStream,
 } from 'blecsd';
 import type { World } from 'blecsd';
 
@@ -347,6 +348,7 @@ function createAppState(): AppState {
 // =============================================================================
 
 function enterAltScreen(): void {
+	setOutputStream(process.stdout);
 	enterAlternateScreen();
 	hideCursor();
 	writeRaw('\x1b[?1003h'); // Enable any-event mouse tracking
@@ -359,7 +361,7 @@ function exitAltScreen(): void {
 	writeRaw('\x1b[?1003l'); // Disable mouse tracking
 	showCursor();
 	leaveAlternateScreen();
-	process.stdout.write(RESET);
+	writeRaw(RESET);
 }
 
 // =============================================================================
@@ -752,7 +754,7 @@ function render(state: AppState): void {
 		out += '\x1b[?25l'; // Ensure cursor hidden
 	}
 
-	process.stdout.write(out);
+	writeRaw(out);
 	state.needsRender = false;
 }
 
