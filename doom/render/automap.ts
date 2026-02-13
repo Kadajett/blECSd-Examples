@@ -8,7 +8,6 @@
  * @module render/automap
  */
 
-import { three } from 'blecsd';
 import { FRACBITS } from '../math/fixed.js';
 import type { PlayerState } from '../game/player.js';
 import type { RenderState } from './defs.js';
@@ -81,9 +80,16 @@ function drawLine(
 	const sy = cy0 < cy1 ? 1 : -1;
 	let err = dx - dy;
 
+	const buf = rs.fb.colorBuffer;
+	const w = rs.screenWidth;
+
 	for (;;) {
-		if (cx0 >= 0 && cx0 < rs.screenWidth && cy0 >= clipTop && cy0 < clipBottom) {
-			three.setPixelUnsafe(rs.fb, cx0, cy0, r, g, b, 255);
+		if (cx0 >= 0 && cx0 < w && cy0 >= clipTop && cy0 < clipBottom) {
+			const offset = (cy0 * w + cx0) << 2;
+			buf[offset] = r;
+			buf[offset + 1] = g;
+			buf[offset + 2] = b;
+			buf[offset + 3] = 255;
 		}
 
 		if (cx0 === cx1 && cy0 === cy1) break;
@@ -112,12 +118,6 @@ function drawLine(
  * @param player - Player state for centering and arrow direction
  * @param hudState - HUD state containing automap zoom level
  * @param map - Map data with linedefs and vertices
- *
- * @example
- * ```typescript
- * import { drawAutomap } from './automap.js';
- * drawAutomap(renderState, player, hudState, map);
- * ```
  */
 export function drawAutomap(
 	rs: RenderState,
@@ -130,21 +130,45 @@ export function drawAutomap(
 	const centerX = rs.screenWidth / 2;
 	const centerY = AUTOMAP_TOP + viewportHeight / 2;
 
+	const buf = rs.fb.colorBuffer;
+	const w = rs.screenWidth;
+
 	// Draw dark background overlay
 	for (let y = AUTOMAP_TOP; y < viewportBottom; y++) {
-		for (let x = 0; x < rs.screenWidth; x++) {
-			three.setPixelUnsafe(rs.fb, x, y, BG_R, BG_G, BG_B, 255);
+		let off = (y * w) << 2;
+		for (let x = 0; x < w; x++) {
+			buf[off] = BG_R;
+			buf[off + 1] = BG_G;
+			buf[off + 2] = BG_B;
+			buf[off + 3] = 255;
+			off += 4;
 		}
 	}
 
 	// Draw border
-	for (let x = 0; x < rs.screenWidth; x++) {
-		three.setPixelUnsafe(rs.fb, x, AUTOMAP_TOP, BORDER_R, BORDER_G, BORDER_B, 255);
-		three.setPixelUnsafe(rs.fb, x, viewportBottom - 1, BORDER_R, BORDER_G, BORDER_B, 255);
+	for (let x = 0; x < w; x++) {
+		const topOff = (AUTOMAP_TOP * w + x) << 2;
+		buf[topOff] = BORDER_R;
+		buf[topOff + 1] = BORDER_G;
+		buf[topOff + 2] = BORDER_B;
+		buf[topOff + 3] = 255;
+		const botOff = ((viewportBottom - 1) * w + x) << 2;
+		buf[botOff] = BORDER_R;
+		buf[botOff + 1] = BORDER_G;
+		buf[botOff + 2] = BORDER_B;
+		buf[botOff + 3] = 255;
 	}
 	for (let y = AUTOMAP_TOP; y < viewportBottom; y++) {
-		three.setPixelUnsafe(rs.fb, 0, y, BORDER_R, BORDER_G, BORDER_B, 255);
-		three.setPixelUnsafe(rs.fb, rs.screenWidth - 1, y, BORDER_R, BORDER_G, BORDER_B, 255);
+		const leftOff = (y * w) << 2;
+		buf[leftOff] = BORDER_R;
+		buf[leftOff + 1] = BORDER_G;
+		buf[leftOff + 2] = BORDER_B;
+		buf[leftOff + 3] = 255;
+		const rightOff = (y * w + w - 1) << 2;
+		buf[rightOff] = BORDER_R;
+		buf[rightOff + 1] = BORDER_G;
+		buf[rightOff + 2] = BORDER_B;
+		buf[rightOff + 3] = 255;
 	}
 
 	// Player position in map units (convert from fixed-point)

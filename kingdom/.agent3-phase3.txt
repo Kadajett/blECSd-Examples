@@ -1,0 +1,18 @@
+Phase 3: Combat depth and difficulty scaling. Read all current files in structures/, entities/greed.ts, systems/combat.ts, systems/spawn.ts, systems/construction.ts first.
+
+Tasks:
+1. Improve wave composition in systems/spawn.ts: Night 1-3: only basic greed. Night 4-5: introduce masked (30% chance). Night 6+: introduce floaters (15%). Night 8+: crown stealers (5%). Blood moons double all percentages for special types. Add a wave preview - before night, show "Wave X approaching" message with count.
+
+2. Add breeder greed behavior in entities/greed.ts: Breeders are slow but spawn 2 mini-greeds when they take damage. Mini-greeds have 1hp and basic speed. Breeders appear starting night 7. Add greed retreat - greeds carrying 3+ stolen coins should try to flee back to their portal.
+
+3. Improve structures/wall.ts: Add tower upgrade path. After iron wall, spending 15 coins creates a tower (StructureType.Tower). Towers give archers +5 range and allow 2 archers to station there. Export createTower, getTowerAt. Add StructureType.Tower to types.ts if needed.
+
+4. Improve structures/farm.ts: Farms should have a visual growth cycle. Newly built farms produce nothing for 10 seconds (growing). Windmill farms attract more farmers. Add a max of 3 farms per side.
+
+5. Add catapult/ballista in a new file structures/siege.ts: Late-game structure (island 3+). Costs 12 coins. Does 3 damage to all greeds in a 3-tile radius. Fires every 5 seconds during night. Auto-targets the largest group of greeds. Export createBallista, updateBallista.
+
+6. Improve systems/combat.ts: Add friendly fire prevention (arrows shouldn't hit friendly units). Add armor penetration - masked greeds take 50% less damage from basic arrows, but full damage from tower archers. Add combo system - 3 arrows hitting the same greed within 1 second does bonus damage.
+
+7. Add difficulty progression: Each island increases portal count by 1, greed base hp by 0.5, and wave size multiplier by 0.5. Island 5 is the final island. When all portals on island 5 are destroyed, set GamePhase.Victory.
+
+Write all changes now. Make sure everything typechecks.

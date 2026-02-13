@@ -8,7 +8,6 @@
  * @module render/hud
  */
 
-import { three } from 'blecsd';
 import { FRACBITS } from '../math/fixed.js';
 import type { PlayerState } from '../game/player.js';
 import type { InputState } from '../game/input.js';
@@ -156,6 +155,8 @@ function drawDigit(
 ): void {
 	const pattern = DIGIT_PATTERNS[digit];
 	if (!pattern) return;
+	const buf = rs.fb.colorBuffer;
+	const w = rs.screenWidth;
 
 	for (let row = 0; row < DIGIT_HEIGHT; row++) {
 		const line = pattern[row];
@@ -164,8 +165,12 @@ function drawDigit(
 			if (line[col] === '#') {
 				const px = x + col;
 				const py = y + row;
-				if (px >= 0 && px < rs.screenWidth && py >= 0 && py < rs.screenHeight) {
-					three.setPixelUnsafe(rs.fb, px, py, r, g, b, 255);
+				if (px >= 0 && px < w && py >= 0 && py < rs.screenHeight) {
+					const offset = (py * w + px) << 2;
+					buf[offset] = r;
+					buf[offset + 1] = g;
+					buf[offset + 2] = b;
+					buf[offset + 3] = 255;
 				}
 			}
 		}
@@ -186,6 +191,8 @@ function drawChar(
 ): void {
 	const pattern = CHAR_PATTERNS[ch];
 	if (!pattern) return;
+	const buf = rs.fb.colorBuffer;
+	const w = rs.screenWidth;
 
 	for (let row = 0; row < DIGIT_HEIGHT; row++) {
 		const line = pattern[row];
@@ -194,8 +201,12 @@ function drawChar(
 			if (line[col] === '#') {
 				const px = x + col;
 				const py = y + row;
-				if (px >= 0 && px < rs.screenWidth && py >= 0 && py < rs.screenHeight) {
-					three.setPixelUnsafe(rs.fb, px, py, r, g, b, 255);
+				if (px >= 0 && px < w && py >= 0 && py < rs.screenHeight) {
+					const offset = (py * w + px) << 2;
+					buf[offset] = r;
+					buf[offset + 1] = g;
+					buf[offset + 2] = b;
+					buf[offset + 3] = 255;
 				}
 			}
 		}
@@ -278,15 +289,29 @@ export function drawHud(
 	}
 
 	// Draw status bar background
+	const buf = rs.fb.colorBuffer;
+	const w = rs.screenWidth;
 	for (let y = barTop; y < rs.screenHeight; y++) {
-		for (let x = 0; x < rs.screenWidth; x++) {
-			three.setPixelUnsafe(rs.fb, x, y, BAR_R, BAR_G, BAR_B, 255);
+		let off = (y * w) << 2;
+		for (let x = 0; x < w; x++) {
+			buf[off] = BAR_R;
+			buf[off + 1] = BAR_G;
+			buf[off + 2] = BAR_B;
+			buf[off + 3] = 255;
+			off += 4;
 		}
 	}
 
 	// Draw top border line
-	for (let x = 0; x < rs.screenWidth; x++) {
-		three.setPixelUnsafe(rs.fb, x, barTop, BORDER_R, BORDER_G, BORDER_B, 255);
+	{
+		let off = (barTop * w) << 2;
+		for (let x = 0; x < w; x++) {
+			buf[off] = BORDER_R;
+			buf[off + 1] = BORDER_G;
+			buf[off + 2] = BORDER_B;
+			buf[off + 3] = 255;
+			off += 4;
+		}
 	}
 
 	// Layout positions (vertically centered within status bar)
@@ -333,36 +358,31 @@ function drawKeySlot(
 	g: number,
 	b: number,
 ): void {
+	const buf = rs.fb.colorBuffer;
+	const w = rs.screenWidth;
+
+	const setPixel = (px: number, py: number, cr: number, cg: number, cb: number) => {
+		if (px >= 0 && px < w && py >= 0 && py < rs.screenHeight) {
+			const off = (py * w + px) << 2;
+			buf[off] = cr;
+			buf[off + 1] = cg;
+			buf[off + 2] = cb;
+			buf[off + 3] = 255;
+		}
+	};
+
 	// Draw outline
 	for (let i = 0; i < size; i++) {
-		// Top and bottom edges
-		if (x + i >= 0 && x + i < rs.screenWidth) {
-			if (y >= 0 && y < rs.screenHeight) {
-				three.setPixelUnsafe(rs.fb, x + i, y, r, g, b, 255);
-			}
-			if (y + size - 1 >= 0 && y + size - 1 < rs.screenHeight) {
-				three.setPixelUnsafe(rs.fb, x + i, y + size - 1, r, g, b, 255);
-			}
-		}
-		// Left and right edges
-		if (y + i >= 0 && y + i < rs.screenHeight) {
-			if (x >= 0 && x < rs.screenWidth) {
-				three.setPixelUnsafe(rs.fb, x, y + i, r, g, b, 255);
-			}
-			if (x + size - 1 >= 0 && x + size - 1 < rs.screenWidth) {
-				three.setPixelUnsafe(rs.fb, x + size - 1, y + i, r, g, b, 255);
-			}
-		}
+		setPixel(x + i, y, r, g, b);
+		setPixel(x + i, y + size - 1, r, g, b);
+		setPixel(x, y + i, r, g, b);
+		setPixel(x + size - 1, y + i, r, g, b);
 	}
 
 	// Fill interior with empty color
 	for (let iy = 1; iy < size - 1; iy++) {
 		for (let ix = 1; ix < size - 1; ix++) {
-			const px = x + ix;
-			const py = y + iy;
-			if (px >= 0 && px < rs.screenWidth && py >= 0 && py < rs.screenHeight) {
-				three.setPixelUnsafe(rs.fb, px, py, KEY_EMPTY_R, KEY_EMPTY_G, KEY_EMPTY_B, 255);
-			}
+			setPixel(x + ix, y + iy, KEY_EMPTY_R, KEY_EMPTY_G, KEY_EMPTY_B);
 		}
 	}
 }

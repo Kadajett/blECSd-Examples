@@ -8,7 +8,7 @@
  * @module demos/table
  */
 import { createWorld, addEntity } from 'blecsd';
-import { attachTableBehavior, setHeaders, appendRow, getData, getDataRows, renderTableLines, getColumns, removeRow, setTableDisplay } from 'blecsd/components';
+import { attachTableBehavior, setHeaders, appendRow, getDataRows, renderTableLines, removeRow, setTableDisplay } from 'blecsd/components';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, formatHelpBar, formatTitle, isQuitKey, getTerminalSize, moveTo, parseArrowKey } from './demo-utils';
 
 const world = createWorld();

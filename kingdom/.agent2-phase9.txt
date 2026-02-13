@@ -1,0 +1,127 @@
+Phase 9: Crusher greed type, proper unit behavior polish, heir system, co-op prep.
+
+Read KINGDOM_TODO.md, types.ts, knight.ts, archer.ts, builder.ts, farmer.ts, ai.ts, economy.ts, mount.ts first.
+
+You own: monarch.ts, villager.ts, builder.ts, archer.ts, farmer.ts, knight.ts, animals.ts, mount.ts, economy.ts, ai.ts
+
+TASK 1: HEIR SUCCESSION IN monarch.ts
+When the crown is permanently lost (game over):
+- Instead of immediate game over, implement heir system:
+  - If this is first crown loss: "A new heir approaches..."
+  - New monarch spawns at dock on the SAME island
+  - Heir starts with: 8 coins, no mount (walks)
+  - Previous kingdom state is preserved but decayed:
+    - Apply 100 days of decay to ALL unlocked islands
+    - Banker coins preserved (inheritance)
+    - Gems preserved
+    - Unlocks (mounts, hermits, statues) preserved
+    - But all subjects lose their tools (revert to vagrants)
+  - Track totalHeirs: number in GameState
+  - Max heirs: unlimited (but each succession causes more decay)
+- Export: triggerHeirSuccession(state), spawnHeir(state)
+
+TASK 2: PROPER ARCHER DISTRIBUTION IN archer.ts
+- When new archer is recruited, assign to side with fewer archers
+  - Count archers on left (x < CAMP_CENTER_X) vs right
+  - New archer walks to side with fewer
+- Tower priority: fill tower slots before ground positions
+  - Check all towers for empty slots
+  - Assign nearest available archer to tower
+- Night repositioning:
+  - Unassigned archers walk to outermost wall on their side
+  - Space evenly along wall (not all stacked at same position)
+  - If wall has tower: prioritize tower slots
+- Export: getArcherDistribution(state): { left: number, right: number }
+
+TASK 3: PROPER BUILDER PRIORITIES IN builder.ts
+Full builder task priority list (descending):
+1. Repair town center (if damaged)
+2. Repair damaged walls (lowest HP first)
+3. Build queued structures (walls, towers)
+4. Upgrade town center (if coin dropped at center)
+5. Upgrade towers (if coin dropped at tower)
+6. Upgrade farms (if coin dropped at farm)
+7. Restore boat hull pieces (if boat restoration active)
+8. Operate catapult (if loaded and enemies in range)
+9. Push bomb (if bomb active, needs 3 builders + knight escort)
+10. Cut trees (expand territory)
+11. Idle: walk to nearest outer wall and wait
+
+- Max 2 builders per construction task (prevent overcrowding)
+- Builders work day and night (no self-preservation)
+- Builder pathfinding: straight line walk to task position
+- Export: getBuilderPriority(taskType): number, findBestBuilderTask(state, builderX): Task
+
+TASK 4: IMPROVED KNIGHT AI IN knight.ts
+- Defensive mode (night, no assault active):
+  - Knights position at outermost walls
+  - Shield wall formation: knight faces outward, blocks damage for archers behind
+  - Shield absorbs hits: 3 HP shield, regenerates 1 HP per day at dawn
+  - Knight + 4 archers form "company" - move together
+- Offensive mode (portal assault dispatched):
+  - Knight leads company toward target portal
+  - Knight charges ahead, archers provide covering fire
+  - Knight deals melee damage to portal
+  - On retreat: knight falls back behind archers, archers cover retreat
+- Crown defense mode (crown dropped):
+  - All knights rush to crown position regardless of current task
+  - Form defensive circle around crown
+  - Attack any greed within 5 tiles of crown
+- Export: getKnightMode(state, knightId): 'defensive' | 'offensive' | 'crownDefense'
+
+TASK 5: VAGRANT CAMP IMPROVEMENTS IN villager.ts
+- Vagrant camps at fixed forest positions (3-5 per island)
+- Each camp holds 2-3 vagrants
+- Vagrant spawning: 1 new vagrant per camp every 2 minutes
+  - Max vagrants per camp: 3
+  - Total max vagrants on island: 15
+- Vagrants freeze and crouch when greed approaches:
+  - If greed within 10 tiles: vagrant crouches (stops moving)
+  - Cannot be recruited while crouching
+  - After greed passes: resume wandering after 3 seconds
+- Vagrant wandering: random walk within 10 tiles of camp
+- When recruited: vagrant walks to nearest tool stand
+- Export: getVagrantCamps(state), updateVagrantSpawning(state, dt)
+
+TASK 6: TOOL THEFT MECHANIC IN economy.ts
+When a greedling kills a unit:
+- Unit drops their tool (bow/hammer/scythe/pike/shield/sword)
+- Greedling picks up the tool and carries it toward portal
+- If greedling reaches portal with tool: tool destroyed permanently
+- If greedling killed while carrying tool: tool drops to ground
+  - Dropped tool stays for 60 seconds
+  - Any vagrant can pick up a dropped tool to become that unit type
+  - After 60 seconds: tool despawns
+- Track droppedTools: { x, toolType, timer }[]
+- Tool types map to unit roles: bow->archer, hammer->builder, etc.
+- Export: dropTool(x, toolType), pickUpTool(state, vagrantId, toolIndex)
+
+TASK 7: MOUNT FEAR MECHANIC IN mount.ts
+- When monarch on mount is near a breeder (within 8 tiles):
+  - Mount panics: 2 seconds of uncontrolled movement
+  - Mount moves away from breeder at 2x speed
+  - Monarch cannot control direction during panic
+  - After panic: 3 second cooldown before normal control resumes
+- Bear mount is immune to fear (too brave)
+- Warhorse has reduced fear (1 second instead of 2)
+- Griffin can fly over breeder (no fear trigger)
+- Add mountPanicTimer: number to mount state
+- Export: triggerMountPanic(state, breederX), isMountPanicking(state)
+
+TASK 8: FINAL AI INTEGRATION IN ai.ts
+Wire up ALL systems:
+- Heir succession check (on crown loss)
+- Archer distribution balancing
+- Builder priority system
+- Knight mode switching (defensive/offensive/crown defense)
+- Vagrant camp spawning
+- Tool theft tracking
+- Mount fear triggers
+- All blessing effects from statues
+- Weather effects on unit behavior (rain: slightly slower movement)
+- Seasonal checks for all unit types
+- Update all entity modules in correct order:
+  1. monarch, 2. mount, 3. dog, 4. archers, 5. builders, 6. farmers,
+  7. knights/squires, 8. pikemen, 9. hermits, 10. vagrants, 11. animals
+
+Make sure everything typechecks when done.

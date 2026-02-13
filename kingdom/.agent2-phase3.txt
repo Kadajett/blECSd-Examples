@@ -1,0 +1,18 @@
+Phase 3: Gameplay depth and balance. Read all current files in entities/, game/, systems/ first.
+
+Tasks:
+1. Add animal spawning for hunting in a new file entities/animals.ts: Spawn rabbits and deer in forest areas. Rabbits move fast, give 1 coin. Deer move slow, give 3 coins. Animals flee from nearby entities. Archers auto-target animals during day (before greed). Animals respawn over time. Export spawnAnimal, updateAnimals.
+
+2. Balance economy in game/economy.ts: Early game should be tight. Day 1-2: only hunting income. Day 3+: first farm available. Wall costs should escalate. Add inflation tracking - each wall built on the same side costs +1 more. Make shrine costs scale with uses.
+
+3. Improve entities/archer.ts: Add archer levels. After 5 kills, archer gets +1 range. After 10 kills, archer gets faster reload (0.8x cooldown). Track kills on UnitData or locally. Archers should prioritize CrownStealers over other greed.
+
+4. Improve villager wandering in entities/villager.ts: Vagrants should cluster near the campfire. New vagrants arrive from forest edges every 45 seconds (max 8 at a time). They walk slowly toward camp. If a vagrant reaches the camp and no tool stands are available, they sit idle.
+
+5. Improve entities/farmer.ts: Farmers working irrigated/windmill farms should produce more. Farmers at risk (greed nearby) should flee even during day. Add farm destruction - if greed reaches a farm, they destroy it.
+
+6. Update systems/ai.ts: Integrate animal system updates. Add knight squad behavior - knights rally nearby archers. When a portal is vulnerable (no greed guarding it), knights should prioritize attacking it. Add a "panic" state - if walls on one side are all destroyed, all units on that side flee to the other side.
+
+7. Wire animals into the game: Update index.ts to call updateAnimals if it's not already imported. Or export from ai.ts.
+
+Write all changes now. Make sure everything typechecks.

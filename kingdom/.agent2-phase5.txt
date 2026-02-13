@@ -1,0 +1,82 @@
+Phase 5: Fix entity movement, animal spawning, unit caps, and builder logic.
+
+Read monarch.ts, builder.ts, archer.ts, farmer.ts, animals.ts, villager.ts, knight.ts, ai.ts, economy.ts, movement.ts (just to understand) first.
+
+The game has CRITICAL bugs:
+
+BUG 1: DOUBLE MOVEMENT - Every entity moves TWICE per frame.
+Entity updates (updateMonarch, updateBuilder, updateArcher, etc.) all call setPosition directly.
+Then updateMovement in movement.ts ALSO applies velocity to position for all entities.
+Result: everything moves 2x intended speed.
+
+FIX: Remove ALL direct setPosition calls from entity update functions. ONLY use setVelocity.
+Let movement.ts handle all position updates. Specifically:
+
+- monarch.ts: Remove lines 56-57 (const newX = clamp(...); setPosition(...)). Keep setVelocity at line 53.
+  Also handle speed boost: if state.speedBoostTimer > 0, multiply the speed by 1.5 in getMountSpeed or updateMonarch.
+
+- builder.ts: In updateBuilderDay (line 108-109), updateBuilderDusk (line 133-134), updateBuilderNight (line 156-157, 237-238),
+  tryPanicBuild (line 237-238): Remove setPosition calls. Keep setVelocity calls.
+
+- archer.ts: In updateArcherDay (lines 131-132, 136-137), updateArcherDusk (line 162-163),
+  updateArcherNight (line 181-182): Remove setPosition calls. Keep setVelocity calls.
+
+- farmer.ts: In updateFarmerDay (lines 106-107), updateFarmerFlee (lines 130-131),
+  updateFarmerRetreat (lines 156-157): Remove setPosition calls. Keep setVelocity calls.
+
+- villager.ts: In updateVagrant (lines 222-224): Remove setPosition call. Keep setVelocity.
+
+- knight.ts: In updateKnightDay (lines 102-103), updateKnightDusk (lines 129-130),
+  updateKnightNight (lines 147-148): Remove setPosition calls. Keep setVelocity calls.
+
+BUG 2: ANIMALS SPAWN ONLY AT MAP EDGES
+animals.ts has FOREST_LEFT_MIN=10, FOREST_LEFT_MAX=60, FOREST_RIGHT_MIN=1140, FOREST_RIGHT_MAX=1190.
+With the 1200-wide map, there are forests at MANY locations. Animals should spawn in ALL forests.
+
+FIX in animals.ts:
+- Import getBiome, Biome from '../world/terrain'
+- Replace the two hardcoded forest zones with a dynamic list based on biome
+- Define FOREST_ZONES as ranges where getBiome returns DenseForest:
+  [10-60, 180-260, 520-570, 830-940, 1140-1190]
+- spawnRandomAnimal should pick a random forest zone, then random x within it
+- updateAnimalMovement: instead of checking FOREST_LEFT/RIGHT, check if animal is in ANY forest zone via getBiome
+- Increase MAX_ANIMALS from 6 to 12 (more zones = more animals)
+- Reduce RESPAWN_INTERVAL from 20 to 12 seconds
+
+BUG 3: UNIT CAPS WAY TOO LOW
+economy.ts has MAX_ARCHERS=3, MAX_BUILDERS=3, MAX_FARMERS=2, MAX_KNIGHTS=2.
+For 5 settlements and 5 portals across 1200 tiles, this is absurdly low.
+
+FIX in economy.ts:
+- MAX_ARCHERS = 10
+- MAX_BUILDERS = 8
+- MAX_FARMERS = 6
+- MAX_KNIGHTS = 4
+
+BUG 4: BUILDER ENTITY CONFLICTS WITH CONSTRUCTION SYSTEM
+builder.ts manages building by modifying HP directly. construction.ts also manages building via buildProgress.
+Both run every frame on the same builders.
+
+FIX: Simplify builder.ts to only handle MOVEMENT and STATE TRANSITIONS. Remove all direct HP modification from builder.ts.
+The construction system (Agent 3's domain) will handle the actual building logic.
+
+In builder.ts:
+- updateBuilderDay: Find build target (keep findBuildTarget). If close enough (dist < 1.0), set aiState = Working
+  and setVelocity to 0. Do NOT modify target.hp. The construction system will handle HP changes.
+  If not close, set MovingTo and velocity toward target.
+- updateBuilderNight: tryPanicBuild should only place blueprints and move builder, not do HP modification.
+  Remove the rate/hp modification in the rush-build section (lines 224-228). Just set Working state.
+- Remove all `target.hp = Math.min(target.hp + rate * dt, target.maxHp)` lines from builder.ts.
+- Keep the getBuildRate export (construction.ts might need it).
+
+BUG 5: ARCHERS DON'T ACTUALLY KILL GREED (OPTIMISTIC TRACKING)
+archer.ts line 225: `recordKill(unit.eid); // Optimistic kill tracking for greed`
+The archer records a kill when it fires, not when the arrow hits. Arrows are projectiles processed by combat.ts.
+The optimistic kill tracking inflates the archer's kill count.
+
+FIX: Remove line 225 (recordKill in updateArcherNight). Kill tracking for greed should only happen in combat.ts
+when a greed actually dies. Export recordKill from archer.ts and have combat.ts call it when a greed dies from
+an arrow hit (you'd need to track which archer fired the arrow, which is complex - for now just remove the
+optimistic call and leave the kill tracking for animal hunting only, which IS instant).
+
+Write all changes. Make sure everything typechecks.

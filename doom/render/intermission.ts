@@ -7,7 +7,7 @@
  * @module render/intermission
  */
 
-import { three } from 'blecsd';
+import { type three } from 'blecsd';
 import type { TransitionState } from '../game/levelTransition.js';
 import { PAR_TIMES, formatTime } from '../game/levelTransition.js';
 import type { Palette } from '../wad/types.js';
@@ -31,60 +31,78 @@ export function drawIntermission(
 	palette: Palette,
 	ts: TransitionState,
 ): void {
-	// Dark background
-	three.clearFramebuffer(fb, { r: 0, g: 0, b: 0, a: 255 });
+	// Dark background - clear entire framebuffer to black
+	const buf = fb.colorBuffer;
+	const totalPixels = SCREEN_WIDTH * SCREEN_HEIGHT;
+	for (let i = 0; i < totalPixels; i++) {
+		const off = i << 2;
+		buf[off] = 0;
+		buf[off + 1] = 0;
+		buf[off + 2] = 0;
+		buf[off + 3] = 255;
+	}
 
 	const cx = Math.floor(SCREEN_WIDTH / 2);
 
 	// Title: "FINISHED"
-	drawText(fb, cx - 28, 16, 'FINISHED', 200, 200, 200);
+	drawText(buf, cx - 28, 16, 'FINISHED', 200, 200, 200);
 
 	// Map name
 	const mapLabel = ts.currentMap;
-	drawText(fb, cx - (mapLabel.length * 4) / 2, 30, mapLabel, 255, 200, 50);
+	drawText(buf, cx - (mapLabel.length * 4) / 2, 30, mapLabel, 255, 200, 50);
 
 	// Divider line
+	let divOff = (44 * SCREEN_WIDTH + 40) << 2;
 	for (let x = 40; x < SCREEN_WIDTH - 40; x++) {
-		three.setPixelUnsafe(fb, x, 44, 80, 80, 80, 255);
+		buf[divOff] = 80;
+		buf[divOff + 1] = 80;
+		buf[divOff + 2] = 80;
+		buf[divOff + 3] = 255;
+		divOff += 4;
 	}
 
 	// Kill percentage
 	const killPctStr = `${ts.displayKillPct}`;
-	drawText(fb, 60, 56, 'KILLS', 200, 200, 200);
-	drawRightAlignedText(fb, 240, 56, `${killPctStr}%`, 255, 255, 100);
+	drawText(buf, 60, 56, 'KILLS', 200, 200, 200);
+	drawRightAlignedText(buf, 240, 56, `${killPctStr}%`, 255, 255, 100);
 
 	// Time
 	const timeStr = formatTime(ts.displayTime);
-	drawText(fb, 60, 74, 'TIME', 200, 200, 200);
-	drawRightAlignedText(fb, 240, 74, timeStr, 255, 255, 100);
+	drawText(buf, 60, 74, 'TIME', 200, 200, 200);
+	drawRightAlignedText(buf, 240, 74, timeStr, 255, 255, 100);
 
 	// Par time
 	const parTime = PAR_TIMES[ts.currentMap];
 	if (parTime !== undefined) {
 		const parStr = formatTime(parTime);
-		drawText(fb, 60, 92, 'PAR', 200, 200, 200);
-		drawRightAlignedText(fb, 240, 92, parStr, 255, 255, 100);
+		drawText(buf, 60, 92, 'PAR', 200, 200, 200);
+		drawRightAlignedText(buf, 240, 92, parStr, 255, 255, 100);
 	}
 
 	// Divider line
+	divOff = (110 * SCREEN_WIDTH + 40) << 2;
 	for (let x = 40; x < SCREEN_WIDTH - 40; x++) {
-		three.setPixelUnsafe(fb, x, 110, 80, 80, 80, 255);
+		buf[divOff] = 80;
+		buf[divOff + 1] = 80;
+		buf[divOff + 2] = 80;
+		buf[divOff + 3] = 255;
+		divOff += 4;
 	}
 
 	// Next map
 	if (ts.nextMap) {
-		drawText(fb, 60, 122, 'ENTERING', 200, 200, 200);
+		drawText(buf, 60, 122, 'ENTERING', 200, 200, 200);
 		const nextLabel = ts.nextMap;
-		drawText(fb, cx - (nextLabel.length * 4) / 2, 136, nextLabel, 255, 200, 50);
+		drawText(buf, cx - (nextLabel.length * 4) / 2, 136, nextLabel, 255, 200, 50);
 	} else {
-		drawText(fb, cx - 40, 122, 'EPISODE COMPLETE', 255, 100, 100);
+		drawText(buf, cx - 40, 122, 'EPISODE COMPLETE', 255, 100, 100);
 	}
 
 	// Prompt
 	if (ts.countsFinished) {
 		// Blink the prompt
 		if ((ts.intermissionTics >> 4) & 1) {
-			drawText(fb, cx - 48, 170, 'PRESS SPACE TO CONTINUE', 160, 160, 160);
+			drawText(buf, cx - 48, 170, 'PRESS SPACE TO CONTINUE', 160, 160, 160);
 		}
 	}
 }
@@ -95,7 +113,7 @@ export function drawIntermission(
  * Draw text using a 3x5 bitmap font (4px per character with gap).
  */
 function drawText(
-	fb: ReturnType<typeof three.createPixelFramebuffer>,
+	buf: Uint8ClampedArray,
 	x: number,
 	y: number,
 	text: string,
@@ -117,7 +135,11 @@ function drawText(
 				const px = cx + col;
 				const py = y + row;
 				if (px >= 0 && px < SCREEN_WIDTH && py >= 0 && py < SCREEN_HEIGHT) {
-					three.setPixelUnsafe(fb, px, py, r, g, b, 255);
+					const offset = (py * SCREEN_WIDTH + px) << 2;
+					buf[offset] = r;
+					buf[offset + 1] = g;
+					buf[offset + 2] = b;
+					buf[offset + 3] = 255;
 				}
 			}
 		}
@@ -128,7 +150,7 @@ function drawText(
  * Draw text right-aligned to the given X position.
  */
 function drawRightAlignedText(
-	fb: ReturnType<typeof three.createPixelFramebuffer>,
+	buf: Uint8ClampedArray,
 	rightX: number,
 	y: number,
 	text: string,
@@ -137,7 +159,7 @@ function drawRightAlignedText(
 	b: number,
 ): void {
 	const textWidth = text.length * 4;
-	drawText(fb, rightX - textWidth, y, text, r, g, b);
+	drawText(buf, rightX - textWidth, y, text, r, g, b);
 }
 
 /** Minimal 3x5 font for intermission text. */

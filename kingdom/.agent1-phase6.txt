@@ -1,0 +1,78 @@
+Phase 6: Title screen, seasonal visuals, blood moon visuals, town center rendering.
+
+Read KINGDOM_TODO.md, .research-agent1-rendering.md, renderer.ts, hud.ts, index.ts, types.ts first.
+
+You own: renderer.ts, hud.ts, index.ts, types.ts, effects.ts, sound.ts, world/terrain.ts, world/map.ts, world/camera.ts
+
+TASK 1: ADD SEASON ENUM AND STATE TO types.ts
+- Add Season enum: Spring = 0, Summer = 1, Autumn = 2, Winter = 3
+- Add to GameState: season: Season, seasonDay: number (0-15, days within current season)
+- Seasons cycle every 16 days. Full cycle = 64 days.
+- Season is derived from global dayCount: season = Math.floor((dayCount % 64) / 16)
+- seasonDay = dayCount % 16
+
+TASK 2: ADD TOWN CENTER TIER TO types.ts
+- Add TownCenterTier enum: Ruins=0, Campfire=1, Camp=2, Village=3, TownHall=4, StoneFort=5, Castle=6, IronKeep=7
+- Add to GameState: townCenterTier: TownCenterTier (starts at Campfire=1)
+- Add TOWN_CENTER_COSTS: [0, 1, 4, 8, 12, 15, 18, 20] (coins per tier upgrade)
+- Add TOWN_CENTER_NAMES: ['Ruins', 'Campfire', 'Camp', 'Village', 'Town Hall', 'Stone Fort', 'Castle', 'Iron Keep']
+
+TASK 3: SEASONAL SKY COLORS IN renderer.ts
+Currently the sky uses fixed colors. Make them season-dependent:
+- Spring: Dawn=0x446688ff, Day=0x5599ccff, Dusk=0x884466ff, Night=0x112233ff
+- Summer: Dawn=0x558899ff, Day=0x66aaddff, Dusk=0x995544ff, Night=0x0a1a2aff (brighter days, warmer dusk)
+- Autumn: Dawn=0x665544ff, Day=0x889988ff, Dusk=0x774433ff, Night=0x111122ff (muted, amber tones)
+- Winter: Dawn=0x889999ff, Day=0x99aabbff, Dusk=0x667788ff, Night=0x0a0a1aff (cold, pale blue)
+
+Create a getSkyColor(phase: TimeOfDay, season: Season) function.
+
+For terrain colors:
+- Spring/Summer: green grass (current)
+- Autumn: yellowed grass (0xbb9944ff fg), red-tinted forest (0xcc5533ff)
+- Winter: white/gray grass (0xccccddff), snow on ground (0xddddffff bg for grass tiles)
+
+TASK 4: BLOOD MOON VISUALS IN renderer.ts
+When state.isBloodMoon is true (add to GameState if not there):
+- Sky: override all phases with deep red tints (0x331111ff bg, 0x882222ff for stars area)
+- Moon/stars: render a large red moon character at top of screen
+- Ground: subtle red-orange ambient glow on terrain
+- HUD: show "BLOOD MOON" warning text in bright red, pulsing
+
+TASK 5: TOWN CENTER RENDERING IN renderer.ts
+Render the town center at CAMP_CENTER_X based on townCenterTier:
+- Ruins (0): '.' dim gray
+- Campfire (1): '*' flickering orange/red (already exists, keep it)
+- Camp (2): Two chars wide: '#*' (tent + fire)
+- Village (3): Three chars: '|#|' wood structure
+- Town Hall (4): Four chars: '|##|' with stone color
+- Stone Fort (5): Five chars: '[###]' stone gray
+- Castle (6): Six chars: '|[###]|' with banner char on top
+- Iron Keep (7): Seven chars: '{[###]}' iron-colored
+Use distinct fg colors per tier. Show upgrade cost in HUD when monarch is nearby.
+
+TASK 6: UPDATE HUD FOR SEASON AND TOWN CENTER
+In hud.ts:
+- Show current season name and day-within-season: "Spring D3" or "Winter D12"
+- Show town center tier name when monarch is near center (within 10 tiles)
+- Show upgrade cost: "Upgrade to [NextTier]: [Cost] coins" prompt
+- Show gem count if gems are added to GameState (placeholder for now: state.gems ?? 0)
+
+TASK 7: TITLE SCREEN IN index.ts
+Before the game loop starts, show a title screen:
+- "KINGDOM" in large ASCII art (use simple block letters)
+- "A Terminal Strategy Game"
+- "[N] New Game  [C] Continue  [Q] Quit"
+- If save exists, show "Continue" option
+- Render to the cell buffer, wait for keypress
+- On 'n': start new game. On 'c': load save. On 'q': exit.
+
+TASK 8: GAME OVER AND VICTORY SCREENS
+- GameOver screen: "YOUR CROWN HAS BEEN LOST" centered, red text, "Press R to restart"
+- Victory screen: "THE KINGDOM IS SECURED" centered, gold text, show stats (days survived, greed defeated, islands cleared)
+
+TASK 9: UPDATE index.ts GAME LOOP FOR SEASONS
+- After updateDayNight, compute season from dayCount: state.season = Math.floor((state.dayCount % 64) / 16)
+- state.seasonDay = state.dayCount % 16
+- Pass season info to renderer
+
+Make sure everything typechecks when done.

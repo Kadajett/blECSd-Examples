@@ -133,7 +133,15 @@ export function updatePlayer(
 	input: InputState,
 	map: MapData,
 ): void {
-	// Rotation
+	// Mouse look: convert pixel delta to BAM angle change
+	if (input.mouseDeltaX !== 0) {
+		// Sensitivity: each pixel of mouse movement = this many BAM units
+		const MOUSE_SENSITIVITY = 0x400000; // ~1.4 degrees per pixel
+		const bamDelta = input.mouseDeltaX * MOUSE_SENSITIVITY;
+		player.angle = ((player.angle - bamDelta) >>> 0);
+	}
+
+	// Keyboard rotation
 	if (input.keys.has('left') || input.keys.has('a')) {
 		player.angle = ((player.angle + player.turnSpeed) >>> 0);
 	}

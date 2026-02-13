@@ -17,6 +17,7 @@ import type { MapData } from '../wad/types.js';
 import type { PlayerState } from './player.js';
 import { createPlayer } from './player.js';
 import { createWeaponState, type WeaponState } from './weapons.js';
+import { applyDamage as applyPaletteDamage, type PaletteState } from '../render/paletteEffects.js';
 
 // ─── Game Phase ─────────────────────────────────────────────────
 
@@ -91,11 +92,13 @@ export function createGameState(lives?: number): GameState {
  * @param gs - Mutable game state
  * @param player - Mutable player state
  * @param damage - Raw damage amount before armor
+ * @param paletteState - Optional palette state for damage tint effect
  */
 export function damagePlayer(
 	gs: GameState,
 	player: PlayerState,
 	damage: number,
+	paletteState?: PaletteState,
 ): void {
 	if (gs.phase !== GamePhase.PLAYING) return;
 	if (damage <= 0) return;
@@ -112,6 +115,11 @@ export function damagePlayer(
 
 	const actualDamage = damage - saved;
 	player.health -= actualDamage;
+
+	// Trigger palette damage tint
+	if (paletteState) {
+		applyPaletteDamage(paletteState, actualDamage);
+	}
 
 	if (player.health <= 0) {
 		player.health = 0;

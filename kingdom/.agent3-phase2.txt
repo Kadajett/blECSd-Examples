@@ -1,0 +1,18 @@
+Phase 2: Improve combat, structures, and spawning. The game runs but needs better gameplay mechanics. Read the current files first (all files in structures/, entities/greed.ts, systems/combat.ts, systems/construction.ts, systems/spawn.ts).
+
+Tasks:
+1. Fix systems/spawn.ts: Currently spawns all greeds instantly. Instead, spawn them over the night with delays. Track a spawnQueue per portal: calculate total wave size at night start, then pop one greed every 2 seconds. Add variety - 70% basic, 20% masked, 10% special (based on island).
+
+2. Improve entities/greed.ts updateGreed: Greeds should group up and attack the nearest wall together. When a wall is destroyed, they should pause briefly (0.5s) then continue. Add knockback when hit by arrows (push back 1 tile). CrownStealers should pathfind around walls instead of attacking them.
+
+3. Improve structures/wall.ts: Add visual damage states. When wall hp < 50%, it shows CHAR_WALL_DAMAGED. Add a repair mechanic: builders near damaged walls should slowly restore hp (1 hp per 3 seconds). Export getWallHealth(state, x) returning a 0-1 ratio.
+
+4. Add structures/ship.ts (new file): The ship is at x=0 (left edge). It starts damaged. Costs SHIP_REPAIR_COST coins to repair. When fully repaired, pressing space near it triggers island transition (increment islandIndex, regenerate map with higher difficulty). Export createShip, repairShip, isShipReady.
+
+5. Improve systems/combat.ts: Add arrow visual trail - projectiles should have a lifetime (disappear after 0.5s even if no hit). Add critical hits (10% chance for 2x damage). When a greed dies, drop 1 coin at their position that the monarch can pick up by walking over it. Track dropped coins as a new array in GameState or use a simple position list.
+
+6. Improve systems/construction.ts: Builders should choose the closest task. Priority: repair damaged walls > build new structures > upgrade existing. Add build time based on structure type (walls: 5s, farms: 8s, upgrades: 10s).
+
+7. Add a retaliation wave system: When a portal is destroyed (via destroyPortal), immediately spawn a massive wave (3x normal size) from the remaining portals. Track this in spawn.ts with a retaliationPending flag.
+
+Write all changes now. Make sure everything typechecks.

@@ -8,7 +8,7 @@
  * @module render/titleScreen
  */
 
-import { three } from 'blecsd';
+import { type three } from 'blecsd';
 import type { WadFile, Palette } from '../wad/types.js';
 import { findLump, getLumpData } from '../wad/wad.js';
 import { parsePicture, renderPictureToFlat } from '../wad/pictureFormat.js';
@@ -116,6 +116,8 @@ function drawFontChar(
 ): void {
 	const pattern = FONT[ch];
 	if (!pattern) return;
+	const buf = fb.colorBuffer;
+	const w = fb.width;
 
 	for (let row = 0; row < CHAR_HEIGHT; row++) {
 		const line = pattern[row];
@@ -124,8 +126,12 @@ function drawFontChar(
 			if (line[col] === '#') {
 				const px = x + col;
 				const py = y + row;
-				if (px >= 0 && px < fb.width && py >= 0 && py < fb.height) {
-					three.setPixelUnsafe(fb, px, py, r, g, b, 255);
+				if (px >= 0 && px < w && py >= 0 && py < fb.height) {
+					const offset = (py * w + px) << 2;
+					buf[offset] = r;
+					buf[offset + 1] = g;
+					buf[offset + 2] = b;
+					buf[offset + 3] = 255;
 				}
 			}
 		}
@@ -182,23 +188,29 @@ function fillRect(
 	b: number,
 	a: number,
 ): void {
+	const buf = fb.colorBuffer;
+	const fbw = fb.width;
+
 	for (let py = y; py < y + h && py < fb.height; py++) {
 		if (py < 0) continue;
-		for (let px = x; px < x + w && px < fb.width; px++) {
+		for (let px = x; px < x + w && px < fbw; px++) {
 			if (px < 0) continue;
+			const offset = (py * fbw + px) << 2;
 			if (a >= 255) {
-				three.setPixelUnsafe(fb, px, py, r, g, b, 255);
+				buf[offset] = r;
+				buf[offset + 1] = g;
+				buf[offset + 2] = b;
+				buf[offset + 3] = 255;
 			} else {
 				// Alpha blend
-				const idx = (py * fb.width + px) * 4;
-				const sr = fb.colorBuffer[idx] ?? 0;
-				const sg = fb.colorBuffer[idx + 1] ?? 0;
-				const sb = fb.colorBuffer[idx + 2] ?? 0;
+				const sr = buf[offset] ?? 0;
+				const sg = buf[offset + 1] ?? 0;
+				const sb = buf[offset + 2] ?? 0;
 				const alpha = a / 255;
-				const outR = Math.round(sr * (1 - alpha) + r * alpha);
-				const outG = Math.round(sg * (1 - alpha) + g * alpha);
-				const outB = Math.round(sb * (1 - alpha) + b * alpha);
-				three.setPixelUnsafe(fb, px, py, outR, outG, outB, 255);
+				buf[offset] = Math.round(sr * (1 - alpha) + r * alpha);
+				buf[offset + 1] = Math.round(sg * (1 - alpha) + g * alpha);
+				buf[offset + 2] = Math.round(sb * (1 - alpha) + b * alpha);
+				buf[offset + 3] = 255;
 			}
 		}
 	}
@@ -216,23 +228,36 @@ export function drawTitlePic(
 	fb: three.PixelFramebuffer,
 	palette: Palette,
 ): void {
+	const buf = fb.colorBuffer;
+	const w = fb.width;
+
 	if (!titlePicPixels) {
 		// No TITLEPIC, fill with dark red
 		for (let y = 0; y < fb.height; y++) {
-			for (let x = 0; x < fb.width; x++) {
-				three.setPixelUnsafe(fb, x, y, 80, 0, 0, 255);
+			let off = (y * w) << 2;
+			for (let x = 0; x < w; x++) {
+				buf[off] = 80;
+				buf[off + 1] = 0;
+				buf[off + 2] = 0;
+				buf[off + 3] = 255;
+				off += 4;
 			}
 		}
 		return;
 	}
 
 	for (let y = 0; y < fb.height && y < titlePicHeight; y++) {
-		for (let x = 0; x < fb.width && x < titlePicWidth; x++) {
+		let off = (y * w) << 2;
+		for (let x = 0; x < w && x < titlePicWidth; x++) {
 			const palIdx = titlePicPixels[y * titlePicWidth + x] ?? 0;
 			const color = palette[palIdx];
 			if (color) {
-				three.setPixelUnsafe(fb, x, y, color.r, color.g, color.b, 255);
+				buf[off] = color.r;
+				buf[off + 1] = color.g;
+				buf[off + 2] = color.b;
+				buf[off + 3] = 255;
 			}
+			off += 4;
 		}
 	}
 }

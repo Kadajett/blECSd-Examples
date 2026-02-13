@@ -1,0 +1,76 @@
+Phase 5: Rendering fixes - make the game VISIBLE.
+
+Read renderer.ts, hud.ts, types.ts, index.ts first.
+
+The game has critical rendering bugs: animals, dropped coins, blueprints, and NPC subtypes are all INVISIBLE.
+Also the movement system double-applies velocity (index.ts calls updateMovement which applies velocity, but entity updates ALSO apply position directly).
+
+CRITICAL FIXES:
+
+1. renderer.ts - Add missing render sections AFTER section 10 (projectiles) and BEFORE section 11 (night overlay):
+
+   Section 7.5: Render ANIMALS. Import getAnimals from '../entities/animals'.
+   For each animal in getAnimals():
+     - If not isOnScreen, skip
+     - Rabbits: char 'r', fg 0xccaa88ff (tan)
+     - Deer: char 'D', fg 0x886644ff (brown)
+     - Draw at (worldToScreen(animal.x), Math.floor(animal.y))
+     - Animals should be visible ON the ground level
+
+   Section 9.5: Render DROPPED COINS. Import getDroppedCoins from '../systems/combat'.
+   For each coin in getDroppedCoins():
+     - If not isOnScreen, skip
+     - Char: CHAR_COIN, fg: COLOR_COIN with pulse (use sin(totalElapsed * 4) for brightness variation)
+     - Draw at ground level
+
+   Section 5.5: Render CONSTRUCTION BLUEPRINTS. Import getBlueprints from '../systems/construction'.
+   For each blueprint x in getBlueprints():
+     - If not isOnScreen, skip
+     - Char: CHAR_WALL but with a dim/transparent look
+     - Fg: 0x664433aa (dim brown), blinking slowly (alternate with 0x332211ff based on totalElapsed)
+     - Draw at GROUND_Y
+     - ALSO render walls with hp === 0 from state.structures as "under construction" (different from damaged):
+       - In structureChar: if s.hp === 0 && s.maxHp > 0, return a construction char like '.' or dashes
+       - Give them a distinct "building in progress" color (pulsing between dim and bright)
+
+2. renderer.ts - Render NPC subtypes distinctly.
+   Import getNpcOrigin, NpcOrigin from '../entities/villager'.
+   In section 7 (units), for vagrants check getNpcOrigin(unit.eid):
+     - Standard: CHAR_VILLAGER, COLOR_VILLAGER (unchanged)
+     - Warrior: char '\u2694' (crossed swords), fg 0xff4444ff (red)
+     - Scout: char '\u2192' (arrow), fg 0x44ff44ff (green)
+     - Craftsman: char '\u2692' (hammer/pick), fg 0x4488ffff (blue)
+     - Peasant: char '\u2698' (flower), fg 0xffdd44ff (yellow)
+
+3. hud.ts - Display nearby interactable prompt.
+   Import getNearbyInteractable from '../game/economy'.
+   In renderHud, on the secondary bar (row 1), after the stamina bar:
+     - Call getNearbyInteractable()
+     - If it returns a non-null string, display it right-aligned on row 1
+     - Use bright white fg on dark bg so it stands out
+     - This tells the player what pressing Space will do
+
+4. index.ts - FIX DOUBLE MOVEMENT.
+   The game loop calls updateAI (which calls updateMonarch, updateBuilder, etc. - all of which apply position directly)
+   THEN calls updateMovement (which ALSO applies velocity to position).
+
+   The fix: Remove the monarch position update from movement.ts. Let entity-specific code handle its own movement.
+   BUT WAIT - you own index.ts and renderer.ts, not movement.ts (that's Agent 3).
+
+   Instead: In index.ts, REMOVE the updateMovement call entirely. Each entity already handles its own movement.
+   The updateMovement function in movement.ts also handles projectile bounds and unit overlap resolution.
+   So instead of removing updateMovement entirely, the Agent 3 fix should remove the position-from-velocity code.
+
+   YOUR FIX in index.ts: Add a comment noting the double-movement issue but DON'T remove updateMovement yet
+   (Agent 3 will fix movement.ts to not double-apply). Instead, ensure the speed boost in index.ts doesn't
+   compound the double movement. Currently index.ts scales velocity by 1.5 BEFORE updateMovement applies it again.
+   REMOVE the speed boost velocity scaling from index.ts (lines 259-264). The speed boost should be handled
+   in monarch.ts's getMountSpeed or updateMonarch instead. Just pass state.speedBoostTimer > 0 info via state.
+
+5. renderer.ts - Render wall HP bars.
+   For structures that are walls (WallWood/Stone/Iron), show a tiny HP indicator:
+   - If wall hp < maxHp, draw a colored pip one row ABOVE the wall at GROUND_Y - 1
+   - Green pip if hp > 66%, yellow if > 33%, red if <= 33%
+   - This makes wall damage visible at a glance
+
+Write all changes. Make sure everything typechecks.

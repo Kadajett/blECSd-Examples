@@ -1,0 +1,172 @@
+Phase 7: Greed overhaul, bomb structure, lighthouse, forge, decay system, tower upgrades in wall.ts.
+
+Read KINGDOM_TODO.md, types.ts, greed.ts, combat.ts, wall.ts, portal.ts, construction.ts, spawn.ts first.
+
+You own: combat.ts, wall.ts, portal.ts, resources.ts, shrine.ts, ship.ts, siege.ts, spawn.ts, construction.ts, movement.ts, greed.ts
+
+TASK 1: GREED TYPE OVERHAUL IN greed.ts AND spawn.ts
+Upgrade all greed types to match Kingdom Two Crowns:
+
+Greedling (basic):
+- 1 HP (keep current)
+- Flee at sunrise: when timePhase === Day, all greedlings move toward nearest portal
+  - Speed: 0.8x normal speed when fleeing
+  - If they reach a portal, they vanish (remove entity)
+  - If sunrise catch: greedlings in open despawn with a puff (after 5 seconds of daylight)
+- Tool theft: when greedling kills a unit, that unit's tool drops
+  - Greedling picks up tool and carries it to portal (tool destroyed on portal entry)
+
+Masked Greedling:
+- 3 HP (was 2, increase to 3)
+- Front mask: first hit from the FRONT does 0 damage (mask absorbs)
+  - Track maskBroken: boolean per masked greedling
+  - Hits from behind bypass mask
+  - Tower archers bypass mask
+- More wall damage: 2x damage vs walls compared to basic greedling
+
+Floater:
+- 12 HP (was much less)
+- Does NOT steal coins. Does NOT interact with walls.
+- Abducts villagers: targets nearest non-monarch unit
+  - Grab animation: floater moves to unit, picks up (3 second grab time)
+  - Carries unit toward portal at half speed
+  - If floater killed while carrying: unit dropped at current position (alive)
+  - Abducted unit is removed if floater reaches portal
+- Roofed towers (towerTier >= 5): archers in roofed towers cannot be abducted
+- First appears: Blood Moon 3 (around day 15+)
+- Does NOT flee at sunrise (fights until dead)
+- Countered by: catapults (one-shot), heavy archer fire, pikemen
+- Add floaterTarget: Entity | null, isCarrying: boolean to floater state
+
+Breeder:
+- 70 HP (was 3, massive increase)
+- Punch attack: every 4 seconds, knocks down all units within 2 tiles
+  - Knocked units stunned for 1.5 seconds (can't attack/move)
+  - Units hit by punch drop their coins
+- Continuous spawning: spawns 2 greedlings every 6 seconds while alive
+  - Spawned greedlings are basic type
+  - Max 20 greedlings per breeder at a time
+- Does NOT flee at sunrise
+- First appears: around day 20+
+- Countered by: concentrated fire, catapults, bombs
+- Add breederSpawnTimer: number, breederPunchTimer: number
+
+Crown Stealer:
+- 8 HP (was 2)
+- Speed: 2.5x normal greed speed (faster than any mount)
+- Bypasses walls entirely (pathfinds around or over)
+- Bypasses coins, gems - ignores everything except monarch
+- On contact with monarch: instantly knocks crown off
+- Then picks up crown and runs to portal at 3x speed
+- If killed before reaching portal: crown drops, recoverable
+- First appears: day 30+ on blood moons, day 50+ on regular nights
+- Add hasCrown: boolean to crown stealer state
+
+TASK 2: BOMB STRUCTURE
+Create structures/bomb.ts (NEW FILE):
+- Requires Iron Keep (TownCenterTier >= 7) AND 18 coins
+- Build process: 3 builders required, takes 15 seconds to construct
+- Bomb is placed near town center
+- Bomb push sequence:
+  - 3 builders push bomb toward nearest active portal
+  - Movement speed: 0.3x normal (very slow)
+  - Knight escort required: at least 1 knight must accompany
+  - Without knight escort, builders stop pushing
+- Cave entry: 5 coins to enter cave portal
+- Cave interior:
+  - For now, simplified: bomb reaches portal, 5 coins to ignite
+  - 20 second escape timer starts
+  - After timer: portal destroyed permanently, all greed from that portal die
+  - Builders must escape (reach kingdom border before timer)
+  - Builders caught in blast are lost
+- State: bombBuilt, bombX, bombPushers: Entity[], bombEscapeTimer
+- Export: createBomb, updateBomb, startBombPush, igniteBomb, isBombActive
+
+TASK 3: LIGHTHOUSE STRUCTURE
+Create structures/lighthouse.ts (NEW FILE):
+- Found at island edge (x = 10 or x = MAP_WIDTH - 10)
+- 3 upgrade tiers:
+  - Wooden (6 coins): 10 days decay protection
+  - Stone (12 coins): 20 days decay protection
+  - Iron (18 coins): 30 days decay protection
+- Lighthouse state per island:
+  - lighthouseTier: 0-3 (0 = ruins/unbuilt)
+  - lighthouseX: number (position)
+- Functions:
+  - buildLighthouse(state, tier): upgrade to tier, deduct coins
+  - getLighthouseDecayProtection(state): returns days of protection
+  - canUpgradeLighthouse(state): checks coins and current tier
+- When monarch returns to an island:
+  - Without lighthouse: boat crashes, lose some coins
+  - With lighthouse: safe landing
+- Export: createLighthouse, upgradeLighthouse, getLighthouseDecayProtection, updateLighthouse
+
+TASK 4: FORGE STRUCTURE
+Create structures/forge.ts (NEW FILE):
+- Found on islands 3+ as ruins (forge ruin at fixed position, e.g., x = 400)
+- 8 coins to repair from ruins
+- Produces iron swords: 12 coins per sword
+  - Sword appears at forge position
+  - Squire walks to forge, picks up sword -> becomes Knight
+  - One sword produced at a time, 30-second production time
+- Requires TownCenterTier >= 7 (Iron Keep)
+- State: forgeBuilt: boolean, forgeX: number, forgeSwordReady: boolean, forgeSwordTimer: number
+- Export: buildForge, updateForge, isSwordReady, collectSword
+
+TASK 5: DECAY SYSTEM
+Create systems/decay.ts (NEW FILE):
+- Decay begins when monarch leaves an island (sails away)
+- Walls decay from outermost to innermost
+- Decay rates per wall tier:
+  - Spikes: 2 days
+  - Wood: 4 days
+  - Stone: 8 days
+  - TallStone: 12 days
+  - Iron: 20 days
+- Lighthouse adds protection days (additive)
+- When a wall decays: remove it, any units behind lose their tools (revert to vagrant)
+- Track per-island: lastVisitDay (set when monarch departs)
+- When monarch returns to island: apply accumulated decay
+  - daysAway = currentDay - lastVisitDay
+  - Remove walls that exceed their decay threshold
+- Completed islands (all portals destroyed) do NOT decay
+- Banker coins persist through decay
+- Gems never decay
+- Export: applyDecay(islandState, daysAway, lighthouseProtection), getDecayRate(wallType)
+
+TASK 6: TOWER UPGRADES IN wall.ts AND construction.ts
+- Towers are built on maxed-out walls (current behavior, keep it)
+- Add tower upgrade path in construction.ts:
+  - When monarch drops coin on existing tower: upgrade to next tier
+  - Cost from TOWER_COSTS array (defined by Agent 1 in types.ts)
+  - Requirements:
+    - Tier 3 (Stone Tower): TownCenterTier >= 5
+    - Tier 5 (Roofed): TownCenterTier >= 7
+  - Builder walks to tower and upgrades it (5 second build time)
+- Add upgradeTower(state, towerX) to construction.ts
+- Update findBestTask to include tower upgrades
+
+TASK 7: PORTAL ASSAULT IMPROVEMENTS IN portal.ts
+- When monarch drops coin at outermost wall banner:
+  - Dispatch nearest knight + their archer squad toward nearest portal
+  - Knight marches forward, archers follow behind
+  - Archers split fire between approaching greed and portal
+  - Portal takes damage: knight deals 2 DPS to portal, archers 1 DPS each
+  - Portal defense waves: portal spawns small groups (3-5 greed) every 10 seconds during assault
+  - Portal damage is permanent (does not regenerate between assaults)
+  - When portal HP reaches 0: portal destroyed, gem drop, retaliation wave
+- Add portalAssaultActive: boolean, assaultTargetPortal: number to state
+- Export: startPortalAssault(state, side), updatePortalAssault(state, dt)
+
+TASK 8: GREED SUNRISE FLEE IN movement.ts AND spawn.ts
+- At dawn (timePhase changes to Day):
+  - All greedlings and masked greedlings switch to flee mode
+  - Target: nearest portal position
+  - Speed: normal speed (they're in a hurry)
+  - On reaching portal: entity removed
+  - If no portal exists nearby (all destroyed): greedling despawns after 10 seconds
+- Breeders, floaters, crown stealers do NOT flee
+- Update movement.ts greed movement to check for flee state
+- In spawn.ts: stop spawning new greed during day phase
+
+Make sure everything typechecks when done.

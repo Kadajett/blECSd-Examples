@@ -1,0 +1,16 @@
+Phase 3: Sound cues, persistence, and game feel. Read the current index.ts, render/renderer.ts, render/effects.ts, render/hud.ts, game/input.ts, types.ts first.
+
+Tasks:
+1. Add terminal bell/sound cues in a new file render/sound.ts: Export playBell() using process.stdout.write('\x07'). Export playAlert() using rapid double-bell. Call playBell on coin collect, playAlert when night starts, when walls are breached. Wire these into index.ts.
+
+2. Add save/load persistence in a new file game/persistence.ts: Save state to ~/.kingdom-save.json on clean exit and every 30 seconds. Load on startup if save exists. Save: islandIndex, dayCount, monarchCoins, structure positions/types/hp, unit roles/positions, portal positions. Export saveGame(state), loadGame(): Partial<GameState> | null.
+
+3. Improve game feel in index.ts: Add a brief pause (500ms) on game over before accepting restart. Add screen shake effect (random camera offset for 200ms) when walls are destroyed. Add a "dawn bonus" - collect 2 coins automatically each morning.
+
+4. Add mount system in a new file entities/mount.ts: Monarch starts with a horse. Mount affects speed (horse: 1.5x normal, 2x sprint). Sprint consumes stamina (100 max, depletes at 20/sec, recharges at 10/sec when not sprinting). Horse recharges stamina faster when near grass. Export MountType enum, createMount, updateMount, getMountSpeed, getStamina. Update types.ts to add mount-related fields to GameState if needed.
+
+5. Improve render/renderer.ts: Add animated water (alternate between wave chars every 0.5s). Add tree sway (alternate tree chars slightly). Add cloud layer that drifts slowly across the sky. These small animations make the world feel alive.
+
+6. Update render/hud.ts: Add a stamina bar below coins. Show mount name. Show wave countdown at night (estimated greed remaining). Flash the HUD red during blood moons.
+
+Write all changes now. Make sure everything typechecks.

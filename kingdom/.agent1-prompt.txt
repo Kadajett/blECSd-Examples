@@ -1,0 +1,42 @@
+You are Agent 1: Core + World + Rendering. You are building a Kingdom-style side-scrolling TUI strategy game using blECSd 0.2.0. The project is at /home/kadajett/Dev/gameDev2026/blECSd-Examples/kingdom. Read types.ts first for all shared types/constants. Also look at the dvd-bounce and roguelike examples in sibling directories for blECSd API patterns.
+
+YOUR FILES ONLY (do NOT create or touch any other files):
+- world/map.ts
+- world/camera.ts
+- world/terrain.ts
+- game/dayNight.ts
+- game/input.ts
+- render/renderer.ts
+- render/hud.ts
+- render/effects.ts
+- index.ts
+
+BLECSD API REFERENCE:
+- import { createWorld, addEntity, addComponent, Position, Velocity, setPosition, setVelocity, createCellBuffer } from 'blecsd'
+- CellBuffer: cast to interface with .setCell(x,y,char,fg,bg) and .cells[y][x] and .width/.height
+- Colors are 0xRRGGBBAA format
+- import { parseKeyBuffer } from 'blecsd' for input parsing
+- Terminal setup: process.stdout.write('\x1b[?1049h') alt screen, '\x1b[?25l' hide cursor
+- process.stdin.setRawMode?.(true); process.stdin.resume();
+
+BUILD EACH FILE:
+
+1) world/terrain.ts - Export generateTerrain(width,height): creates TileType[][] grid. Forest at edges (x<40 and x>MAP_WIDTH-40), grass in middle, dirt below GROUND_Y, water at WATER_Y+.
+
+2) world/map.ts - Export generateMap(state): calls generateTerrain, places portals at forest edge positions, places campfire at CAMP_CENTER_X, creates bow/hammer stands near camp. Store results in state.tiles, state.structures, state.portalPositions.
+
+3) world/camera.ts - Export updateCamera(state): follow monarch x position, clamp to [0, MAP_WIDTH - viewWidth]. Smooth lerp toward target.
+
+4) game/input.ts - Export setupInput(state): configure stdin raw mode, parse key events. Arrow keys set state.inputLeft/inputRight, shift sets inputSprint, space sets inputDrop. q/Ctrl-C exits. Export cleanupInput().
+
+5) game/dayNight.ts - Export updateDayNight(state,dt): advance state.dayTime by dt/DAY_LENGTH, wrap at 1.0 incrementing dayCount. Compute state.timeOfDay from DAWN_START/DAY_START/DUSK_START/NIGHT_START thresholds.
+
+6) render/renderer.ts - Export render(state): clear buffer, draw sky (color by timeOfDay), draw terrain tiles with appropriate chars/colors, draw structures (walls/farms/portals/shrines), draw all entities (monarch/units/greeds/projectiles) offset by cameraX, call renderHud, flush to stdout with dirty-rect optimization. Use fillRect helper internally.
+
+7) render/hud.ts - Export renderHud(state,buffer): draw top bar showing coin count, day number, time of day icon, island number. Use COLOR_HUD_BG/COLOR_HUD_TEXT.
+
+8) render/effects.ts - Export applyNightOverlay(buffer,timeOfDay): darken all cells during night/dusk. Export flashEffect(buffer,x,y): brief color inversion for damage.
+
+9) index.ts - Main entry point. Create world, generate map, create monarch entity, spawn initial vagrants, set up input. Game loop at TARGET_FPS: read dt, updateDayNight, updateMovement (from systems/movement), updateAI (from systems/ai), updateCombat (from systems/combat), updateSpawning (from systems/spawn), updateConstruction (from systems/construction), updateCamera, render. Handle resize. Clean shutdown on exit. Import other agent systems even if files dont exist yet - just have the imports ready.
+
+Make sure everything typechecks against types.ts. Use Bundler module resolution (no .ts extensions on imports). Write all files now.

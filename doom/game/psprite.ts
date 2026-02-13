@@ -8,7 +8,6 @@
  * @module game/psprite
  */
 
-import { three } from 'blecsd';
 import { FRACBITS } from '../math/fixed.js';
 import type { RenderState } from '../render/defs.js';
 import type { SpriteStore } from '../wad/spriteData.js';
@@ -111,14 +110,20 @@ export function drawWeaponSprite(
 	// Determine light level (brighter during muzzle flash)
 	const flashBright = ws.flashTics > 0;
 
-	// Render column by column
+	// Precompute colormap for weapon sprite
+	const weaponColormapIdx = flashBright ? 0 : Math.min(15, Math.max(0, 8));
+	const weaponCmap = rs.colormap[weaponColormapIdx];
+	const buf = rs.fb.colorBuffer;
+	const w = rs.screenWidth;
+
+	// Render column by column with direct buffer writes
 	for (let sx = 0; sx < spriteWidth; sx++) {
 		const texCol = Math.floor(sx / WEAPON_SCALE);
 		const column = pic.columns[texCol];
 		if (!column) continue;
 
 		const px = drawX + sx;
-		if (px < 0 || px >= rs.screenWidth) continue;
+		if (px < 0 || px >= w) continue;
 
 		for (const post of column) {
 			for (let p = 0; p < post.pixels.length; p++) {
@@ -130,20 +135,17 @@ export function drawWeaponSprite(
 					if (py < 0 || py >= rs.screenHeight) continue;
 
 					const paletteIdx = post.pixels[p]!;
-					let colormapIdx = 0;
-					if (!flashBright) {
-						// Apply light diminishing based on sector light
-						colormapIdx = Math.min(15, Math.max(0, 8));
-					}
-
-					const colormap = rs.colormap[colormapIdx];
-					const mappedIdx = colormap ? colormap[paletteIdx] ?? paletteIdx : paletteIdx;
+					const mappedIdx = weaponCmap ? weaponCmap[paletteIdx] ?? paletteIdx : paletteIdx;
 					const color = rs.palette[mappedIdx];
 					const r = color ? color.r : 0;
 					const g = color ? color.g : 0;
 					const b = color ? color.b : 0;
 
-					three.setPixelUnsafe(rs.fb, px, py, r, g, b, 255);
+					const offset = (py * w + px) << 2;
+					buf[offset] = r;
+					buf[offset + 1] = g;
+					buf[offset + 2] = b;
+					buf[offset + 3] = 255;
 				}
 			}
 		}
@@ -177,10 +179,16 @@ function drawFallbackWeapon(
 	}
 
 	const statusBarTop = rs.screenHeight - 32;
+	const buf = rs.fb.colorBuffer;
+	const w = rs.screenWidth;
 
 	for (let y = Math.max(0, drawY); y < Math.min(statusBarTop, drawY + weaponHeight); y++) {
-		for (let x = Math.max(0, drawX); x < Math.min(rs.screenWidth, drawX + weaponWidth); x++) {
-			three.setPixelUnsafe(rs.fb, x, y, r, g, b, 255);
+		for (let x = Math.max(0, drawX); x < Math.min(w, drawX + weaponWidth); x++) {
+			const offset = (y * w + x) << 2;
+			buf[offset] = r;
+			buf[offset + 1] = g;
+			buf[offset + 2] = b;
+			buf[offset + 3] = 255;
 		}
 	}
 
@@ -191,8 +199,12 @@ function drawFallbackWeapon(
 	const barrelY = drawY - barrelHeight;
 
 	for (let y = Math.max(0, barrelY); y < Math.min(statusBarTop, barrelY + barrelHeight); y++) {
-		for (let x = Math.max(0, barrelX); x < Math.min(rs.screenWidth, barrelX + barrelWidth); x++) {
-			three.setPixelUnsafe(rs.fb, x, y, r - 20, g - 20, b - 20, 255);
+		for (let x = Math.max(0, barrelX); x < Math.min(w, barrelX + barrelWidth); x++) {
+			const offset = (y * w + x) << 2;
+			buf[offset] = r - 20;
+			buf[offset + 1] = g - 20;
+			buf[offset + 2] = b - 20;
+			buf[offset + 3] = 255;
 		}
 	}
 }

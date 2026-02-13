@@ -12,8 +12,8 @@ importers:
         specifier: ^11.0.0
         version: 11.10.0
       blecsd:
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: file:../../blECSd
+        version: file:../../blECSd
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -366,8 +366,8 @@ packages:
   bl@4.1.0:
     resolution: {integrity: sha512-1W07cM9gS6DcLperZfFSj+bWLtaPGSOHWhPiGzXmvVJbRLdG82sH/Kn8EtW1VqWVA54AKf2h5k5BbnIbwF3h6w==}
 
-  blecsd@0.2.0:
-    resolution: {integrity: sha512-48pZRL3UNYHxFpB370p7xiy2oNBkHrEyX21+ZlvOeNj/abgvlyv1aLElTY4N6h8xvf+86PcRB+u+oZ3U18GsKQ==}
+  blecsd@file:../../blECSd:
+    resolution: {directory: ../../blECSd, type: directory}
     engines: {node: '>=22.0.0'}
     hasBin: true
 
@@ -904,7 +904,7 @@ snapshots:
       inherits: 2.0.4
       readable-stream: 3.6.2
 
-  blecsd@0.2.0:
+  blecsd@file:../../blECSd:
     dependencies:
       bitecs: 0.4.0
       zod: 4.3.6

@@ -12,7 +12,7 @@ beforeAll(() => {
 
 // ─── Minimal Mocks ──────────────────────────────────────────────────
 
-const noInput: InputState = { keys: new Set(), ctrl: false, shift: false };
+const noInput: InputState = { keys: new Set(), ctrl: false, shift: false, mouseDeltaX: 0 };
 
 function createMockMapData(things: MapData['things'] = []): MapData {
 	const buf = new ArrayBuffer(4);
@@ -143,6 +143,7 @@ describe('updatePlayer', () => {
 			keys: new Set(['left']),
 			ctrl: false,
 			shift: false,
+			mouseDeltaX: 0,
 		};
 		updatePlayer(player, input, map);
 
@@ -161,6 +162,7 @@ describe('updatePlayer', () => {
 			keys: new Set(['a']),
 			ctrl: false,
 			shift: false,
+			mouseDeltaX: 0,
 		};
 		updatePlayer(player, input, map);
 
@@ -178,6 +180,7 @@ describe('updatePlayer', () => {
 			keys: new Set(['right']),
 			ctrl: false,
 			shift: false,
+			mouseDeltaX: 0,
 		};
 		updatePlayer(player, input, map);
 
@@ -196,6 +199,7 @@ describe('updatePlayer', () => {
 			keys: new Set(['d']),
 			ctrl: false,
 			shift: false,
+			mouseDeltaX: 0,
 		};
 		updatePlayer(player, input, map);
 
@@ -213,6 +217,7 @@ describe('updatePlayer', () => {
 			keys: new Set(['up']),
 			ctrl: false,
 			shift: false,
+			mouseDeltaX: 0,
 		};
 		updatePlayer(player, input, map);
 
@@ -233,6 +238,7 @@ describe('updatePlayer', () => {
 			keys: new Set(['w']),
 			ctrl: false,
 			shift: false,
+			mouseDeltaX: 0,
 		};
 		updatePlayer(player, input, map);
 
@@ -264,6 +270,7 @@ describe('updatePlayer', () => {
 			keys: new Set(['down']),
 			ctrl: false,
 			shift: false,
+			mouseDeltaX: 0,
 		};
 		updatePlayer(player, input, map);
 
@@ -331,7 +338,7 @@ describe('momentum and friction', () => {
 		player.momx = 10 * FRACUNIT;
 		player.momy = 0;
 
-		const input: InputState = { keys: new Set(), ctrl: false, shift: false };
+		const input: InputState = { keys: new Set(), ctrl: false, shift: false, mouseDeltaX: 0 };
 		updatePlayer(player, input, map);
 
 		// After one tick with friction, momx should be reduced
@@ -348,7 +355,7 @@ describe('momentum and friction', () => {
 		player.momx = 5 * FRACUNIT;
 		player.momy = 0;
 
-		const input: InputState = { keys: new Set(), ctrl: false, shift: false };
+		const input: InputState = { keys: new Set(), ctrl: false, shift: false, mouseDeltaX: 0 };
 
 		// Run many ticks with no input
 		for (let i = 0; i < 50; i++) {
@@ -365,12 +372,12 @@ describe('momentum and friction', () => {
 		const player = createPlayer(map);
 
 		// Apply thrust for one tick
-		const moveInput: InputState = { keys: new Set(['up']), ctrl: false, shift: false };
+		const moveInput: InputState = { keys: new Set(['up']), ctrl: false, shift: false, mouseDeltaX: 0 };
 		updatePlayer(player, moveInput, map);
 		const posAfterThrust = player.x;
 
 		// Release input, player should still move due to momentum
-		const noKeys: InputState = { keys: new Set(), ctrl: false, shift: false };
+		const noKeys: InputState = { keys: new Set(), ctrl: false, shift: false, mouseDeltaX: 0 };
 		updatePlayer(player, noKeys, map);
 
 		expect(player.x).toBeGreaterThan(posAfterThrust);
@@ -388,7 +395,7 @@ describe('momentum and friction', () => {
 		player.momx = 0x0fff;
 		player.momy = 0x0fff;
 
-		const input: InputState = { keys: new Set(), ctrl: false, shift: false };
+		const input: InputState = { keys: new Set(), ctrl: false, shift: false, mouseDeltaX: 0 };
 		updatePlayer(player, input, map);
 
 		// After friction, the small values should be zeroed

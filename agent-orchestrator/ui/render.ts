@@ -156,8 +156,9 @@ export function renderAgentPane(
  * @param state - Application state
  */
 export function renderFrame(state: AppState): void {
-	// Clear screen + hide cursor + move to home
-	let output = '\x1b[?25l\x1b[2J\x1b[H';
+	// Begin synchronized output (prevents partial frame display)
+	// The terminal holds all output until \x1b[?2026l, then displays atomically (no flicker)
+	let output = '\x1b[?2026h\x1b[?25l\x1b[H\x1b[2J';
 
 	// 0. Render header bar at row 1
 	output += renderHeaderBar(state.screenWidth, '');
@@ -231,7 +232,8 @@ export function renderFrame(state: AppState): void {
 		}
 	}
 
-	// Write to stdout
+	// End synchronized output and write to stdout
+	output += '\x1b[?2026l';
 	process.stdout.write(output);
 }
 

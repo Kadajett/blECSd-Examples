@@ -1,0 +1,101 @@
+Phase 5: Fix movement system, portal/settlement positions, and construction system.
+
+Read movement.ts, construction.ts, portal.ts, spawn.ts, combat.ts, greed.ts, wall.ts first.
+Also read world/map.ts to see SETTLEMENT_CENTERS and PORTAL_POSITIONS.
+
+The game has CRITICAL bugs:
+
+BUG 1: DOUBLE MOVEMENT IN movement.ts
+Entity-specific updates (monarch.ts, builder.ts, archer.ts, etc.) set velocity via setVelocity.
+Agent 2 is removing their direct setPosition calls so only velocity is set.
+Then movement.ts applies velocity to position. This is correct.
+
+BUT: Currently movement.ts also applies velocity to monarch (lines 28-37) AND units (lines 17-27) AND greeds (lines 39-49).
+Since Agent 2 is removing direct setPosition from entity updates, movement.ts becomes the SOLE mover.
+This is the correct fix. HOWEVER, greed movement is special: greed.ts uses Position.x[greed.eid] directly
+(line 236, 294) instead of setVelocity. So greeds bypass the velocity system entirely.
+
+FIX for movement.ts:
+- Keep the unit position-from-velocity code (lines 17-27) - this is now the only movement
+- Keep the monarch position-from-velocity code (lines 28-37) - this is now the only movement
+- For greeds (lines 39-49): Greeds don't use velocity, they modify Position directly in greed.ts.
+  REMOVE the greed velocity loop from movement.ts (lines 39-49). Greeds handle their own movement.
+- Keep projectile movement (lines 52-59) and collision avoidance (line 66)
+
+BUG 2: PORTAL POSITIONS MISMATCH
+map.ts PORTAL_POSITIONS = [30, 220, 540, 880, 1170] (5 portals)
+portal.ts PORTAL_POSITIONS_WORLD = [50, 275, 475, 725, 925, 1150] (6 portals, DIFFERENT positions)
+
+The ACTUAL portals are placed by map.ts into state.structures and state.portalPositions.
+portal.ts's PORTAL_POSITIONS_WORLD is never used for placement but IS used by spawn.ts.
+
+FIX in portal.ts:
+- Change PORTAL_POSITIONS_WORLD to match map.ts: [30, 220, 540, 880, 1170]
+  Or better: import PORTAL_POSITIONS from map.ts (but it's not exported).
+  Simplest: just update the constant to [30, 220, 540, 880, 1170]
+
+BUG 3: SETTLEMENT POSITIONS MISMATCH
+map.ts SETTLEMENT_CENTERS = [150, 400, 600, 800, 1050]
+portal.ts SETTLEMENT_POSITIONS = [200, 375, 600, 825, 1050]
+
+These MUST match because:
+- construction.ts uses getNearestSettlement (from portal.ts) for auto-gate placement
+- getWeakestSettlement uses SETTLEMENT_POSITIONS for defense rating
+- getSettlementDefenseRating uses SETTLEMENT_POSITIONS
+
+FIX in portal.ts:
+- Change SETTLEMENT_POSITIONS to match map.ts: [150, 400, 600, 800, 1050]
+  Or better: import SETTLEMENT_CENTERS from '../world/map' and re-export as SETTLEMENT_POSITIONS.
+  map.ts already exports SETTLEMENT_CENTERS. So:
+  import { SETTLEMENT_CENTERS } from '../world/map';
+  export const SETTLEMENT_POSITIONS = SETTLEMENT_CENTERS;
+  Delete the old hardcoded SETTLEMENT_POSITIONS array.
+
+BUG 4: CONSTRUCTION SYSTEM NEEDS TO BE THE SOLE BUILDER
+Agent 2 is removing direct HP modification from builder.ts. The construction system (construction.ts)
+needs to be the SOLE system that handles building/repairing.
+
+FIX in construction.ts:
+- The system already handles builders in Working state
+- BUT it only processes builders already in Working state. After Agent 2's fix, builder.ts will set
+  builders to Working when close to a target. construction.ts then needs to do the actual HP work.
+- Current issue: findBestTask checks both blueprints Set AND state.structures. But walls placed by
+  placeWallBlueprint go into state.structures with hp:0, NOT into the blueprints Set. So they're
+  found as "BuildNew" priority, not "BuildBlueprint".
+
+  FIX: In findBestTask, for structures with hp===0 and maxHp > 0, treat them as blueprints:
+  ```
+  if (structure.hp === 0 && structure.maxHp > 0) {
+    tasks.push({ ..., priority: TaskPriority.BuildBlueprint, isBlueprint: false, ... });
+  }
+  ```
+  This ensures walls placed by placeWallBlueprint get built promptly.
+
+- When a "BuildNew" or hp:0 structure finishes building (buildProgress reaches 100), set structure.hp = structure.maxHp.
+  Currently, for non-blueprint tasks, it just deletes buildProgress but doesn't set HP.
+  ADD: `if (task.structure) { task.structure.hp = task.structure.maxHp; }` when next >= 100 for non-blueprint tasks.
+
+- For the repair path (TaskPriority.RepairWall): this already modifies hp directly, which is correct.
+
+BUG 5: GREED DON'T LOOK SCARY ENOUGH AND WALLS NEED BETTER BLOCKING
+The greed system works but some edge cases:
+
+- In greed.ts, Position.x is modified directly (line 236, 294) bypassing setPosition. This is fine since
+  movement.ts won't touch greeds (per fix above), but it means greed y position is never updated.
+  Make sure greeds stay at GROUND_Y - 1.
+
+- findNearestDefenseInPath (line 147) scans from greed toward target checking state.structures.get(checkX).
+  This only finds structures at exact integer positions. Make sure Math.round is used consistently.
+  The current code uses Math.round(greedX) and Math.round(targetX) - looks correct.
+
+BUG 6: COMBAT SYSTEM NEEDS TO TRACK ARCHER KILLS FOR REAL
+Currently archer.ts optimistically tracks kills when arrows are fired (for greed).
+Agent 2 is removing that. Combat.ts should track real kills.
+
+FIX in combat.ts:
+- In cleanupDeadGreeds, when a greed dies, check if any projectile recently hit it
+  (or simpler: just don't track greed kills for archers since the leveling system is for animal hunting).
+  The current system is fine as-is since recordKill is only meaningful for archer leveling (range/cooldown bonuses).
+  No change needed here - Agent 2's fix to remove optimistic tracking is sufficient.
+
+Write all changes. Make sure everything typechecks.

@@ -1,0 +1,174 @@
+Phase 9: Challenge islands, final wave tuning, siege improvements, comprehensive combat balance.
+
+Read KINGDOM_TODO.md, types.ts, spawn.ts, combat.ts, siege.ts, wall.ts, portal.ts, greed.ts first.
+
+You own: combat.ts, wall.ts, portal.ts, resources.ts, shrine.ts, ship.ts, siege.ts, spawn.ts, construction.ts, movement.ts, greed.ts
+
+TASK 1: CHALLENGE ISLANDS IN portal.ts AND spawn.ts
+Add 3 challenge islands (post-main-campaign):
+- Challenge islands unlocked after destroying all portals on Island 5
+
+Skull Island (Island 6):
+- Endless survival mode - no portals to destroy
+- Greed spawn from both edges of map, increasing every night
+- Hourglass statue: 10 coins to activate, freezes greed for 30 seconds
+- Score tracked: nights survived
+- Map: small (400 tiles), minimal resources
+- Victory: survive 30 nights = gold medal, 50 = diamond
+
+Dire Island (Island 7):
+- Same as Island 5 but 3x difficulty multiplier on all waves
+- All greed types from night 1
+- Limited vagrant camps (2 only)
+- No merchant, no banker
+- Victory: destroy all portals
+
+Plague Island (Island 8):
+- New enemy type: Plague Crawler
+  - Climbs over walls (doesn't need to fly)
+  - 4 HP, moderate speed
+  - On death: poisons adjacent units (1 DPS for 5 seconds)
+  - Add GreedType.PlagueCrawler
+- Poisoned units: track poisonTimer, take damage over time
+- Only cure: reach town center (removes poison)
+- Victory: destroy all portals + survive 10 nights after
+
+Export: isChallenge Island(index), getChallengeRules(index), getChallengeDifficulty(index)
+
+TASK 2: FINAL WAVE FORMULA IN spawn.ts
+Definitive wave scaling:
+- baseWaveSize = Math.floor(dayCount / 3) + 3
+- islandMultiplier = [1.0, 1.25, 1.5, 1.75, 2.0, 3.0, 5.0, 2.5] (8 islands)
+- seasonMultiplier = { Spring: 1.0, Summer: 0.85, Autumn: 1.15, Winter: 1.35 }
+- bloodMoonMultiplier = state.isBloodMoon ? 3.0 : 1.0
+- finalWaveSize = Math.floor(baseWaveSize * islandMultiplier * seasonMultiplier * bloodMoonMultiplier)
+
+Wave composition calculation:
+- greedlingRatio = max(0.3, 1.0 - dayCount * 0.01)
+- maskedRatio = min(0.3, dayCount * 0.005)
+- floaterRatio = dayCount > 15 ? min(0.15, (dayCount - 15) * 0.003) : 0
+- breederRatio = dayCount > 20 ? min(0.1, (dayCount - 20) * 0.002) : 0
+- crownStealerRatio = dayCount > 30 ? min(0.05, (dayCount - 30) * 0.001) : 0
+- Normalize ratios to sum to 1.0
+- Multiply each ratio by finalWaveSize for count per type
+
+Multi-portal spawning:
+- Total wave split across active portals proportionally
+- Closer portals get slightly more (weighted by inverse distance to town center)
+- Spawn timing: staggered so furthest portal spawns first (waves arrive together)
+
+TASK 3: SIEGE WEAPON IMPROVEMENTS IN siege.ts
+Finalize all siege weapons:
+
+Ballista (existing, improve):
+- Piercing damage: projectile hits ALL greed in its path (line)
+- Range: 25 tiles
+- Damage: 5 per hit
+- Reload: 3 seconds (2 with 2 builders)
+- 1-2 builders operate
+
+Catapult (from Phase 6, verify/improve):
+- AoE damage: 15 damage in 3-tile radius
+- Range: 20 tiles
+- Reload: 8 seconds (4 with 2 builders)
+- Can target: greedlings (group), floaters (one-shot), breeders (priority target)
+- Auto-target: prioritize breeders > floaters > largest group of greedlings
+- 1-2 builders operate
+
+Fire Barrel (catapult upgrade):
+- Requires Iron Keep tier
+- 5 coins per barrel
+- Replaces stone ammo with fire: adds 3-second burn to AoE
+- Continuous burn on ground (3x3 tiles) for 5 seconds after impact
+- Greed walking through fire patch take 2 DPS
+
+Export: updateSiegeWeapons(state, dt), getTargetPriority(greedEntities), fireBallista, fireCatapult
+
+TASK 4: WALL DAMAGE MECHANICS IN combat.ts AND wall.ts
+Differentiated wall damage per greed type:
+- Greedling: 1 damage per attack (1 attack/second)
+- Masked Greedling: 2 damage per attack (1 attack/second)
+- Breeder: 5 damage per punch (1 punch/4 seconds)
+- Crown Stealer: 0 damage (bypasses walls)
+- Floater: 0 damage (flies over)
+- Crusher: 10 damage per charge (1 charge/6 seconds, stuns self for 2 seconds after)
+
+Wall weakening:
+- At 50% HP: wall appearance changes (visual crack indicator)
+- At 25% HP: wall makes creaking sound (terminal bell)
+- At 0 HP: wall destroyed, greed pour through gap
+  - Units behind wall lose tools (revert to vagrant)
+  - Gap remains until new wall built
+
+Gate mechanics update:
+- Gates have 50% of wall HP at same tier
+- Gates can be locked at night (no friendlies pass either)
+- Locked gates take 50% less damage
+- Auto-lock at dusk, auto-unlock at dawn
+
+TASK 5: GREED PATHFINDING IMPROVEMENT IN movement.ts
+Better greed pathing:
+- Greedlings: walk toward town center, stop at first wall
+  - Stack at wall, attack it
+  - If wall destroyed: rush through gap toward next wall
+  - If no walls: rush toward town center
+- Masked: same as greedling but slightly faster
+- Floaters: fly in straight line toward nearest unit (not wall)
+  - If no unit in range: drift toward town center
+  - Height: 2 rows above ground (visual only, still in same combat layer)
+- Breeders: slow march toward outermost wall
+  - Stop and punch when in range
+  - Spawn greedlings while waiting
+  - If wall destroyed: advance to next wall
+- Crown Stealer: pathfind AROUND walls
+  - Check for gaps in wall line
+  - If no gaps: climb over (takes 2 seconds, vulnerable during climb)
+  - Beeline for monarch once past walls
+
+TASK 6: SHRINE IMPROVEMENTS IN shrine.ts
+Expand shrine system:
+- Currently basic shrine exists. Add multiple shrine types:
+  - Speed Shrine: +30% movement speed for 1 day (5 coins + 2 per previous use)
+  - Damage Shrine: +50% arrow damage for 1 day (5 coins + 2 per previous use)
+  - Shield Shrine: +30% wall HP for 2 days (8 coins + 3 per previous use)
+  - Spawn Shrine: spawn 3 archers immediately (10 coins, one-time per day)
+- Shrine locations: 2-3 per island, random from pool
+- Shrine cooldown: 1 day between uses
+- Shrine visual: different colors per type (blue/red/gray/green)
+- Export: getShrineType(x), activateShrine(state, shrineX), getShrineEffect(type)
+
+TASK 7: RESOURCE IMPROVEMENTS IN resources.ts
+- Gold vein depletion: each gold vein has finite coins (50 per vein)
+  - Track goldVeinRemaining: number per vein
+  - When depleted: vein becomes inert (dim visual)
+  - 3-5 gold veins per island
+- Berry bush improvements (winter):
+  - 4 berries per bush, 1 coin per berry
+  - Regrow after 2 days (if still winter)
+  - 8-12 bushes per island during winter
+- Tree resources:
+  - Trees drop 1 coin when cut by builder
+  - Trees block wall placement (must be cut first)
+  - Trees regrow slowly (1 per day in spring/summer)
+  - No regrowth in autumn/winter
+- Stream/water: fish can be caught by pikemen
+  - 1 coin per fish, 8-second fishing time
+  - Fish only in non-frozen streams (not winter)
+
+TASK 8: FINAL COMBAT BALANCE PASS
+Review and adjust all combat numbers:
+- Archer damage: 1 (ground), 2 (tower, bypasses mask)
+- Archer range: 10 (ground), 15 (tower tier 1), +5 per tower tier
+- Archer fire rate: 1.5 seconds (ground), 1.0 seconds (tower)
+- Archer accuracy: 33% (ground), 100% (tower), 100% (blessed)
+- Pike damage: 3 per thrust, 1.5 tile AoE
+- Pike fire rate: 2 seconds
+- Knight damage: 2 melee
+- Knight shield HP: 3 (regenerate 1/day)
+- Catapult: 15 damage, 3-tile AoE, 8s reload
+- Ballista: 5 damage, piercing, 3s reload
+- All greed HP as specified in Task 1 of Phase 7
+
+Verify all damage/HP values are consistent and balanced.
+
+Make sure everything typechecks when done.

@@ -1,0 +1,35 @@
+Phase 4: Fix coin interaction, multiple recruit groups, and auto-building.
+
+Read types.ts, game/economy.ts, entities/monarch.ts, entities/villager.ts, entities/builder.ts, entities/archer.ts, entities/farmer.ts, entities/knight.ts, systems/ai.ts, structures/wall.ts first.
+
+CRITICAL FIXES AND FEATURES:
+
+1. FIX game/economy.ts dropCoin - This is the most important fix. Currently dropping coins near structures doesn't work well. Rewrite dropCoin completely:
+   - Get monarch position from getPosition(state.world, state.monarch.eid)
+   - Search state.structures within 3 tiles of monarch for interaction targets
+   - Search state.units within 3 tiles for vagrants to recruit
+   - Priority order: recruit vagrant near tool stand > upgrade wall > build new wall > build farm
+   - When dropping a coin with NO nearby structure and there's open ground, CREATE A NEW WALL BLUEPRINT at monarch position. Builders will auto-build it. This is how the player builds protection.
+   - Add clear messages for every action: "Recruited archer! (2 coins)", "Wall blueprint placed (3 coins)", "Not enough coins!", etc.
+   - The player should feel like dropping coins DOES things.
+
+2. Add multiple recruit groups. Rewrite entities/villager.ts:
+   - Instead of just vagrants, add different NPC types at different settlements:
+     - Warriors (red): found at outer settlements, become knights directly (cost 3)
+     - Scouts (green): found near forests, become archers with +3 range (cost 2)
+     - Craftsmen (blue): found at central settlements, become builders that work 1.5x faster (cost 2)
+     - Peasants (yellow): found everywhere, become farmers with +50% output (cost 1)
+   - Each settlement should spawn its own type of NPC. Track NPC subtype on UnitData or use a module-level map.
+   - Vagrants from different groups should look different (different CHAR or color)
+
+3. Auto-builder AI improvement in entities/builder.ts:
+   - Builders should AUTOMATICALLY place and build walls when enemies are detected nearby (within 20 tiles of outer wall)
+   - During night, if there are no walls between camp and an approaching greed wave, builders should panic-build a temporary barricade
+   - Builders should repair damaged walls before building new ones
+   - Builders should expand walls outward during peaceful day periods (if coins > 15, auto-place wall blueprint 3 tiles outside current outermost wall)
+
+4. Fix entities/monarch.ts: The input handling for coin drop should be a one-shot (drop once per space press, not continuous). Add a visual indicator when near an interactable (structure or vagrant) - set a flag that the HUD can read.
+
+5. Update systems/ai.ts to handle the new NPC subtypes and auto-building behavior. When timeOfDay changes to Dusk and no walls exist on a side, trigger emergency wall building.
+
+Write all changes. Make sure everything typechecks.

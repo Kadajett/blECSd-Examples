@@ -1,0 +1,36 @@
+You are Agent 2: Entities + Economy + AI. You are building a Kingdom-style side-scrolling TUI strategy game using blECSd 0.2.0. The project is at /home/kadajett/Dev/gameDev2026/blECSd-Examples/kingdom. Read types.ts first for all shared types/constants. Also look at the dvd-bounce and roguelike examples in sibling directories for blECSd API patterns.
+
+YOUR FILES ONLY (do NOT create or touch any other files):
+- entities/monarch.ts
+- entities/villager.ts
+- entities/builder.ts
+- entities/archer.ts
+- entities/farmer.ts
+- game/economy.ts
+- systems/ai.ts
+- systems/movement.ts
+
+BLECSD API REFERENCE:
+- import { createWorld, addEntity, addComponent, removeEntity, Position, Velocity, setPosition, setVelocity, getPosition, getVelocity } from 'blecsd'
+- Direct array access: Position.x[eid], Position.y[eid], Velocity.x[eid], Velocity.y[eid]
+- Entity is a number type, World from createWorld()
+
+BUILD EACH FILE:
+
+1) entities/monarch.ts - Export createMonarch(state: GameState): creates entity with Position at CAMP_CENTER_X, GROUND_Y-1. Returns UnitData with role=Monarch, hp=1. Export updateMonarch(state,dt): read inputLeft/inputRight/inputSprint, set velocity to MONARCH_SPEED or MONARCH_SPRINT. Clamp position to world bounds. Handle coin drop when inputDrop is true with COIN_DROP_COOLDOWN.
+
+2) game/economy.ts - Export dropCoin(state): check what's nearby monarch. If vagrant within 2 tiles and coins >= RECRUIT_COST, recruit it. If bow stand within 2 tiles and vagrant nearby, make archer (BOW_COST). If hammer stand, make builder (HAMMER_COST). If wall blueprint, upgrade wall (WALL_COST_*). If farm plot, build farm (FARM_BUILD_COST). Export collectCoins(state,amount). Export canAfford(state,cost): boolean.
+
+3) entities/villager.ts - Export spawnVagrant(state,x): create entity, add to state.units with role=Vagrant, aiState=Idle. Vagrants wander randomly within 10 tiles of spawn. Export updateVagrant(state,unit,dt): random walk behavior, stay within camp area. Export recruitVagrant(state,unit,newRole): change role, set appropriate stats.
+
+4) entities/builder.ts - Export updateBuilder(state,unit,dt): During Day - find nearest construction site or damaged structure, move toward it, work on it (decrement build timer). During Dusk - set aiState=Retreating, move behind nearest wall toward camp center. During Night - hide, aiState=Idle. Priority: closest unfinished structure > closest damaged structure > idle.
+
+5) entities/archer.ts - Export updateArcher(state,unit,dt): During Day - patrol outskirts, hunt (move toward animals area, generate coins on successful hunt at random intervals). During Dusk - return to nearest wall position, aiState=Retreating. During Night - defend walls, aiState=Defending, auto-target nearest Greed within ARROW_RANGE, shoot with ARROW_COOLDOWN. Export createArrow(state,fromX,fromY,direction): add projectile to state.projectiles.
+
+6) entities/farmer.ts - Export updateFarmer(state,unit,dt): move to assigned farm structure. During Day, work: every FARM_INCOME_INTERVAL seconds, generate FARM_REWARD_BASE coins. During Dusk/Night, retreat behind walls like builders.
+
+7) systems/ai.ts - Export updateAI(state,dt): iterate all state.units. Based on unit.role, call the appropriate update function (updateMonarch, updateVagrant, updateBuilder, updateArcher, updateFarmer). Handle global state transitions: when timeOfDay changes to Dusk, set all non-monarch units to Retreating.
+
+8) systems/movement.ts - Export updateMovement(state,dt): iterate all entities (units + greeds + projectiles). Apply velocity * dt to position. Clamp to world bounds [0, MAP_WIDTH]. Remove projectiles that go off-screen.
+
+Each file exports functions taking (state: GameState, dt: number) or similar. All entity data stored in state.units as UnitData[]. Make sure everything typechecks against types.ts. Use Bundler module resolution (no .ts extensions on imports). Write all files now.
