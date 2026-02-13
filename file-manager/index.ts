@@ -28,6 +28,7 @@
  * @module file-manager
  */
 
+import { leaveAlternateScreen, showCursor, writeRaw } from 'blecsd';
 import { runTabbedApp } from './tabbedApp';
 
 async function main(): Promise<void> {
@@ -35,9 +36,9 @@ async function main(): Promise<void> {
 		await runTabbedApp();
 	} catch (error) {
 		// Restore terminal on error
-		process.stdout.write('\x1b[?1049l'); // Exit alternate screen
-		process.stdout.write('\x1b[?25h'); // Show cursor
-		process.stdout.write('\x1b[0m'); // Reset attributes
+		leaveAlternateScreen();
+		showCursor();
+		writeRaw('\x1b[0m'); // Reset attributes
 
 		console.error('Error:', error);
 		process.exit(1);

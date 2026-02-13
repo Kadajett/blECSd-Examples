@@ -208,6 +208,7 @@ const renderableEntities: Entity[] = [];
 interface AppState {
 	world: World;
 	panels: Panel[];
+	sortedPanels: Panel[]; // Cached z-sorted panels (updated only on shuffle)
 	buffer: CellBufferDirect;
 	prevBuffer: CellBufferDirect; // Previous frame for dirty rect comparison
 	width: number;
@@ -349,6 +350,13 @@ function shuffleZOrder(state: AppState): void {
 		setZIndex(world, panelA.eid, zB);
 		setZIndex(world, panelB.eid, zA);
 	}
+
+	// Re-sort the cached array after shuffling
+	state.sortedPanels = [...panels].sort((a, b) => {
+		const zA = getZIndex(world, a.eid);
+		const zB = getZIndex(world, b.eid);
+		return zA - zB;
+	});
 }
 
 // =============================================================================
@@ -487,18 +495,12 @@ function renderShadow(
 }
 
 function render(state: AppState): void {
-	const { world, panels, buffer, width, height, fps } = state;
+	const { world, panels, sortedPanels, buffer, width, height, fps } = state;
 
 	// Clear buffer with background
 	fillRect(buffer, 0, 0, width, height, ' ', 0xffffffff, BG_COLOR);
 
-	// Sort panels by z-index for correct layering
-	const sortedPanels = [...panels].sort((a, b) => {
-		const zA = getZIndex(world, a.eid);
-		const zB = getZIndex(world, b.eid);
-		return zA - zB;
-	});
-
+	// Use cached sorted panels (updated only on shuffle for performance)
 	// Render all panels (back to front)
 	for (const panel of sortedPanels) {
 		const pos = getPosition(world, panel.eid);
@@ -717,9 +719,17 @@ async function main(): Promise<void> {
 		panels.push(createPanel(world, width, height, i));
 	}
 
+	// Pre-sort panels by z-index for initial cached sort
+	const sortedPanels = [...panels].sort((a, b) => {
+		const zA = getZIndex(world, a.eid);
+		const zB = getZIndex(world, b.eid);
+		return zA - zB;
+	});
+
 	const state: AppState = {
 		world,
 		panels,
+		sortedPanels,
 		buffer,
 		prevBuffer,
 		width,
