@@ -31,7 +31,7 @@ let focusIdx = 0;
 let lastChange = '';
 
 for (const sl of sliders) {
-	onSliderChange(sl.eid, (val) => { lastChange = `${sl.label}: ${val}`; });
+	onSliderChange(world, sl.eid, (val) => { lastChange = `${sl.label}: ${val}`; });
 }
 
 function render(): void {
@@ -43,9 +43,9 @@ function render(): void {
 	for (let i = 0; i < sliders.length; i++) {
 		const sl = sliders[i]!;
 		const focused = i === focusIdx;
-		const val = getSliderValue(sl.eid);
-		const pct = getSliderPercentage(sl.eid);
-		const bar = renderSliderString(sl.eid, 25);
+		const val = getSliderValue(world, sl.eid);
+		const pct = getSliderPercentage(world, sl.eid);
+		const bar = renderSliderString(world, sl.eid, 25);
 		const row = 6 + i * 3;
 		const color = focused ? '\x1b[1;33m' : '\x1b[0m';
 		const indicator = focused ? '>' : ' ';

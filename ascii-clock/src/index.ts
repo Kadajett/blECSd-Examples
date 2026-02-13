@@ -10,6 +10,7 @@ import {
 	cleanup as cleanupOutput,
 	clearBuffer,
 	clearScreen,
+	createDirtyTracker,
 	createDoubleBuffer,
 	createInputHandler,
 	createScreenEntity,
@@ -222,7 +223,8 @@ const initialHeight = Math.max(15, process.stdout.rows ?? DEFAULT_HEIGHT);
 createScreenEntity(world, { width: initialWidth, height: initialHeight });
 
 let doubleBuffer = createDoubleBuffer(initialWidth, initialHeight);
-setRenderBuffer(doubleBuffer);
+let dirtyTracker = createDirtyTracker(initialWidth, initialHeight);
+setRenderBuffer(dirtyTracker, doubleBuffer.backBuffer);
 setOutputBuffer(doubleBuffer);
 setOutputStream(process.stdout);
 
@@ -326,7 +328,8 @@ async function main(): Promise<void> {
 		const resized = getOutputBuffer();
 		if (resized) {
 			doubleBuffer = resized;
-			setRenderBuffer(doubleBuffer);
+			dirtyTracker = createDirtyTracker(doubleBuffer.width, doubleBuffer.height);
+			setRenderBuffer(dirtyTracker, doubleBuffer.backBuffer);
 		}
 
 		updateLayout();
