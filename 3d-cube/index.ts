@@ -9,16 +9,23 @@
  * Quit: Ctrl+C
  */
 
-import { addEntity, createWorld } from 'blecsd';
 import {
+	addEntity,
+	createWorld,
 	type Entity,
 	type World,
 	three,
 	createViewport3D,
+	createDefaultPackedQueryAdapter,
+	setWorldAdapter,
+	syncWorldAdapter,
 } from 'blecsd';
 
 // Create ECS world
 const world = createWorld() as World;
+
+// Use packed adapter for better query performance
+setWorldAdapter(world, createDefaultPackedQueryAdapter(256));
 
 // Terminal dimensions
 const VIEWPORT_WIDTH = 60;
@@ -63,6 +70,9 @@ function frame(): void {
 	const now = Date.now();
 	const dt = (now - lastTime) / 1000;
 	lastTime = now;
+
+	// Sync packed adapter before processing
+	syncWorldAdapter(world);
 
 	// Run animation
 	// Manually update rotation since we don't have the scheduler running
