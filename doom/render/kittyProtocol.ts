@@ -9,7 +9,7 @@
  * @module render/kittyProtocol
  */
 
-import { type three } from 'blecsd';
+import { type three, writeRaw } from 'blecsd';
 
 // ─── Constants ──────────────────────────────────────────────────
 
@@ -81,12 +81,14 @@ export function createKittyRenderer(
 				output += `\x1b_Ga=a,i=${imageId},q=2\x1b\\`;
 			}
 
-			process.stdout.write(output);
+			// TODO: blECSd missing kitty image protocol API - using writeRaw
+			writeRaw(output);
 		},
 
 		cleanup(): void {
 			// Delete image and suppress response
-			process.stdout.write(`\x1b_Ga=d,d=I,i=${imageId},q=2\x1b\\`);
+			// TODO: blECSd missing kitty image protocol API - using writeRaw
+			writeRaw(`\x1b_Ga=d,d=I,i=${imageId},q=2\x1b\\`);
 		},
 	};
 }

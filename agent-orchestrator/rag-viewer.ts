@@ -11,6 +11,7 @@
  * @module agent-orchestrator/rag-viewer
  */
 
+import { setOutputStream, writeRaw, hideCursor, showCursor } from 'blecsd';
 import Database from 'better-sqlite3';
 import { THEME, hexToAnsi } from './ui/theme.js';
 
@@ -366,14 +367,15 @@ function render(): void {
 	const h = state.height;
 
 	if (!state.db) {
-		process.stdout.write(`${CLEAR}${HIDE_CURSOR}`);
-		process.stdout.write(`${FG_ACCENT2}${BOLD} Memory Sidebar${RESET}\n`);
-		process.stdout.write(`${FG_SUBTEXT}${'─'.repeat(w)}${RESET}\n`);
-		process.stdout.write(`\n${FG_WARNING}  Waiting for DB...${RESET}\n`);
-		process.stdout.write(`${DIM}  ${state.dbPath}${RESET}\n`);
-		process.stdout.write(`\n${FG_SUBTEXT}  The orchestrator will${RESET}\n`);
-		process.stdout.write(`${FG_SUBTEXT}  create the database${RESET}\n`);
-		process.stdout.write(`${FG_SUBTEXT}  on first run.${RESET}\n`);
+		writeRaw(CLEAR);
+		hideCursor();
+		writeRaw(`${FG_ACCENT2}${BOLD} Memory Sidebar${RESET}\n`);
+		writeRaw(`${FG_SUBTEXT}${'─'.repeat(w)}${RESET}\n`);
+		writeRaw(`\n${FG_WARNING}  Waiting for DB...${RESET}\n`);
+		writeRaw(`${DIM}  ${state.dbPath}${RESET}\n`);
+		writeRaw(`\n${FG_SUBTEXT}  The orchestrator will${RESET}\n`);
+		writeRaw(`${FG_SUBTEXT}  create the database${RESET}\n`);
+		writeRaw(`${FG_SUBTEXT}  on first run.${RESET}\n`);
 		return;
 	}
 
@@ -390,7 +392,7 @@ function render(): void {
 	output += `${ESC}[${h};1H`;
 	output += renderFooter(w);
 
-	process.stdout.write(output);
+	writeRaw(output);
 }
 
 // =============================================================================
@@ -488,7 +490,8 @@ function connectDb(dbPath: string): Database.Database | null {
 // =============================================================================
 
 function cleanup(): void {
-	process.stdout.write(`${SHOW_CURSOR}${RESET}`);
+	showCursor();
+	writeRaw(RESET);
 	if (state.db) {
 		try { state.db.close(); } catch { /* ignore */ }
 	}
@@ -524,6 +527,9 @@ function renderScrollProgressBar(width: number): string {
 }
 
 function main(): void {
+	// Initialize blECSd output stream
+	setOutputStream(process.stdout);
+
 	// Parse args
 	const args = process.argv.slice(2);
 	let dbPath = DEFAULT_DB_PATH;

@@ -14,7 +14,13 @@
  * @module game/input
  */
 
-import { parseKeyBuffer, parseMouseSequence, isMouseBuffer, type KeyName } from 'blecsd';
+import {
+	parseKeyBuffer,
+	parseMouseSequence,
+	isMouseBuffer,
+	writeRaw,
+	type KeyName,
+} from 'blecsd';
 
 /** How long a key stays "held" after last press event (ms). */
 const KEY_HOLD_MS = 120;
@@ -58,9 +64,10 @@ export function setupInput(): void {
 	process.stdin.resume();
 
 	// Enable SGR 1006 mouse reporting for mouse look
-	process.stdout.write('\x1b[?1000h'); // enable mouse tracking
-	process.stdout.write('\x1b[?1003h'); // enable any-event tracking
-	process.stdout.write('\x1b[?1006h'); // enable SGR extended mode
+	// TODO: blECSd missing mouse tracking enable/disable API - using writeRaw
+	writeRaw('\x1b[?1000h'); // enable mouse tracking
+	writeRaw('\x1b[?1003h'); // enable any-event tracking
+	writeRaw('\x1b[?1006h'); // enable SGR extended mode
 
 	process.stdin.on('data', (data: Buffer | string) => {
 		const buf = typeof data === 'string' ? Buffer.from(data) : data;
@@ -135,9 +142,10 @@ export function pollInput(): InputState {
  */
 export function cleanupInput(): void {
 	// Disable mouse reporting
-	process.stdout.write('\x1b[?1006l');
-	process.stdout.write('\x1b[?1003l');
-	process.stdout.write('\x1b[?1000l');
+	// TODO: blECSd missing mouse tracking enable/disable API - using writeRaw
+	writeRaw('\x1b[?1006l');
+	writeRaw('\x1b[?1003l');
+	writeRaw('\x1b[?1000l');
 
 	if (process.stdin.isTTY) {
 		process.stdin.setRawMode(false);

@@ -19,7 +19,15 @@
  */
 
 import { spawn } from 'node:child_process';
-import { createWorld } from 'blecsd';
+import {
+	createWorld,
+	setOutputStream,
+	enterAlternateScreen,
+	leaveAlternateScreen,
+	hideCursor,
+	showCursor,
+	writeRaw,
+} from 'blecsd';
 import { parseCliArgs, parseAgentSpec, FRAME_MS } from './config.js';
 import * as tmux from './tmux/controller.js';
 import { startMcpServer } from './mcp/server.js';
@@ -165,11 +173,15 @@ async function mainBlecsd(): Promise<void> {
 	});
 	state.backend = backend;
 
+	// Initialize blECSd output stream
+	setOutputStream(process.stdout);
+
 	// Enter alt screen, raw mode, mouse tracking, hide cursor
-	process.stdout.write('\x1b[?1049h'); // Alt screen
-	process.stdout.write('\x1b[?25l');   // Hide cursor
-	process.stdout.write('\x1b[?1006h'); // SGR mouse encoding
-	process.stdout.write('\x1b[?1000h'); // Button press/release only (no motion tracking)
+	enterAlternateScreen();
+	hideCursor();
+	// TODO: blECSd missing mouse tracking enable/disable API - using writeRaw
+	writeRaw('\x1b[?1006h'); // SGR mouse encoding
+	writeRaw('\x1b[?1000h'); // Button press/release only (no motion tracking)
 	if (process.stdin.isTTY) {
 		process.stdin.setRawMode(true);
 	}
@@ -445,10 +457,11 @@ async function main(): Promise<void> {
 
 main().catch((err) => {
 	// Restore terminal on fatal error
-	process.stdout.write('\x1b[?1000l');
-	process.stdout.write('\x1b[?1006l');
-	process.stdout.write('\x1b[?25h');
-	process.stdout.write('\x1b[?1049l');
+	// TODO: blECSd missing mouse tracking enable/disable API - using writeRaw
+	writeRaw('\x1b[?1000l');
+	writeRaw('\x1b[?1006l');
+	showCursor();
+	leaveAlternateScreen();
 	if (process.stdin.isTTY) {
 		process.stdin.setRawMode(false);
 	}

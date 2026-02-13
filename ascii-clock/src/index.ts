@@ -29,6 +29,7 @@ import {
 	setupSigwinchHandler,
 	triggerResize,
 	type World,
+	writeRaw,
 	writeString,
 } from 'blecsd';
 import { createBigText, type FontDefinition } from 'blecsd/widgets';
@@ -89,17 +90,20 @@ const sanitizeGlyphChar = (value: string, fallback: string): string => {
 };
 
 const showHelp = (): never => {
-	process.stdout.write(`ASCII Clock\n\n`);
-	process.stdout.write(`Options:\n`);
-	process.stdout.write(`  --seconds         Show seconds\n`);
-	process.stdout.write(`  --millis          Show milliseconds\n`);
-	process.stdout.write(`  --date            Show date\n`);
-	process.stdout.write(`  --12hour          Use 12-hour format\n`);
-	process.stdout.write(`  --skinny          Use skinny font\n`);
-	process.stdout.write(`  --fill=<char>     Glyph fill character\n`);
-	process.stdout.write(`  --fg=<hex>        Time color (e.g. #36c7ff)\n`);
-	process.stdout.write(`  --date-fg=<hex>   Date color\n`);
-	process.stdout.write(`  --date-format=... Date format tokens (YYYY, MM, DD, MMM, ddd)\n`);
+	// Initialize blECSd output stream early for help text
+	setOutputStream(process.stdout);
+
+	writeRaw(`ASCII Clock\n\n`);
+	writeRaw(`Options:\n`);
+	writeRaw(`  --seconds         Show seconds\n`);
+	writeRaw(`  --millis          Show milliseconds\n`);
+	writeRaw(`  --date            Show date\n`);
+	writeRaw(`  --12hour          Use 12-hour format\n`);
+	writeRaw(`  --skinny          Use skinny font\n`);
+	writeRaw(`  --fill=<char>     Glyph fill character\n`);
+	writeRaw(`  --fg=<hex>        Time color (e.g. #36c7ff)\n`);
+	writeRaw(`  --date-fg=<hex>   Date color\n`);
+	writeRaw(`  --date-format=... Date format tokens (YYYY, MM, DD, MMM, ddd)\n`);
 	process.exit(0);
 };
 

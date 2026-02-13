@@ -11,8 +11,18 @@
  * @module agent-orchestrator/tmux-header
  */
 
-import { addEntity, createWorld } from 'blecsd';
-import { type Entity, type World, three, createViewport3D } from 'blecsd';
+import {
+	addEntity,
+	createWorld,
+	setOutputStream,
+	writeRaw,
+	hideCursor,
+	showCursor,
+	type Entity,
+	type World,
+	three,
+	createViewport3D,
+} from 'blecsd';
 import { THEME, hexToAnsi } from './ui/theme.js';
 import { renderSparkline } from './ui/sparkline.js';
 import { getAgentPalette } from './ui/agentColors.js';
@@ -352,7 +362,7 @@ function renderFrame(
 	ansi += `${ESC}[10;${rightCol + 1}H${THEME.surface.bg}${rightLabel}`;
 	ansi += RESET;
 
-	process.stdout.write(ansi);
+	writeRaw(ansi);
 }
 
 // =============================================================================
@@ -362,11 +372,14 @@ function renderFrame(
 function main(): void {
 	const options = parseArgs(process.argv.slice(2));
 
+	// Initialize blECSd output stream
+	setOutputStream(process.stdout);
+
 	// Hide cursor, clear header area
 	if (process.stdout.isTTY) {
-		process.stdout.write(`${ESC}[?25l`);
+		hideCursor();
 	}
-	process.stdout.write(`${ESC}[2J`);
+	writeRaw(`${ESC}[2J`);
 
 	// Set up 3D cube
 	const cubeState = createCube();
@@ -410,7 +423,8 @@ function main(): void {
 	const cleanup = (): void => {
 		clearInterval(frameLoop);
 		if (process.stdout.isTTY) {
-			process.stdout.write(`${ESC}[?25h${RESET}`);
+			showCursor();
+			writeRaw(RESET);
 		}
 		process.exit(0);
 	};

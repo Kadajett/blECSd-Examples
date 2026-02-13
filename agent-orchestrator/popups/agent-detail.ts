@@ -9,6 +9,7 @@
  * @module agent-orchestrator/popups/agent-detail
  */
 
+import { setOutputStream, writeRaw, hideCursor, showCursor } from 'blecsd';
 import { execSync } from 'node:child_process';
 import { parseTokensFromOutput } from '../utils/tokenTracker.js';
 
@@ -286,7 +287,7 @@ function render(): void {
 	out += `${fg(C.subtext)} Press ${fg(C.accent1)}q${fg(C.subtext)} or ${fg(C.accent1)}Esc${fg(C.subtext)} to close`;
 	out += `    ${fg(C.subtext)}Press ${fg(C.accent1)}r${fg(C.subtext)} to refresh${RESET}`;
 
-	process.stdout.write(out);
+	writeRaw(out);
 }
 
 // =============================================================================
@@ -311,13 +312,16 @@ function handleKey(data: Buffer): void {
 // =============================================================================
 
 function cleanup(): void {
-	process.stdout.write(SHOW_CURSOR);
+	showCursor();
 	if (process.stdin.isTTY) {
 		process.stdin.setRawMode(false);
 	}
 }
 
-process.stdout.write(HIDE_CURSOR);
+// Initialize blECSd output stream
+setOutputStream(process.stdout);
+
+hideCursor();
 if (process.stdin.isTTY) {
 	process.stdin.setRawMode(true);
 }
