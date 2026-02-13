@@ -19,6 +19,7 @@ import {
 	getComputedLayout,
 	getContent,
 	getStyle,
+	hexToColor,
 	layoutSystem,
 	outputSystem,
 	renderSystem,
@@ -33,7 +34,7 @@ import { createBigText } from 'blecsd/widgets';
 import { loadFont } from 'blecsd/widgets/fonts';
 
 async function main(): Promise<void> {
-	const world = createWorld() as World;
+	const world = createWorld();
 
 	const DEFAULT_WIDTH = 120;
 	const DEFAULT_HEIGHT = 40;
@@ -55,8 +56,15 @@ async function main(): Promise<void> {
 	const leftColumn = 2;
 	const rightColumn = Math.min(Math.floor(width / 2) + 2, Math.max(2, width - 40));
 
-	const boldFont = await loadFont('terminus-14-bold');
-	const normalFont = await loadFont('terminus-14-normal');
+	let boldFont;
+	let normalFont;
+	try {
+		boldFont = await loadFont('terminus-14-bold');
+		normalFont = await loadFont('terminus-14-normal');
+	} catch (err) {
+		console.error('Failed to load fonts:', err);
+		process.exit(1);
+	}
 
 	const measureText = (text: string, charWidth: number, charHeight: number) => {
 		const lines = text.split('\n');
@@ -80,7 +88,7 @@ async function main(): Promise<void> {
 		top: titleTop,
 		text: titleText,
 		font: boldFont,
-		fg: '#ffcc00',
+		fg: hexToColor('#ffcc00'),
 		width: titleSize.width,
 		height: titleSize.height,
 	});
@@ -93,7 +101,7 @@ async function main(): Promise<void> {
 		top: subtitleTop,
 		text: subtitleText,
 		font: normalFont,
-		fg: '#5cc8ff',
+		fg: hexToColor('#5cc8ff'),
 		width: subtitleSize.width,
 		height: subtitleSize.height,
 	});
@@ -106,7 +114,7 @@ async function main(): Promise<void> {
 		top: multiLineTop,
 		text: multiLineText,
 		font: boldFont,
-		fg: '#ff6b6b',
+		fg: hexToColor('#ff6b6b'),
 		width: multiLineSize.width,
 		height: multiLineSize.height,
 	});
@@ -119,7 +127,7 @@ async function main(): Promise<void> {
 		top: accentsTop,
 		text: accentsText,
 		font: normalFont,
-		fg: '#8bff7a',
+		fg: hexToColor('#8bff7a'),
 		width: accentsSize.width,
 		height: accentsSize.height,
 	});
@@ -132,7 +140,7 @@ async function main(): Promise<void> {
 		top: outlineTop,
 		text: outlineText,
 		font: normalFont,
-		fg: '#f2f2f2',
+		fg: hexToColor('#f2f2f2'),
 		width: outlineSize.width,
 		height: outlineSize.height,
 	});
@@ -193,7 +201,7 @@ async function main(): Promise<void> {
 	const FRAME_MS = 1000 / 30;
 	const interval = setInterval(() => {
 		layoutSystem(world);
-		renderSystem(world);
+		// Custom rendering for BigText with outline effect
 		renderBigTextContent();
 		doubleBuffer.fullRedraw = true;
 		outputSystem(world);
