@@ -15,6 +15,11 @@ import {
 	type World,
 	three,
 	createViewport3D,
+	enterAlternateScreen,
+	leaveAlternateScreen,
+	hideCursor,
+	showCursor,
+	clearScreen,
 } from 'blecsd';
 
 // Create ECS world
@@ -54,10 +59,10 @@ let lastTime = Date.now();
 const TARGET_FPS = 30;
 const FRAME_MS = 1000 / TARGET_FPS;
 
-// Hide cursor
-process.stdout.write('\x1B[?25l');
-// Clear screen
-process.stdout.write('\x1B[2J');
+// Setup terminal
+enterAlternateScreen();
+hideCursor();
+clearScreen();
 
 function frame(): void {
 	const now = Date.now();
@@ -116,9 +121,8 @@ const interval = setInterval(frame, FRAME_MS);
 // Clean up on exit
 function cleanup(): void {
 	clearInterval(interval);
-	process.stdout.write('\x1B[?25h'); // Show cursor
-	process.stdout.write('\x1B[0m');   // Reset attributes
-	process.stdout.write(`\x1B[${VIEWPORT_HEIGHT + 4};1H`); // Move below viewport
+	showCursor();
+	leaveAlternateScreen();
 	process.exit(0);
 }
 

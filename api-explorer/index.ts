@@ -39,7 +39,17 @@
  * @module api-explorer
  */
 
-import { createWorld, parseMouseSequence, isMouseBuffer } from 'blecsd';
+import {
+	createWorld,
+	parseMouseSequence,
+	isMouseBuffer,
+	enterAlternateScreen,
+	leaveAlternateScreen,
+	hideCursor,
+	showCursor,
+	clearScreen,
+	writeRaw,
+} from 'blecsd';
 import type { World } from 'blecsd';
 
 // =============================================================================
@@ -337,18 +347,18 @@ function createAppState(): AppState {
 // =============================================================================
 
 function enterAltScreen(): void {
-	process.stdout.write('\x1b[?1049h'); // Enter alternate screen
-	process.stdout.write('\x1b[?25l'); // Hide cursor
-	process.stdout.write('\x1b[?1003h'); // Enable any-event mouse tracking
-	process.stdout.write('\x1b[?1006h'); // Enable SGR mouse protocol
-	process.stdout.write('\x1b[2J'); // Clear screen
+	enterAlternateScreen();
+	hideCursor();
+	writeRaw('\x1b[?1003h'); // Enable any-event mouse tracking
+	writeRaw('\x1b[?1006h'); // Enable SGR mouse protocol
+	clearScreen();
 }
 
 function exitAltScreen(): void {
-	process.stdout.write('\x1b[?1006l'); // Disable SGR mouse
-	process.stdout.write('\x1b[?1003l'); // Disable mouse tracking
-	process.stdout.write('\x1b[?25h'); // Show cursor
-	process.stdout.write('\x1b[?1049l'); // Exit alternate screen
+	writeRaw('\x1b[?1006l'); // Disable SGR mouse protocol
+	writeRaw('\x1b[?1003l'); // Disable mouse tracking
+	showCursor();
+	leaveAlternateScreen();
 	process.stdout.write(RESET);
 }
 

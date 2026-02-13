@@ -41,6 +41,13 @@ import {
 	setWorldAdapter,
 	createCellBuffer,
 	packColor,
+	enterAlternateScreen,
+	leaveAlternateScreen,
+	hideCursor,
+	showCursor,
+	clearScreen,
+	cursorHome,
+	writeRaw,
 } from 'blecsd';
 
 // =============================================================================
@@ -81,7 +88,7 @@ const COLORS = [
 	0x55ffaaff, // Lime
 	0xff55aaff, // Pink
 	0xaaffaaff, // Light green
-	0xaaaaff, // Light blue
+	0xaaaaffff, // Light blue
 ];
 
 const BG_COLOR = 0x101018ff;
@@ -645,7 +652,7 @@ function bufferToAnsiDirty(
  * Full buffer render (used for first frame or after resize)
  */
 function bufferToAnsiFull(buffer: CellBufferDirect): string {
-	let output = '\x1b[H'; // Move cursor to home
+	let output = '';
 	let lastFg = -1;
 	let lastBg = -1;
 
@@ -726,8 +733,8 @@ async function main(): Promise<void> {
 	};
 
 	// Setup terminal
-	stdout.write('\x1b[?1049h'); // Alt screen
-	stdout.write('\x1b[?25l'); // Hide cursor
+	enterAlternateScreen();
+	hideCursor();
 	stdin.setRawMode?.(true);
 	stdin.resume();
 
@@ -739,8 +746,11 @@ async function main(): Promise<void> {
 		}
 	});
 
+	// Track if we need a full redraw (first frame, resize, etc.)
+	let needsFullRedraw = true;
+
 	// Handle resize
-	stdout.on('resize', () => {
+	const resizeHandler = (): void => {
 		state.width = stdout.columns ?? 80;
 		state.height = stdout.rows ?? 24;
 		// Recreate both buffers on resize
@@ -748,10 +758,8 @@ async function main(): Promise<void> {
 		state.prevBuffer = createCellBuffer(state.width, state.height) as CellBufferDirect;
 		// Force full redraw on next frame by clearing previous buffer
 		needsFullRedraw = true;
-	});
-
-	// Track if we need a full redraw (first frame, resize, etc.)
-	let needsFullRedraw = true;
+	};
+	stdout.on('resize', resizeHandler);
 
 	// Main loop
 	let lastTime = Date.now();
@@ -759,8 +767,9 @@ async function main(): Promise<void> {
 	const loop = (): void => {
 		if (!state.running) {
 			// Cleanup and exit
-			stdout.write('\x1b[?25h'); // Show cursor
-			stdout.write('\x1b[?1049l'); // Exit alt screen
+			stdout.off('resize', resizeHandler);
+			showCursor();
+			leaveAlternateScreen();
 			process.exit(0);
 		}
 
@@ -791,6 +800,7 @@ async function main(): Promise<void> {
 		// Output using dirty rect optimization
 		if (needsFullRedraw) {
 			// Full redraw for first frame or after resize
+			cursorHome();
 			stdout.write(bufferToAnsiFull(state.buffer));
 			state.dirtyCount = state.width * state.height;
 			needsFullRedraw = false;

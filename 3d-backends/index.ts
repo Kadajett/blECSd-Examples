@@ -14,6 +14,12 @@ import {
 	type World,
 	three,
 	createViewport3D,
+	enterAlternateScreen,
+	leaveAlternateScreen,
+	hideCursor,
+	showCursor,
+	clearScreen,
+	writeRaw,
 } from 'blecsd';
 
 // Backend names and their display labels
@@ -82,9 +88,10 @@ let lastTime = Date.now();
 const TARGET_FPS = 30;
 const FRAME_MS = 1000 / TARGET_FPS;
 
-// Hide cursor and clear screen
-process.stdout.write('\x1B[?25l');
-process.stdout.write('\x1B[2J');
+// Setup terminal
+enterAlternateScreen();
+hideCursor();
+clearScreen();
 
 // Draw title
 const title = ' 3D Backend Comparison - blECSd ';
@@ -196,10 +203,8 @@ const interval = setInterval(frame, FRAME_MS);
 // Clean up on exit
 function cleanup(): void {
 	clearInterval(interval);
-	process.stdout.write('\x1B[?25h'); // Show cursor
-	process.stdout.write('\x1B[0m');   // Reset attributes
-	const bottomRow = TOP_MARGIN + 2 * (VP_HEIGHT + V_GAP + 1) + 2;
-	process.stdout.write(`\x1B[${bottomRow};1H`); // Move below viewports
+	showCursor();
+	leaveAlternateScreen();
 	process.exit(0);
 }
 

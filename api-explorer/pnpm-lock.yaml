@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       blecsd:
-        specifier: file:../../blECSd-Parent/blECSd
-        version: file:../../blECSd-Parent/blECSd
+        specifier: ^0.4.0
+        version: 0.4.0
     devDependencies:
       '@types/node':
         specifier: ^25.2.1
@@ -338,8 +338,8 @@ packages:
   bitecs@0.4.0:
     resolution: {integrity: sha512-ho6Zop/L79DRTnBAfakPpGPuX7y0+lAjX06CpaAW+5tnAc7BH3L3RlSrWAXAqwnQGDZ10GsoxaxyTTsddlun3g==}
 
-  blecsd@file:../../blECSd-Parent/blECSd:
-    resolution: {directory: ../../blECSd-Parent/blECSd, type: directory}
+  blecsd@0.4.0:
+    resolution: {integrity: sha512-FSl1o0w11nQSavy+1zwgZ/V9QUCP6beJJ+BK+YFYAnVOTPszxMUvMGH1zSOWxRhsdZC3MHpX56cBxmS357tsQg==}
     engines: {node: '>=22.0.0'}
     hasBin: true
 
@@ -733,7 +733,7 @@ snapshots:
 
   bitecs@0.4.0: {}
 
-  blecsd@file:../../blECSd-Parent/blECSd:
+  blecsd@0.4.0:
     dependencies:
       bitecs: 0.4.0
       zod: 4.3.6
