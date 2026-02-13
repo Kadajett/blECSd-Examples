@@ -187,6 +187,7 @@ async function mainBlecsd(): Promise<void> {
 		const toolHandlers = createToolHandlers(backend, 'blecsd-0', memoryDepsHolder);
 		mcpState = await startMcpServer(toolDefs, toolHandlers);
 		mcpConfigPath = writeMcpConfig(cliArgs.workspace, mcpState.port);
+		state.mcpConfigPath = mcpConfigPath;
 	} catch (err) {
 		warn('MCP server failed to start, tools will be unavailable', err, 'mcp');
 	}

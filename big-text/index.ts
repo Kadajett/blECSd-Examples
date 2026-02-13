@@ -12,6 +12,7 @@ import { addEntity, createWorld } from 'blecsd';
 import {
 	cleanup as cleanupOutput,
 	clearScreen,
+	createDirtyTracker,
 	createDoubleBuffer,
 	createScreenEntity,
 	enterAlternateScreen,
@@ -42,7 +43,8 @@ async function main(): Promise<void> {
 	createScreenEntity(world, { width, height });
 
 	const doubleBuffer = createDoubleBuffer(width, height);
-	setRenderBuffer(doubleBuffer);
+	const dirtyTracker = createDirtyTracker(width, height);
+	setRenderBuffer(dirtyTracker, doubleBuffer.backBuffer);
 	setOutputBuffer(doubleBuffer);
 	setOutputStream(process.stdout);
 

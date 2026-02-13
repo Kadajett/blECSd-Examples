@@ -1,0 +1,44 @@
+Phase 4: Auto-protection, enemy scaling for massive world, and structure improvements.
+
+Read types.ts, structures/wall.ts, structures/farm.ts, structures/portal.ts, structures/shrine.ts, structures/ship.ts, systems/combat.ts, systems/spawn.ts, systems/construction.ts, entities/greed.ts first.
+
+CRITICAL CHANGES:
+
+1. Auto-protection system in systems/construction.ts:
+   - Add a function planDefenses(state): analyzes the map and creates wall blueprints automatically
+   - When a settlement is first visited (monarch enters within 10 tiles), auto-place wall blueprint positions 15 tiles left and right of the settlement campfire
+   - Builders assigned to a settlement should auto-queue: walls first, then farms
+   - Track blueprint positions in a module-level Set. Blueprints are "virtual structures" with buildProgress 0.
+   - Builders pick the nearest blueprint and start building. Once complete, it becomes a real wall in state.structures.
+   - Export getBlueprints(), addBlueprint(x), removeBlueprint(x)
+
+2. Scale enemies for the massive 1200-wide world:
+   - Update systems/spawn.ts: portals now exist between EACH settlement (not just at forest edges)
+   - Each portal group spawns independently - so the player faces threats from multiple directions
+   - Greed from different portals should target the nearest settlement, not always the center
+   - Add a new greed behavior: roaming bands. During day, small groups of 2-3 greed roam between portals. They're weaker but force the player to patrol.
+
+3. Improve structures/wall.ts:
+   - Add gate structure (StructureType.Gate if not in types.ts, use a numeric value). Gates let friendly units pass but block greed.
+   - Auto-gate: when a wall line is built, automatically place a gate every 10 tiles so builders/archers can move through
+   - Wall chains: connected walls (adjacent x positions) get a +1 HP bonus each. A line of 5 walls each gets +5 bonus HP.
+
+4. Improve structures/portal.ts for the massive world:
+   - Portals should be placed at: x=50, x=275, x=475, x=725, x=925, x=1150 (between settlements)
+   - Each portal has its own difficulty level that scales independently
+   - Destroying a portal permanently clears the area, allowing settlement expansion
+
+5. Add resource nodes in a new file structures/resources.ts:
+   - Gold veins: found in mountain biomes, miners (builders reassigned) extract 1 coin every 10 seconds
+   - Berry bushes: found in forest, farmers can harvest for bonus coins
+   - Export createResource(state, x, type), harvestResource(state, x), getResourceAt(state, x)
+   - Resources deplete after 20 harvests and respawn after 60 seconds
+
+6. Update systems/combat.ts for the wider world:
+   - Combat should only process entities within 50 tiles of the camera (performance optimization)
+   - Archers at different settlements should defend independently
+   - Add settlement defense rating: count walls + archers near each settlement to determine defense strength
+
+7. Update entities/greed.ts: Greed should target the WEAKEST settlement (lowest defense rating) not always the center. This forces the player to balance defense across the map.
+
+Write all changes. Make sure everything typechecks.

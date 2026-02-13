@@ -1,64 +1,92 @@
 /**
- * Keyboard input state management for the Doom game loop.
+ * Input state management for the Doom game loop.
  *
- * Sets up raw stdin and tracks which keys are currently held down
- * per-frame using the blecsd key parser.
+ * Sets up raw stdin and tracks keyboard + mouse input per-frame
+ * using the blecsd key and mouse parsers.
+ *
+ * Key hold tracking: Uses a timestamp map to bridge gaps between
+ * terminal key repeat events. Keys expire after KEY_HOLD_MS without
+ * a new press event, providing smooth held-key movement.
+ *
+ * Mouse look: Enables SGR 1006 mouse reporting and tracks
+ * horizontal mouse delta for turning.
  *
  * @module game/input
  */
 
-import { parseKeyBuffer, type KeyEvent, type KeyName } from 'blecsd';
+import { parseKeyBuffer, parseMouseSequence, isMouseBuffer, type KeyName } from 'blecsd';
 
-/** Set of currently pressed key names. */
+/** How long a key stays "held" after last press event (ms). */
+const KEY_HOLD_MS = 120;
+
+/** Set of currently pressed key names plus mouse delta. */
 export interface InputState {
 	readonly keys: Set<KeyName>;
 	readonly ctrl: boolean;
 	readonly shift: boolean;
+	readonly mouseDeltaX: number;
 }
 
 /** Mutable state for input tracking between frames. */
 interface InputTracker {
-	keys: Set<KeyName>;
+	/** Key name -> timestamp of last press. */
+	keyTimestamps: Map<KeyName, number>;
 	ctrl: boolean;
 	shift: boolean;
-	buffer: Buffer | null;
+	mouseDeltaX: number;
+	lastMouseX: number;
+	mouseInitialized: boolean;
 }
 
 const tracker: InputTracker = {
-	keys: new Set(),
+	keyTimestamps: new Map(),
 	ctrl: false,
 	shift: false,
-	buffer: null,
+	mouseDeltaX: 0,
+	lastMouseX: 0,
+	mouseInitialized: false,
 };
 
 /**
- * Set up raw stdin for keyboard input.
+ * Set up raw stdin for keyboard and mouse input.
  * Must be called once at startup.
- *
- * @example
- * ```typescript
- * setupInput();
- * // In frame loop:
- * const input = pollInput();
- * if (input.keys.has('w')) { // move forward }
- * ```
  */
 export function setupInput(): void {
 	if (process.stdin.isTTY) {
 		process.stdin.setRawMode(true);
 	}
 	process.stdin.resume();
-	process.stdin.setEncoding('utf8');
+
+	// Enable SGR 1006 mouse reporting for mouse look
+	process.stdout.write('\x1b[?1000h'); // enable mouse tracking
+	process.stdout.write('\x1b[?1003h'); // enable any-event tracking
+	process.stdout.write('\x1b[?1006h'); // enable SGR extended mode
 
 	process.stdin.on('data', (data: Buffer | string) => {
 		const buf = typeof data === 'string' ? Buffer.from(data) : data;
-		tracker.buffer = buf;
+		const uint8 = new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength);
 
-		const events = parseKeyBuffer(new Uint8Array(buf.buffer, buf.byteOffset, buf.byteLength));
+		// Check for mouse sequence first
+		if (isMouseBuffer(uint8)) {
+			const result = parseMouseSequence(uint8);
+			if (result?.type === 'mouse') {
+				const event = result.event;
+				if (event.action === 'move' || event.action === 'press') {
+					if (tracker.mouseInitialized) {
+						tracker.mouseDeltaX += event.x - tracker.lastMouseX;
+					}
+					tracker.lastMouseX = event.x;
+					tracker.mouseInitialized = true;
+				}
+			}
+			return;
+		}
 
-		// Update held keys
+		const now = Date.now();
+		const events = parseKeyBuffer(uint8);
+
 		for (const event of events) {
-			tracker.keys.add(event.name);
+			tracker.keyTimestamps.set(event.name, now);
 			if (event.ctrl) tracker.ctrl = true;
 			if (event.shift) tracker.shift = true;
 		}
@@ -66,23 +94,38 @@ export function setupInput(): void {
 }
 
 /**
- * Poll current input state and clear the per-frame buffer.
+ * Poll current input state and clear per-frame accumulators.
  * Call once per frame before processing input.
  *
- * @returns Current input state (keys pressed this frame)
+ * Keys are considered held if they were pressed within KEY_HOLD_MS.
+ * This bridges gaps in terminal key repeat for smooth movement.
+ *
+ * @returns Current input state
  */
 export function pollInput(): InputState {
+	const now = Date.now();
+	const activeKeys = new Set<KeyName>();
+
+	// Collect keys that haven't expired
+	for (const [key, timestamp] of tracker.keyTimestamps) {
+		if (now - timestamp < KEY_HOLD_MS) {
+			activeKeys.add(key);
+		} else {
+			tracker.keyTimestamps.delete(key);
+		}
+	}
+
 	const state: InputState = {
-		keys: new Set(tracker.keys),
+		keys: activeKeys,
 		ctrl: tracker.ctrl,
 		shift: tracker.shift,
+		mouseDeltaX: tracker.mouseDeltaX,
 	};
 
-	// Clear for next frame
-	tracker.keys.clear();
+	// Clear per-frame accumulators (but keep key timestamps)
 	tracker.ctrl = false;
 	tracker.shift = false;
-	tracker.buffer = null;
+	tracker.mouseDeltaX = 0;
 
 	return state;
 }
@@ -91,6 +134,11 @@ export function pollInput(): InputState {
  * Clean up input (restore terminal state).
  */
 export function cleanupInput(): void {
+	// Disable mouse reporting
+	process.stdout.write('\x1b[?1006l');
+	process.stdout.write('\x1b[?1003l');
+	process.stdout.write('\x1b[?1000l');
+
 	if (process.stdin.isTTY) {
 		process.stdin.setRawMode(false);
 	}

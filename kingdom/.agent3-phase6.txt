@@ -1,0 +1,122 @@
+Phase 6: Town Center system, proper 5-tier walls, gem currency, seasonal spawning, catapult.
+
+Read KINGDOM_TODO.md, .research-agent3-world.md, types.ts, wall.ts, portal.ts, spawn.ts, construction.ts first.
+
+You own: combat.ts, wall.ts, portal.ts, resources.ts, shrine.ts, ship.ts, siege.ts, spawn.ts, construction.ts, movement.ts, greed.ts
+
+TASK 1: TOWN CENTER UPGRADE SYSTEM
+Create structures/townCenter.ts (NEW FILE):
+- Town center is at CAMP_CENTER_X (600)
+- TownCenterTier enum will be in types.ts (Agent 1 adds it)
+- Export functions:
+  - getTownCenterTier(state): returns current tier
+  - canUpgradeTownCenter(state): checks coins >= cost AND no cooldown active
+  - upgradeTownCenter(state): deducts coins, increments tier, starts cooldown
+  - updateTownCenter(state, dt): manages upgrade cooldown timer
+  - getTownCenterUnlocks(tier): returns what's unlocked at each tier
+    - Tier 1 (Campfire): bow + hammer stands
+    - Tier 2 (Camp): second tool stand set
+    - Tier 3 (Village): scythe vendor (farmers), inner spike walls
+    - Tier 4 (Town Hall): banker, siege workshop
+    - Tier 5 (Stone Fort): stone walls, pike vendor, catapult station
+    - Tier 6 (Castle): shields (squires), gem keeper
+    - Tier 7 (Iron Keep): bomb, forge, iron walls
+- Cooldown: 30 seconds between upgrades (scales: tier * 10 seconds)
+- Add townCenterTier, townCenterCooldown to GameState in types.ts if Agent 1 hasn't
+- Town center HP: [0, 10, 20, 30, 50, 80, 120, 200] per tier
+- If town center HP reaches 0 from greed attack: game over
+
+TASK 2: PROPER 5-TIER WALL SYSTEM
+Modify wall.ts:
+- Currently has 3 wall types (WallWood, WallStone, WallIron). Expand to 5:
+  - Add StructureType.Spikes (or reuse existing, value = next available)
+  - Add StructureType.TallStone (value = next available)
+  - Update types.ts with new StructureType values
+- Wall tiers with proper stats:
+  | Tier | Type | Cost | HP | Requires |
+  |------|------|------|----|----------|
+  | 1 | Spikes | 1 | 25 | Nothing |
+  | 2 | WallWood | 3 | 50 | Nothing |
+  | 3 | WallStone | 6 | 200 | TownCenterTier >= 5 |
+  | 4 | TallStone | 9 | 300 | TownCenterTier >= 5 |
+  | 5 | WallIron | 12 | 400 | TownCenterTier >= 7 |
+- Upgrade path: each wall can be upgraded to next tier by dropping coins
+- upgradeWall(state, x): checks tier and requirements, upgrades in place
+- Add getWallTier(type): returns 1-5
+- Add getNextWallTier(type): returns next StructureType or null
+- Add getWallUpgradeCost(currentType): returns coin cost for next tier
+- Update isDefensiveStructure to include Spikes
+- Keep chain bonuses, auto-gates, tower conversion
+
+TASK 3: GEM CURRENCY SYSTEM
+Create systems/gems.ts (NEW FILE):
+- Add to GameState: gems: number (starts at 0), gemCapacity: number (default 10)
+- Gems are a secondary currency that persists across islands
+- Functions:
+  - addGems(state, amount): adds gems up to capacity
+  - spendGems(state, amount): returns true if enough, deducts
+  - getGems(state): returns current gem count
+- Gem sources:
+  - Portal destruction: dropGemsOnPortalDestruction(state, portalX)
+    - Small portal: 1-2 gems (random)
+    - Add gem drop to portal destruction in portal.ts
+  - Gem chests: found in ruins terrain (island 2+)
+    - Add GEM_CHEST positions to map generation (Agent 1's domain, but add the interface)
+- Gem uses (for now, just the storage system; hermits/mounts/statues use them later):
+  - Export canAffordGems(state, cost): boolean
+
+TASK 4: CATAPULT WEAPON
+Create structures/catapult.ts (NEW FILE):
+- Requires TownCenterTier >= 5 (Stone Fort) AND siege workshop
+- Cost: 6 coins to build
+- One catapult per side maximum
+- Placement: near outermost wall (within 5 tiles)
+- Mechanics:
+  - 1-2 builders operate it (auto-assigned when idle)
+  - Fires autonomously when loaded and greed in range
+  - Range: 15 tiles from catapult position
+  - Damage: 15 per shot, 3-tile AoE radius
+  - Reload time: 8 seconds (4 seconds with 2 builders)
+  - Can one-shot floaters
+- Fire barrels (future upgrade at Iron Keep): 5 coins each, continuous burn
+- Breeders can pick up and throw back boulders (future)
+- State tracking:
+  - catapults: Map<'left'|'right', CatapultData>
+  - CatapultData: { x, loaded, reloadTimer, builders: Entity[] }
+- Export: createCatapult, updateCatapults, assignBuilderToCatapult
+
+TASK 5: SEASONAL WAVE SPAWNING IN spawn.ts
+Modify spawn.ts for seasonal effects:
+- Import Season from types.ts
+- Winter: longer nights mean more time for greed to attack
+  - Multiply wave size by 1.3 in winter
+  - Shorter day = less prep time
+- Spring: normal waves
+- Summer: slightly smaller waves (0.9x multiplier, longer days for recovery)
+- Autumn: slightly larger waves (1.1x multiplier, warning of winter)
+- Blood moon timing: adjust to be ~2 days before season change
+  - Calculate next season change day, trigger blood moon 2 days before
+  - Keep the every-7-days as fallback
+
+TASK 6: BERRY BUSHES IN WINTER (resources.ts)
+Modify resources.ts:
+- In winter (Season.Winter), dynamically spawn berry bushes in forest zones
+- Berry bushes: harvestable by farmers, yield 1 coin per berry, 4 berries per bush
+- Spawn ~8-12 berry bushes across the map when winter starts
+- Remove them when winter ends
+- Export: spawnWinterBerries(state), clearWinterBerries(state)
+- Call these from the seasonal transition logic
+
+TASK 7: UPDATE construction.ts FOR TOWN CENTER
+- When monarch drops coin at town center position (CAMP_CENTER_X +/- 2):
+  - If canUpgradeTownCenter: trigger upgrade instead of wall build
+  - Show message: "Town Center upgraded to [TierName]!"
+- Add town center to findBestTask priorities (repair town center > repair walls)
+
+TASK 8: UPDATE portal.ts FOR GEM DROPS
+- When a portal is destroyed (in portal.ts or wherever destruction happens):
+  - Call dropGemsOnPortalDestruction from gems.ts
+  - Show message: "Portal destroyed! +N gems"
+- Gems are added directly to state.gems (no physical pickup needed for now)
+
+Make sure everything typechecks when done.

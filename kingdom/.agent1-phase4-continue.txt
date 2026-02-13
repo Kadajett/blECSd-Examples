@@ -1,0 +1,30 @@
+Phase 4 continuation: You already completed types.ts, world/terrain.ts, world/map.ts, and world/camera.ts in a previous session. Now finish the remaining 2 files.
+
+Read types.ts, render/renderer.ts, index.ts first to understand what changed.
+
+REMAINING CHANGES:
+
+1. Update render/renderer.ts to render the new biomes with distinct colors:
+   - Swamp: darker green ground (0x116622ff), blue-green water (0x227766ff)
+   - Mountains: gray/brown elevated terrain (0x887766ff ground, 0x666655ff rock)
+   - Ruins: dark gray structures (0x444444ff), broken walls using box-drawing chars (┌┐└┘│─)
+   - Settlement campfires should glow (alternate between 0xff6600ff and 0xff8800ff based on totalElapsed)
+   - Consumable spots should sparkle/pulse to attract player attention:
+     - FoodCache: yellow pulsing CHAR_COIN
+     - RestShrine: cyan pulsing star
+     - PowerWell: magenta pulsing diamond
+   - Use the ConsumableType enum from types.ts and the consumableSpots/consumedSpots Maps on GameState
+   - Already-consumed spots should NOT be rendered
+
+2. Update index.ts:
+   - Initialize new GameState fields: consumedSpots: new Set(), consumableSpots: new Map() (populated by generateMap), speedBoostTimer: 0
+   - In the game loop (Playing phase), check if monarch walks over a consumable spot:
+     - Get monarch position, check if consumableSpots.has(Math.round(monarchX))
+     - If not already consumed: activate effect, add to consumedSpots
+     - FoodCache: monarchCoins += 3, message "Found food cache! (+3 coins)"
+     - RestShrine: stamina = maxStamina, message "Rested at shrine! (stamina restored)"
+     - PowerWell: speedBoostTimer = 15, message "Power well activated! (speed boost 15s)"
+   - Decrement speedBoostTimer by dt each frame, apply speed multiplier (1.5x) to monarch when > 0
+   - The consumableSpots Map should be populated during generateMap() - check if map.ts already exports it or if you need to wire it
+
+Write all changes. Make sure everything typechecks.

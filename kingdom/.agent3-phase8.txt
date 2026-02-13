@@ -1,0 +1,154 @@
+Phase 8: Tower conversions, farm upgrades, proper boat mechanics, cave portal, counter-attack support.
+
+Read KINGDOM_TODO.md, types.ts, wall.ts, construction.ts, ship.ts, portal.ts, siege.ts, spawn.ts first.
+
+You own: combat.ts, wall.ts, portal.ts, resources.ts, shrine.ts, ship.ts, siege.ts, spawn.ts, construction.ts, movement.ts, greed.ts
+
+TASK 1: SPECIAL TOWER CONVERSIONS IN wall.ts
+After hermit system is implemented (Agent 2), towers can be converted:
+- Add StructureType values for special towers:
+  - BallistaTower: 1 builder operates, fires piercing bolts (hits all greed in a line)
+    - Range: 20 tiles, Damage: 5, Reload: 4 seconds
+    - Cost: 6 coins to convert from existing tower (tier 3+)
+  - FireTower: 1 builder + 1 archer, fires burning projectiles
+    - Range: 15 tiles, Damage: 2/sec burn for 3 seconds, AoE 3 tiles
+    - Cost: 8 coins to convert
+  - BakeryTower: produces 7 bread loaves per day (dawn delivery)
+    - No combat capability, purely economic
+    - Cost: 6 coins to convert
+  - KnightTower: produces 1 shield per day (for squire recruitment)
+    - No combat capability
+    - Cost: 6 coins to convert
+  - BerserkerTower: produces 1 potion per day
+    - Potion: knight picks up for temporary 2x damage, 2x speed for 30 seconds
+    - Cost: 6 coins to convert
+- Tower conversion: hermit dropped at tower triggers conversion
+- Converted towers cannot be further upgraded (locked at conversion tier)
+- Export: convertTower(state, towerX, conversionType), getConvertedTowerOutput
+
+TASK 2: FARM UPGRADES IN construction.ts AND resources.ts
+Proper farm tier system:
+- Tier 1: Water Well / Basic Farm
+  - 5 coins to build at eligible stream position
+  - Up to 4 crop plots, 1 farmer assigned
+  - Harvest: 6 coins per plot (24 coins total per cycle)
+- Tier 2: Farmhouse (Mill House)
+  - 8 coins to upgrade from Tier 1
+  - Up to 6 crop plots, 2 farmers assignable
+  - Provides nighttime shelter for farmers (they stay at farm)
+  - Harvest: 6 coins per plot (36 coins total per cycle)
+- Tier 3: Blessed Farm (via Farmer Statue)
+  - +2 additional plots (8 total), +50% yield
+  - Only while Farmer Statue blessing is active
+- Max 3 farms per side (6 total)
+- Farm placement: only near water/stream tiles
+- Farm destruction by greed: reverts to wild land, farmer loses scythe
+- Add farmTier field to farm StructureData
+- Export: upgradeFarm(state, farmX), getFarmCapacity(tier), getFarmYield(tier, blessed)
+
+TASK 3: PROPER BOAT MECHANICS IN ship.ts
+Expand boat from simple transition to full mechanic:
+- Boat wreck found at island edge (x = 5 or x = MAP_WIDTH - 5)
+- Restoration process:
+  - 10 coins to begin restoration (initial repair)
+  - 59 hull pieces needed, 2 coins each (118 coins total)
+    - Island 1: all pieces free (tutorial), Island 2: 40 free
+  - Track hullPieces: number (0-59)
+  - Builders hammer pieces into place (1 builder per piece, 5 seconds each)
+  - Uninstalled hull pieces can be stolen by greedlings during night
+- Launch: 2 coins to launch boat into water
+- Dock sequence:
+  - Builders push vessel toward dock (0.5x speed, 2+ builders)
+  - Dock bell: 2 coins to summon 3 vagrants and 3 archers as crew
+- Departure: 10 coins to depart
+  - Dog and hermits auto-board
+  - Knight squads can be assigned as escort
+- Return trip: arriving at destination island
+  - If lighthouse exists: safe landing
+  - If no lighthouse: crash landing, lose 20% of coins
+- State: boatState: 'wreck' | 'restoring' | 'ready' | 'launched' | 'docked' | 'departed'
+- State: hullPieces, boatX, boatBuilders: Entity[], boardedEntities: Entity[]
+- Export: startBoatRestoration, addHullPiece, launchBoat, dockBoat, departBoat, boardEntity
+
+TASK 4: CAVE PORTAL SYSTEM IN portal.ts
+Add cave portal as special portal type:
+- Cave portal appears on islands 3+ (one per island)
+- Cave is the "Greed Nest" - source of all greed on the island
+- Cannot be destroyed by normal combat
+- Only destroyed by bomb (see bomb.ts from Phase 7)
+- Cave portal mechanics:
+  - Spawns greed at 2x rate of cliff portals
+  - During blood moon: spawns at 3x rate
+  - When all cliff portals destroyed: cave becomes sole spawner
+  - Cave has "hives" inside equal to island number (Island 3: 3 hives, Island 5: 5 hives)
+- Cave portal HP: 200 * islandIndex (Island 3: 600, Island 5: 1000)
+- When cave destroyed by bomb: ALL greed on island die immediately
+  - Island marked as "cleared" (no more greed spawn ever)
+  - Gem reward: 4-8 gems
+- Add PortalType enum: Cliff, Dock, Cave
+- Add portalType to portal data
+- Export: createCavePortal, isCavePortal, getCaveHiveCount
+
+TASK 5: PORTAL-TO-TELEPORTER CONVERSION IN portal.ts
+When a portal is destroyed:
+- Portal becomes a teleporter after 3 days
+- Teleporter connects to other teleporters on the same island
+- Monarch can use teleporter to fast-travel between destroyed portal locations
+- Cost: 2 coins per teleport
+- Add isTeleporter: boolean to portal data
+- Add teleporterReady: boolean (3-day timer after destruction)
+- When monarch stands on teleporter and presses 'e':
+  - Show list of other teleporter positions
+  - Monarch instantly moves to selected position
+- Export: convertToTeleporter, useTeleporter, getAvailableTeleporters
+
+TASK 6: IMPROVED COMBAT IN combat.ts
+- Piercing damage type for ballista (hits all enemies in a line):
+  - When ballista fires: check all greed at same y within range
+  - Deal damage to each one hit
+- Burn damage type for fire tower:
+  - On hit: apply burn status to greed (2 DPS for 3 seconds)
+  - Track burnTimer per greed entity
+- Pike thrust AoE for pikemen:
+  - Hits all greed within 1.5 tiles of pikeman
+  - Deals 3 damage per thrust
+  - 2 second cooldown between thrusts
+- Catapult AoE: verify Phase 7 catapult damage applies to all greed in radius
+- Mounted combat: monarch on bear can instakill 1 greed (8s cooldown)
+- Add DamageType enum: Normal, Piercing, Burn, AoE
+- Export: applyBurn, applyPiercing, applyAoE
+
+TASK 7: WAVE SCALING IMPROVEMENTS IN spawn.ts
+Proper wave difficulty formula:
+- Base wave size: floor(dayCount / 3) + 2
+- Island multiplier: [1.0, 1.25, 1.5, 1.75, 2.0]
+- Season multiplier: Spring 1.0, Summer 0.9, Autumn 1.1, Winter 1.3
+- Blood moon: 3x multiplier on top
+- Wave composition by day count:
+  - Day 1-5: greedlings only
+  - Day 6-10: greedlings + 1-2 masked
+  - Day 11-15: mixed + first floater
+  - Day 16-20: breeders start appearing
+  - Day 21-30: crown stealers on blood moons
+  - Day 30+: all types, increasing ratios of tough enemies
+- Spawn from multiple portals simultaneously (each contributes fraction of wave)
+- Waves timed to reach kingdom by midnight (spawn earlier for further portals)
+
+TASK 8: CONSTRUCTION PRIORITIES UPDATE
+Update construction.ts for new structures:
+- Add tower conversion to construction tasks
+- Add farm upgrade to construction tasks
+- Add boat restoration to construction tasks (hull pieces)
+- Priority order:
+  1. Repair town center (critical)
+  2. Repair damaged walls (structural)
+  3. Build queued walls/towers (expansion)
+  4. Upgrade town center (progression)
+  5. Upgrade towers (improvement)
+  6. Upgrade farms (economic)
+  7. Boat restoration (when active)
+  8. Cut trees (idle work)
+- Builder assignment: max 2 builders per task (prevent overcrowding)
+- Export: getConstructionPriority(taskType): number
+
+Make sure everything typechecks when done.

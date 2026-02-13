@@ -88,6 +88,10 @@ A physics-based animation with thousands of bouncing panels and collision detect
 
 ![dvdBounce](https://github.com/user-attachments/assets/ba80c94a-4fe6-45d8-acb0-f147f25529d2)
 
+### Claude Chat Simulator
+
+A non-interactive animated demo that simulates the Claude Code CLI interface, streaming a realistic multi-step release workflow with spinners, tool calls, and rich formatting.
+
 ## More Examples
 
 The `demos/` directory contains 68 additional demos covering individual widgets, systems, and features. See the [demos README](./demos/) for the full list.

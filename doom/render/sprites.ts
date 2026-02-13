@@ -8,7 +8,6 @@
  * @module render/sprites
  */
 
-import { three } from 'blecsd';
 import { ANGLETOFINESHIFT, FINEMASK, finecosine, finesine, pointToAngle2 } from '../math/angles.js';
 import { FRACBITS, FRACUNIT, fixedDiv, fixedMul } from '../math/fixed.js';
 import { centerxfrac, centery, projection, viewwidth } from '../math/tables.js';
@@ -24,7 +23,6 @@ import {
 	NUMCOLORMAPS,
 	scalelight,
 } from '../math/tables.js';
-import { drawColumn } from './drawColumn.js';
 
 // ─── Vissprite ────────────────────────────────────────────────────
 
@@ -273,6 +271,9 @@ function drawSpriteColumn(
 	clipBot: number,
 ): void {
 	const invScale = fixedDiv(FRACUNIT, scale);
+	const buf = rs.fb.colorBuffer;
+	const w = rs.screenWidth;
+	const cmap = rs.colormap[colormapIdx];
 
 	for (const post of column) {
 		// Compute screen Y range for this post
@@ -290,7 +291,7 @@ function drawSpriteColumn(
 
 		if (drawTop > drawBot) continue;
 
-		// Draw each pixel in the post
+		// Draw each pixel in the post with direct buffer writes
 		for (let y = drawTop; y <= drawBot; y++) {
 			if (y < 0 || y >= rs.screenHeight) continue;
 
@@ -305,7 +306,15 @@ function drawSpriteColumn(
 			const paletteIdx = post.pixels[postPixelIdx];
 			if (paletteIdx === undefined) continue;
 
-			drawColumn(rs, x, y, paletteIdx, colormapIdx);
+			const shadedIdx = cmap ? (cmap[paletteIdx] ?? paletteIdx) : paletteIdx;
+			const color = rs.palette[shadedIdx];
+			if (!color) continue;
+
+			const offset = (y * w + x) << 2;
+			buf[offset] = color.r;
+			buf[offset + 1] = color.g;
+			buf[offset + 2] = color.b;
+			buf[offset + 3] = 255;
 		}
 	}
 }

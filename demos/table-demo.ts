@@ -8,7 +8,7 @@
  * @module demos/table
  */
 import { createWorld, addEntity } from 'blecsd';
-import { attachTableBehavior, setHeaders, appendRow, getData, getDataRows, renderTableLines, getColumns, removeRow, setTableDisplay } from 'blecsd/components';
+import { attachTableBehavior, setHeaders, appendRow, getDataRows, renderTableLines, removeRow, setTableDisplay } from 'blecsd/components';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, formatHelpBar, formatTitle, isQuitKey, getTerminalSize, moveTo, parseArrowKey } from './demo-utils';
 
 const world = createWorld();
@@ -16,7 +16,7 @@ const table = addEntity(world);
 attachTableBehavior(world, table);
 
 // Configure display
-setTableDisplay(table, {});
+setTableDisplay(world, table, {});
 
 // Set headers
 setHeaders(world, table, [
@@ -45,12 +45,12 @@ function render(): void {
 	const { width, height } = getTerminalSize();
 	const out: string[] = ['\x1b[2J\x1b[H'];
 	out.push(formatTitle('Table Demo') + '\n');
-	const rows = getDataRows(table);
+	const rows = getDataRows(world, table);
 	out.push(`  Rows: \x1b[36m${rows.length}\x1b[0m  Selected: \x1b[33m${selectedRow + 1}\x1b[0m\n`);
 	out.push('  ' + '\u2500'.repeat(Math.min(width - 4, 55)) + '\n\n');
 
 	// Render table lines
-	const lines = renderTableLines(table, Math.min(width - 4, 55));
+	const lines = renderTableLines(world, table, Math.min(width - 4, 55));
 	for (let i = 0; i < lines.length; i++) {
 		const isDataRow = i > 2 && i < lines.length - 1; // Skip header+separator rows
 		const dataIdx = i - 3;
@@ -77,7 +77,7 @@ process.stdin.on('data', (data: Buffer) => {
 	if (isQuitKey(data)) { shutdown(); return; }
 	const ch = data.toString();
 	const dir = parseArrowKey(data);
-	const rows = getDataRows(table);
+	const rows = getDataRows(world, table);
 	if (dir === 'up') selectedRow = Math.max(0, selectedRow - 1);
 	if (dir === 'down') selectedRow = Math.min(rows.length - 1, selectedRow + 1);
 	if (ch === 'a') {
@@ -88,9 +88,9 @@ process.stdin.on('data', (data: Buffer) => {
 	if (ch === 'd' && rows.length > 0) { removeRow(world, table, selectedRow); selectedRow = Math.min(selectedRow, rows.length - 2); }
 	if (ch === 'r') {
 		// Re-randomize all levels
-		const data = getDataRows(table);
+		const data = getDataRows(world, table);
 		// Remove all and re-add with random levels
-		while (getDataRows(table).length > 0) removeRow(world, table, 0);
+		while (getDataRows(world, table).length > 0) removeRow(world, table, 0);
 		for (const row of data) {
 			const cells = row.map((c) => c.value ?? '');
 			cells[2] = String(Math.random() * 99 | 0);

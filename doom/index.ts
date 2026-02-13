@@ -18,6 +18,7 @@
  *   D/Right  - Turn right
  *   Q/,      - Strafe left
  *   E/.      - Strafe right
+ *   Mouse    - Look left/right
  *   Ctrl+C   - Quit
  *
  * @module doom
@@ -71,20 +72,21 @@ import {
 	isInTransition,
 	isEpisodeComplete,
 	doLoadLevel,
-	carryOverPlayerState,
 	mapExists,
 	TransitionPhase,
 } from './game/levelTransition.js';
 import { createSpecialsState, useLines, checkWalkTriggers, runSectorThinkers } from './game/specials.js';
 import { drawIntermission } from './render/intermission.js';
+import { createKittyRenderer } from './render/kittyProtocol.js';
+import { setupTerminal, cleanupTerminal } from './render/terminal.js';
+import { createPaletteState, tickPalette, getPaletteIndex } from './render/paletteEffects.js';
 
 // ─── Configuration ─────────────────────────────────────────────────
 
 const SCREEN_WIDTH = 320;
 const SCREEN_HEIGHT = 200;
-const TARGET_FPS = 30;
 const TICRATE = 35;
-const FRAME_TIME = 1000 / TARGET_FPS;
+const TIC_MS = 1000 / TICRATE;
 
 // ─── Main ──────────────────────────────────────────────────────────
 
@@ -133,7 +135,6 @@ function main(): void {
 		(wad.directory.find((e) => e.name === 'COLORMAP')?.filepos ?? 0) +
 		(wad.directory.find((e) => e.name === 'COLORMAP')?.size ?? 0),
 	));
-	const palette = playpal[0]!;
 
 	// Load textures
 	console.log('Loading textures...');
@@ -161,13 +162,17 @@ function main(): void {
 	const hasTitlePic = loadTitlePic(wad);
 	console.log(`Title screen: ${hasTitlePic ? 'TITLEPIC loaded' : 'fallback'}`);
 
-	// Create framebuffer and backend
+	// Create framebuffer and custom Kitty renderer
 	const fb = three.createPixelFramebuffer({
 		width: SCREEN_WIDTH,
 		height: SCREEN_HEIGHT,
 		enableDepthBuffer: true,
 	});
-	const backend = three.createKittyBackend({ imageId: 1, chunkSize: 1024 * 1024 });
+	const kittyRenderer = createKittyRenderer(1, SCREEN_WIDTH, SCREEN_HEIGHT);
+	kittyRendererRef = kittyRenderer;
+
+	// Create palette effects state
+	const paletteState = createPaletteState();
 
 	// Create player
 	const player = createPlayer(map);
@@ -198,62 +203,28 @@ function main(): void {
 		triggerExit(transitionState, mobjs, secret);
 	};
 
-	// Enter alt screen, hide cursor
-	process.stdout.write('\x1b[?1049h'); // alt screen
-	process.stdout.write('\x1b[?25l');   // hide cursor
+	// Set up terminal (alt screen, cursor hiding)
+	setupTerminal();
 
-	// Set up input
+	// Set up input (keyboard + mouse)
 	setupInput();
 
-	// Frame counter
+	// Frame timing state
+	let lastTime = Date.now();
+	let accumulator = 0;
 	let frameCount = 0;
 	let lastFpsTime = Date.now();
 	let fps = 0;
+	let lastInput = pollInput();
 
-	// ─── Frame Loop ────────────────────────────────────────────────
+	// ─── Game Tic ────────────────────────────────────────────────
 
-	function frame(): void {
-		const frameStart = Date.now();
-
-		// Process input
-		const input = pollInput();
-
-		// Check for Ctrl+C quit (always active)
-		if (input.keys.has('c') && input.ctrl) {
-			shutdown();
-			return;
-		}
+	function gameTic(): void {
+		const input = lastInput;
 
 		// ─── Menu Mode ──────────────────────────────────────────
+		// Menu is handled in the frame loop (quit check + rendering).
 		if (isMenuActive(menuState)) {
-			const menuResult = updateMenu(menuState, input.keys);
-
-			if (menuResult.quit) {
-				shutdown();
-				return;
-			}
-
-			// Draw title screen with menu overlays
-			drawTitleScreen(fb, palette, menuState);
-
-			// Encode and output
-			const encoded = backend.encode(fb, 0, 0);
-			if (encoded.escape) {
-				process.stdout.write(`\x1b[1;1H${encoded.escape}`);
-			}
-
-			// Schedule next frame
-			const elapsed = Date.now() - frameStart;
-			const delay = Math.max(1, FRAME_TIME - elapsed);
-			setTimeout(frame, delay);
-			return;
-		}
-
-		// ─── Gameplay Mode ──────────────────────────────────────
-
-		// Escape quits during gameplay
-		if (input.keys.has('escape')) {
-			shutdown();
 			return;
 		}
 
@@ -266,7 +237,6 @@ function main(): void {
 		if (transitionState.phase === TransitionPhase.INTERMISSION) {
 			tickIntermission(transitionState);
 
-			// Space skips count animation or advances past intermission
 			if (input.keys.has('space')) {
 				if (!transitionState.countsFinished) {
 					skipCounts(transitionState);
@@ -274,20 +244,6 @@ function main(): void {
 					advanceToLoading(transitionState);
 				}
 			}
-
-			// Draw intermission screen
-			drawIntermission(fb, palette, transitionState);
-
-			// Encode and output
-			const encoded = backend.encode(fb, 0, 0);
-			if (encoded.escape) {
-				process.stdout.write(`\x1b[1;1H${encoded.escape}`);
-			}
-
-			// Schedule next frame (skip gameplay rendering)
-			const elapsed = Date.now() - frameStart;
-			const delay = Math.max(1, FRAME_TIME - elapsed);
-			setTimeout(frame, delay);
 			return;
 		}
 
@@ -296,7 +252,6 @@ function main(): void {
 			const nextMapName = transitionState.nextMap;
 
 			if (!nextMapName || isEpisodeComplete(transitionState) || !mapExists(wad, nextMapName)) {
-				// Episode complete or no next map: reset to title
 				completeTransition(transitionState, transitionState.currentMap, mobjs);
 				shutdown();
 				return;
@@ -362,8 +317,6 @@ function main(): void {
 
 			// Complete transition
 			completeTransition(transitionState, nextMapName, mobjs);
-
-			console.log(`Loaded map: ${nextMapName}`);
 		}
 
 		// ─── Gameplay ───────────────────────────────────────────
@@ -377,7 +330,6 @@ function main(): void {
 		tickDeath(gameState, player);
 
 		// Update player and weapons only when alive
-		let extralight = 0;
 		if (canPlayerAct(gameState) && !isInTransition(transitionState)) {
 			updatePlayer(player, input, map);
 			updateHud(hudState, input);
@@ -407,10 +359,10 @@ function main(): void {
 					}
 				}
 			}
-
-			// Apply muzzle flash extralight
-			extralight = weaponState.flashTics > 0 ? 2 : 0;
 		}
+
+		// Tick palette effects
+		tickPalette(paletteState);
 
 		// Run enemy AI thinkers (still run while dying for ambient animation)
 		runThinkers(mobjs, player, gameState, map);
@@ -420,9 +372,36 @@ function main(): void {
 
 		// Run sector movers (doors, lifts, platforms, crushers)
 		runSectorThinkers(specialsState, map);
+	}
 
-		// Set up render state
-		const rs = createRenderState(fb, map, textures, palette, colormap);
+	// ─── Render Frame ───────────────────────────────────────────
+
+	function renderFrame(): void {
+		// Select active palette based on effects (read-only, no mutation)
+		const paletteIdx = getPaletteIndex(paletteState);
+		const activePalette = playpal[paletteIdx] ?? playpal[0]!;
+
+		// ─── Menu Rendering ──────────────────────────────────────
+		if (isMenuActive(menuState)) {
+			drawTitleScreen(fb, activePalette, menuState);
+			kittyRenderer.renderFrame(fb);
+			return;
+		}
+
+		// ─── Intermission Rendering ──────────────────────────────
+		if (transitionState.phase === TransitionPhase.INTERMISSION) {
+			drawIntermission(fb, activePalette, transitionState);
+			kittyRenderer.renderFrame(fb);
+			return;
+		}
+
+		// ─── Gameplay Rendering ──────────────────────────────────
+
+		// Apply muzzle flash extralight
+		const extralight = (canPlayerAct(gameState) && weaponState.flashTics > 0) ? 2 : 0;
+
+		// Set up render state with active palette
+		const rs = createRenderState(fb, map, textures, activePalette, colormap);
 		rs.viewx = player.x;
 		rs.viewy = player.y;
 		rs.viewz = player.viewz;
@@ -433,11 +412,19 @@ function main(): void {
 		rs.viewsin = finesine[fineAngle] ?? 0;
 		rs.extralight = extralight;
 
-		// Recalculate flat scales for current view angle (matching R_ClearPlanes)
+		// Recalculate flat scales for current view angle
 		updateFlatScales(player.angle);
 
 		// Clear framebuffer
-		three.clearFramebuffer(fb, { r: 0, g: 0, b: 0, a: 255 });
+		const buf = fb.colorBuffer;
+		const totalPixels = SCREEN_WIDTH * SCREEN_HEIGHT;
+		for (let i = 0; i < totalPixels; i++) {
+			const off = i << 2;
+			buf[off] = 0;
+			buf[off + 1] = 0;
+			buf[off + 2] = 0;
+			buf[off + 3] = 255;
+		}
 
 		// Render BSP (walls)
 		if (map.nodes.length > 0) {
@@ -465,26 +452,62 @@ function main(): void {
 			drawGameOverOverlay(rs);
 		}
 
-		// Encode and output
-		const encoded = backend.encode(fb, 0, 0);
-		if (encoded.escape) {
-			// Position at top-left and write
-			process.stdout.write(`\x1b[1;1H${encoded.escape}`);
+		// Output frame via custom Kitty protocol
+		kittyRenderer.renderFrame(fb);
+	}
+
+	// ─── Frame Loop (Fixed Timestep) ────────────────────────────
+
+	function frame(): void {
+		const now = Date.now();
+		accumulator += now - lastTime;
+		lastTime = now;
+
+		// Poll input once per frame
+		lastInput = pollInput();
+
+		// Check for Ctrl+C quit (always active)
+		if (lastInput.keys.has('c') && lastInput.ctrl) {
+			shutdown();
+			return;
 		}
+
+		// Check for quit conditions
+		if (isMenuActive(menuState)) {
+			const menuResult = updateMenu(menuState, lastInput.keys);
+			if (menuResult.quit) {
+				shutdown();
+				return;
+			}
+		} else if (lastInput.keys.has('escape')) {
+			shutdown();
+			return;
+		}
+
+		// Run game tics at fixed 35 Hz
+		// Cap accumulator to prevent spiral of death
+		if (accumulator > TIC_MS * 4) {
+			accumulator = TIC_MS * 4;
+		}
+
+		while (accumulator >= TIC_MS) {
+			gameTic();
+			accumulator -= TIC_MS;
+		}
+
+		// Render at display rate
+		renderFrame();
 
 		// FPS counter
 		frameCount++;
-		const now = Date.now();
 		if (now - lastFpsTime >= 1000) {
 			fps = frameCount;
 			frameCount = 0;
 			lastFpsTime = now;
 		}
 
-		// Schedule next frame
-		const elapsed = Date.now() - frameStart;
-		const delay = Math.max(1, FRAME_TIME - elapsed);
-		setTimeout(frame, delay);
+		// Schedule next frame using setImmediate for lower latency
+		setImmediate(frame);
 	}
 
 	// Start the loop
@@ -494,15 +517,18 @@ function main(): void {
 
 // ─── Death / Game Over Overlays ─────────────────────────────────────
 
+interface OverlayTarget {
+	fb: { colorBuffer: Uint8ClampedArray };
+	screenWidth: number;
+	screenHeight: number;
+}
+
 /**
  * Draw a red-tinted "YOU DIED" overlay with respawn prompt.
- * Shows remaining lives and "Press SPACE to respawn".
  */
-function drawDeathOverlay(rs: { fb: ReturnType<typeof three.createPixelFramebuffer>; screenWidth: number; screenHeight: number }, lives: number): void {
-	// Red tint over entire screen
+function drawDeathOverlay(rs: OverlayTarget, lives: number): void {
 	applyRedTint(rs);
 
-	// Center text: "YOU DIED" and "PRESS SPACE TO RESPAWN"
 	const cx = Math.floor(rs.screenWidth / 2);
 	const cy = Math.floor(rs.screenHeight / 2) - 20;
 
@@ -514,8 +540,7 @@ function drawDeathOverlay(rs: { fb: ReturnType<typeof three.createPixelFramebuff
 /**
  * Draw a "GAME OVER" overlay.
  */
-function drawGameOverOverlay(rs: { fb: ReturnType<typeof three.createPixelFramebuffer>; screenWidth: number; screenHeight: number }): void {
-	// Deep red tint
+function drawGameOverOverlay(rs: OverlayTarget): void {
 	applyRedTint(rs);
 
 	const cx = Math.floor(rs.screenWidth / 2);
@@ -527,10 +552,9 @@ function drawGameOverOverlay(rs: { fb: ReturnType<typeof three.createPixelFrameb
 /**
  * Apply a red tint to the framebuffer by blending red into every pixel.
  */
-function applyRedTint(rs: { fb: ReturnType<typeof three.createPixelFramebuffer>; screenWidth: number; screenHeight: number }): void {
+function applyRedTint(rs: OverlayTarget): void {
 	const data = rs.fb.colorBuffer;
 	for (let i = 0; i < data.length; i += 4) {
-		// Blend toward red: increase red channel, reduce green and blue
 		const r = data[i] ?? 0;
 		const g = data[i + 1] ?? 0;
 		const b = data[i + 2] ?? 0;
@@ -542,10 +566,9 @@ function applyRedTint(rs: { fb: ReturnType<typeof three.createPixelFramebuffer>;
 
 /**
  * Draw simple text at a position using 3x5 minimal font.
- * Each character is 4px wide (3px char + 1px gap).
  */
 function drawOverlayText(
-	rs: { fb: ReturnType<typeof three.createPixelFramebuffer>; screenWidth: number; screenHeight: number },
+	rs: OverlayTarget,
 	x: number,
 	y: number,
 	text: string,
@@ -567,7 +590,12 @@ function drawOverlayText(
 				const px = cx + col;
 				const py = y + row;
 				if (px >= 0 && px < rs.screenWidth && py >= 0 && py < rs.screenHeight) {
-					three.setPixelUnsafe(rs.fb, px, py, r, g, b, 255);
+					const offset = (py * rs.screenWidth + px) << 2;
+					const buf = rs.fb.colorBuffer;
+					buf[offset] = r;
+					buf[offset + 1] = g;
+					buf[offset + 2] = b;
+					buf[offset + 3] = 255;
 				}
 			}
 		}
@@ -610,10 +638,11 @@ const OVERLAY_FONT: Readonly<Record<string, readonly string[]>> = {
 
 // ─── Shutdown ──────────────────────────────────────────────────────
 
+let kittyRendererRef: ReturnType<typeof createKittyRenderer> | null = null;
+
 function shutdown(): void {
 	cleanupInput();
-	process.stdout.write('\x1b[?25h');   // show cursor
-	process.stdout.write('\x1b[?1049l'); // exit alt screen
+	cleanupTerminal(kittyRendererRef ?? undefined);
 	console.log('Terminal Doom exited.');
 	process.exit(0);
 }

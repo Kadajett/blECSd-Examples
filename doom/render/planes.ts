@@ -8,7 +8,6 @@
  * @module render/planes
  */
 
-import { three } from 'blecsd';
 import {
 	ANGLETOFINESHIFT,
 	FINEMASK,
@@ -318,6 +317,9 @@ function drawFlatSpan(
 	const colormapIdx = rs.fixedcolormap ?? (lightTable?.[zIdx] ?? 0);
 	const cmap = rs.colormap[colormapIdx];
 
+	const buf = rs.fb.colorBuffer;
+	let offset = (y * rs.screenWidth + x1) << 2;
+
 	for (let x = x1; x <= x2; x++) {
 		const tx = ((xfrac >> FRACBITS) & 63);
 		const ty = ((yfrac >> FRACBITS) & 63);
@@ -326,9 +328,13 @@ function drawFlatSpan(
 		const shadedIdx = cmap ? (cmap[paletteIdx] ?? paletteIdx) : paletteIdx;
 		const color = rs.palette[shadedIdx];
 		if (color) {
-			three.setPixelUnsafe(rs.fb, x, y, color.r, color.g, color.b, 255);
+			buf[offset] = color.r;
+			buf[offset + 1] = color.g;
+			buf[offset + 2] = color.b;
+			buf[offset + 3] = 255;
 		}
 
+		offset += 4;
 		xfrac += xstep;
 		yfrac += ystep;
 	}
@@ -376,6 +382,9 @@ function drawSkyPlane(rs: RenderState, plane: Visplane): void {
  * Fallback sky gradient when SKY1 texture is not found.
  */
 function drawSkyGradient(rs: RenderState, plane: Visplane): void {
+	const buf = rs.fb.colorBuffer;
+	const w = rs.screenWidth;
+
 	for (let x = plane.minx; x <= plane.maxx; x++) {
 		const top = plane.top[x];
 		const bottom = plane.bottom[x];
@@ -384,10 +393,11 @@ function drawSkyGradient(rs: RenderState, plane: Visplane): void {
 		for (let y = top; y <= bottom; y++) {
 			if (y < 0 || y >= rs.screenHeight) continue;
 			const t = y / rs.screenHeight;
-			const r = Math.round(20 + t * 40);
-			const g = Math.round(30 + t * 50);
-			const b = Math.round(80 + t * 120);
-			three.setPixelUnsafe(rs.fb, x, y, r, g, b, 255);
+			const offset = (y * w + x) << 2;
+			buf[offset] = Math.round(20 + t * 40);
+			buf[offset + 1] = Math.round(30 + t * 50);
+			buf[offset + 2] = Math.round(80 + t * 120);
+			buf[offset + 3] = 255;
 		}
 	}
 }
@@ -396,6 +406,9 @@ function drawSkyGradient(rs: RenderState, plane: Visplane): void {
  * Draw a solid-colored plane (fallback when flat texture is missing).
  */
 function drawSolidPlane(rs: RenderState, plane: Visplane): void {
+	const buf = rs.fb.colorBuffer;
+	const w = rs.screenWidth;
+
 	// Dark gray for missing flats
 	for (let x = plane.minx; x <= plane.maxx; x++) {
 		const top = plane.top[x];
@@ -404,7 +417,11 @@ function drawSolidPlane(rs: RenderState, plane: Visplane): void {
 
 		for (let y = top; y <= bottom; y++) {
 			if (y < 0 || y >= rs.screenHeight) continue;
-			three.setPixelUnsafe(rs.fb, x, y, 40, 40, 40, 255);
+			const offset = (y * w + x) << 2;
+			buf[offset] = 40;
+			buf[offset + 1] = 40;
+			buf[offset + 2] = 40;
+			buf[offset + 3] = 255;
 		}
 	}
 }

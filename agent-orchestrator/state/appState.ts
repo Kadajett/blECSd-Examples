@@ -84,6 +84,9 @@ export function createAppState(world: World, cliArgs: CliArgs): AppState {
 		// Timing
 		startTime: Date.now(),
 
+		// MCP
+		mcpConfigPath: null,
+
 		// Counters
 		nextAgentId: 0,
 	};

@@ -1,0 +1,18 @@
+Phase 2: Improve entities and economy. The game runs but needs gameplay depth. Read the current files first (all files in entities/, game/economy.ts, systems/ai.ts, systems/movement.ts).
+
+Tasks:
+1. Fix economy.ts dropCoin: Currently it checks proximity to structures but the structure detection needs to work with the actual state.structures Map (keyed by x position). Make sure dropping coins near vagrants recruits them, near bow stands makes archers, near hammer stands makes builders. Test the proximity logic carefully. The monarch position comes from getPosition(state.world, state.monarch.eid).
+
+2. Add animal hunting to entities/archer.ts: During Day, archers should generate coins periodically (simulating hunting rabbits/deer). Every 8 seconds while patrolling, an archer generates HUNT_REWARD coins via collectCoins. Add a huntTimer to track this.
+
+3. Improve entities/builder.ts: Builders should visually move toward their target structure. When working, they should decrement a buildTimer on the StructureData. Add a buildTimer field to StructureData in types or track it locally. When builders finish, mark the structure as built.
+
+4. Add unit cap and cost scaling: Max 3 archers, 3 builders, 2 farmers per island. Show "No room" message if cap reached. Recruitment cost increases: 2nd unit costs +1, 3rd costs +2.
+
+5. Improve systems/ai.ts: Add proper dusk retreat behavior. At dusk, all units should pathfind toward the nearest wall on their side, then move behind it. At night, archers should position themselves AT wall positions (wall x), not behind them.
+
+6. Add a new file entities/knight.ts: Mid-game unit unlocked on day 5. Knights cost 5 coins, lead a squad of 2 archers toward portals. They can damage portals. Export createKnight, updateKnight.
+
+7. Update systems/movement.ts: Add collision avoidance so units don't stack on the same tile. Spread units with a minimum spacing of 1 tile.
+
+Write all changes now. Make sure everything typechecks.

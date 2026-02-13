@@ -150,6 +150,9 @@ export interface AppState {
 	readonly workspacePath: string;
 	readonly dbPath: string;
 
+	/** MCP config file path (set after MCP server starts, used by workers). */
+	mcpConfigPath: string | null;
+
 	// Timing
 	readonly startTime: number;
 

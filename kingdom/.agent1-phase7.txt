@@ -1,0 +1,99 @@
+Phase 7: Tower tiers, weather effects, crown visual, input improvements, island select screen.
+
+Read KINGDOM_TODO.md, types.ts, renderer.ts, hud.ts, index.ts, effects.ts first.
+
+You own: renderer.ts, hud.ts, index.ts, types.ts, effects.ts, sound.ts, world/terrain.ts, world/map.ts, world/camera.ts
+
+TASK 1: TOWER TIER SYSTEM IN types.ts AND renderer.ts
+Currently towers are a single type. Expand to 6 tiers.
+In types.ts:
+- Add TowerTier enum: RockPlatform=1, WoodWatchtower=2, StoneTower=3, TripletTower=4, RoofedTriplet=5, QuadrupletTower=6
+- Add TOWER_COSTS: [0, 3, 5, 7, 9, 12, 15]
+- Add TOWER_ARCHER_CAPACITY: [0, 1, 1, 2, 3, 3, 4] (archers per tower tier)
+- Add TOWER_NAMES: ['None', 'Rock Platform', 'Watchtower', 'Stone Tower', 'Triplet', 'Roofed Triplet', 'Quadruplet']
+- Add towerTier field to StructureData (default 1)
+- Add isRoofed flag to StructureData (true for tier 5+, protects from floaters)
+
+In renderer.ts, update tower rendering:
+- Tier 1 (Rock Platform): '=' single char, brown
+- Tier 2 (Watchtower): 'T' wood color (0x886633ff)
+- Tier 3 (Stone Tower): 'T' stone gray (0x999999ff), taller visual (2 chars high if possible)
+- Tier 4 (Triplet): 'TTT' stone, 3 chars wide
+- Tier 5 (Roofed Triplet): '^T^' with roof char, gray
+- Tier 6 (Quadruplet): '^TT^' 4 chars with roof
+- Show archer count on tower: small number on top
+
+TASK 2: WEATHER EFFECTS IN effects.ts
+Add weather visual overlays:
+- Create WeatherType enum in types.ts: Clear=0, Rain=1, Snow=2, Storm=3
+- Add weather: WeatherType to GameState (default Clear)
+- Rain effect: random '|' or '/' chars falling from top of screen
+  - Render ~20 raindrops per frame at random x positions
+  - Raindrop positions scroll down each frame (use time-based offset)
+  - Color: 0x4488bbff (blue-gray)
+  - Only during spring/autumn occasionally
+- Snow effect: random '*' or '.' chars drifting down slowly
+  - ~15 snowflakes per frame, drift sideways slightly (sinusoidal x offset)
+  - Color: 0xddddffff (pale white-blue)
+  - Only during winter
+- Storm effect: same as rain but denser (40 drops), with occasional flash
+  - Flash: set all sky bg to 0xffffffaa for 2 frames, then back
+  - Only during blood moon or specific events
+- Export: renderWeather(buffer, width, height, weather, time)
+- Call from main render function after sky but before entities
+
+TASK 3: WEATHER STATE LOGIC IN index.ts
+- In game loop, set weather based on season:
+  - Spring: 30% chance of Rain each day (set at dawn)
+  - Summer: always Clear
+  - Autumn: 20% chance of Rain
+  - Winter: 80% chance of Snow, 20% Clear
+  - Blood Moon: always Storm
+- Use a simple deterministic check: (dayCount * 7 + seasonDay * 13) % 100 < threshold
+- Reset weather at dawn each day
+
+TASK 4: CROWN VISUAL IN renderer.ts
+When monarch's crown is knocked off (future mechanic, prepare the visual):
+- Add crownDropped: boolean, crownX: number, crownY: number to GameState
+- Render dropped crown as 'W' in gold (0xffcc00ff) bouncing on ground
+  - Bounce animation: use sin(time * 8) for small y offset (1-2 chars)
+  - Sparkle effect: alternate between 'W' and '*' every 500ms
+- When crown is on monarch's head: render '^' or 'W' above monarch char
+- Currently monarch is rendered as '@'. Add crown above: render 'W' at monarch position, y-1
+
+TASK 5: INPUT IMPROVEMENTS IN game/input.ts
+Add new key bindings:
+- 'e' or Enter: Interact key (recruit NPC, activate shrine, board boat)
+  - Export: consumeInteract(): boolean
+- 'p': Toggle pause
+  - Add isPaused: boolean to GameState
+  - Export: consumePause(): boolean
+- 'Tab': Toggle minimap (future, just add the binding)
+  - Export: consumeTab(): boolean
+- 'q': Open quit menu (future, just add the binding)
+  - Export: consumeQuit(): boolean
+- Number keys '1'-'9': Quick action slots (future)
+  - Export: consumeNumberKey(): number | null
+
+TASK 6: PAUSE SCREEN IN renderer.ts
+When state.isPaused is true:
+- Dim the entire screen (darken all bg colors by 50%)
+- Show centered "PAUSED" text in white
+- Show "Press P to resume" below
+- Show "Press Q to quit" below that
+- Game loop in index.ts should skip all updates when paused (only poll input for P/Q)
+
+TASK 7: HUD IMPROVEMENTS
+- Show weather icon in HUD: Clear=' ', Rain='~', Snow='*', Storm='!'
+- Show tower count and highest tier
+- Show "Crown!" warning when crownDropped is true (flashing red)
+- Improve the blood moon HUD: add pulsing effect (alternate bright/dim red)
+- Show current island number: "Island 1" etc.
+
+TASK 8: UPDATE RENDERER FOR TOWER TIERS
+- In the structure rendering section, check towerTier field
+- Render different tower visuals per tier
+- Show occupied archer count vs capacity: e.g., "2/3" above tower
+- Roofed towers (tier 5+): render with roof char '^' above, use slightly different color
+
+Make sure everything typechecks when done.

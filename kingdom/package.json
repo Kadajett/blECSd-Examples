@@ -1,0 +1,20 @@
+{
+  "name": "kingdom",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Kingdom-style side-scrolling strategy game built with blECSd TUI framework",
+  "scripts": {
+    "dev": "tsx index.ts",
+    "build": "tsup index.ts --format esm --dts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "blecsd": "file:../../blECSd"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.2",
+    "tsup": "^8.5.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

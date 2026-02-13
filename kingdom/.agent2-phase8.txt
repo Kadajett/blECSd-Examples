@@ -1,0 +1,147 @@
+Phase 8: Hermit system, multiple mounts, statue blessings, proper knight portal assault.
+
+Read KINGDOM_TODO.md, types.ts, knight.ts, mount.ts, archer.ts, economy.ts, ai.ts first.
+
+You own: monarch.ts, villager.ts, builder.ts, archer.ts, farmer.ts, knight.ts, animals.ts, mount.ts, economy.ts, ai.ts
+
+TASK 1: HERMIT SYSTEM
+Create entities/hermit.ts (NEW FILE):
+- 7 hermit types, each on specific islands:
+  - Ballista Hermit (Island 1, 3 gems to coax, 1 coin to mount)
+    - Unlocks: convert towers to ballista towers
+  - Stable Hermit (Island 2, 1 gem, 1 coin)
+    - Unlocks: farmhouse upgrade, mount summoning horn
+  - Bakery Hermit (Island 3, 4 gems, 1 coin)
+    - Unlocks: convert towers to bakeries (produce bread for vagrant recruitment)
+  - Knight Hermit (Island 4, 2 gems, 1 coin)
+    - Unlocks: convert towers to squire towers (produce shields)
+  - Horn Hermit (Island 5, 3 gems, 1 coin)
+    - Unlocks: horn walls (reinforcement call each night)
+  - Fire Tower Hermit (varies, 2 gems, 1 coin)
+    - Unlocks: convert towers to fire towers (AoE burn)
+  - Berserker Hermit (varies, 2 gems, 1 coin)
+    - Unlocks: berserker towers (produce potions for knights)
+
+Hermit mechanics:
+- Each hermit lives in a cottage in the forest (fixed position per island)
+- Monarch visits cottage, pays gem cost to "coax" hermit out
+- Hermit rides on monarch's mount (only 1 hermit at a time)
+- Drop hermit at target tower/structure to convert it
+- Hermit then returns to cottage (walks back slowly)
+- If greed reaches hermit: hermit kidnapped, must destroy that portal to rescue
+- State per hermit: { type, islandIndex, x, coaxed, riding, kidnapped, rescuable }
+- Export: createHermit, updateHermit, coaxHermit, dropHermit, getAvailableHermits
+
+TASK 2: MULTIPLE MOUNT TYPES IN mount.ts
+Expand from single horse to 7 mount types:
+- Each mount found at a stable (or wild location) on specific islands
+- Gem cost to unlock, coin cost to ride:
+
+  | Mount | Island | Gems | Coins | Speed | Stamina | Ability |
+  |-------|--------|------|-------|-------|---------|---------|
+  | Horse | 1 | 0 | 3 | 1.5x | 100 | None (baseline) |
+  | Stag | 2 | 1 | 3 | 1.3x | 80 | Attracts deer within 20 tiles |
+  | Griffin | 1 | 2 | 8 | 1.8x | 60 | Wing flap knockback (5 tiles AoE) |
+  | Warhorse | 3 | 2 | 8 | 1.5x | 120 | Charge: 10s invincibility to nearby allies |
+  | Bear | 4 | 3 | 11 | 1.0x | 150 | Pounce: instakill 1 greed, 8s cooldown |
+  | Lizard | 4 | 3 | 10 | 1.3x | 70 | Fire breath: 3-tile cone, 3 DPS, 6s cooldown |
+  | Unicorn | 5 | 4 | 12 | 1.4x | 90 | Grass eating: generates 3 coins, 15s cooldown |
+
+- Mount stable: fixed position per island where mounts are housed
+- 3 coins to switch between unlocked mounts at stable
+- Mount loss: when monarch takes hit, mount bucks and returns to stable
+  - Monarch on foot until reaching stable again
+- Mount grazing: when idle (monarch not moving), mount slowly regenerates stamina
+- Ability activation: use 'e' key while riding to trigger mount ability
+- State: mountsUnlocked: Set<MountType>, currentMount: MountType, mountAbilityCooldown: number
+- Export: switchMount, activateMountAbility, updateMountAbility, getMountStats
+
+TASK 3: STATUE BLESSING SYSTEM
+Create entities/statue.ts (NEW FILE):
+- 4 statues on specific islands:
+  - Archer Statue (Island 1): 4 gems unlock, 10 coins activate
+    - Blessing: all archers get perfect accuracy for 1 full day/night cycle
+  - Farmer Statue (Island 2): 1 gem unlock, 7 coins activate
+    - Blessing: +2 farmers per farm, farms produce 50% more for 2 days
+  - Builder Statue (Island 3): 3 gems unlock, 9 coins activate
+    - Blessing: all walls get +50% HP for 2 days
+  - Knight Statue (Island 5): 2 gems unlock, 9 coins activate
+    - Blessing: all knights get jump-slash (2x damage) for 1 day
+
+- Statue mechanics:
+  - First, unlock with gems (one-time)
+  - Then, activate with coins (repeatable, blessing lasts set duration)
+  - Blessing timer counts down, when expired statue needs reactivation
+  - Only one blessing active at a time (activating new one replaces old)
+- State: statues: { type, islandIndex, x, unlocked, blessingActive, blessingTimer }[]
+- Export: unlockStatue, activateStatue, updateStatueBlessings, isBlessed, getBlessingType
+
+TASK 4: KNIGHT PORTAL ASSAULT MECHANIC IN knight.ts
+Proper portal assault sequence:
+- Monarch drops coin at outermost wall banner -> triggers assault
+- Knight + 4-archer squad dispatched:
+  - Knight leads, archers follow in formation behind
+  - Formation: knight in front, archers spaced 2 tiles behind in a line
+  - Knight absorbs hits for archers (shield mechanic)
+  - Archers split fire: 50% at approaching greed, 50% at portal
+- Knight charges at portal:
+  - Deals 2 damage per second to portal
+  - Shield absorbs 3 hits before breaking
+  - If shield breaks: knight retreats (and squad retreats)
+- Squad retreat conditions:
+  - Knight shield broken
+  - Knight HP reaches 1
+  - All archers killed
+  - Manual recall (future: drop coin at wall again to recall)
+- If portal destroyed: squad returns to kingdom, celebration message
+- Add assaultSquad: { knightId, archerIds, targetPortal, active } to state
+- Export: dispatchAssault, updateAssault, recallSquad
+
+TASK 5: IMPROVED ANIMAL BEHAVIOR IN animals.ts
+- Deer: attracted to stag mount (within 20 tiles, don't flee)
+  - Normal deer flee from monarch
+  - With stag mount: deer slowly approach, easier to hunt
+- Rabbits: worth 1 coin, quick, flee from everything
+  - Spawn from rabbit dens (fixed positions in forest)
+  - Den spawns 1 rabbit every 45 seconds, max 2 alive per den
+  - Den destroyed in winter (no rabbits)
+- Boar (winter only, from Phase 6):
+  - Verify boar implementation works with new seasonal system
+  - Boar charges at monarch if within 10 tiles
+  - 5 HP, drops 30 coins on death
+  - Only 1 boar per winter season
+- Add rabbit den tracking: rabbitDens: { x, rabbitsAlive }[]
+- Export: updateDenSpawning
+
+TASK 6: BREAD RECRUITMENT IN economy.ts
+After bakery tower is built (via Bakery Hermit):
+- Bakery produces 7 bread loaves per day
+- Bread can recruit vagrants (like coins, but doesn't cost money)
+  - Vagrant + bread = recruited unit (random role based on available tools)
+- Bread dropped near vagrant: vagrant picks it up and becomes loyal
+- Bread spoils after 2 days if not used (removed from world)
+- State: breadCount: number at bakery position
+- Export: produceBread, useBreadForRecruitment
+
+TASK 7: UPDATE ai.ts FOR NEW SYSTEMS
+- Add hermit update dispatch
+- Add statue blessing effect application:
+  - If archer blessed: set accuracy to 100% for all archers
+  - If farmer blessed: double farm output
+  - If builder blessed: multiply wall maxHP by 1.5
+  - If knight blessed: double knight damage
+- Add mount ability cooldown tracking
+- Import all new entity update functions
+- Wire up portal assault squad updates
+
+TASK 8: UPDATE economy.ts FOR HERMITS AND STATUES
+- Add gem costs for hermit coaxing
+- Add coin costs for statue activation
+- Add mount switching cost (3 coins at stable)
+- Add getNearbyInteractable entries:
+  - Near hermit cottage: "Coax hermit (N gems)"
+  - Near statue: "Unlock (N gems)" or "Bless (N coins)"
+  - Near stable: "Switch mount (3 coins)"
+  - Near forge: "Forge sword (12 coins)"
+
+Make sure everything typechecks when done.

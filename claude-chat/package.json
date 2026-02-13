@@ -1,0 +1,24 @@
+{
+  "name": "claude-chat-example",
+  "version": "0.0.1",
+  "description": "Claude Code CLI chat simulator - animated demo of the Claude Code interface",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "claude-chat": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup index.ts --format esm --dts",
+    "start": "node dist/index.js",
+    "dev": "tsx index.ts"
+  },
+  "dependencies": {
+    "blecsd": "file:../../blECSd"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.1",
+    "tsup": "^8.5.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2"
+  }
+}

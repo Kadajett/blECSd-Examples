@@ -136,7 +136,7 @@ function createMockPlayer(): PlayerState {
 	};
 }
 
-const noInput: InputState = { keys: new Set(), ctrl: false, shift: false };
+const noInput: InputState = { keys: new Set(), ctrl: false, shift: false, mouseDeltaX: 0 };
 
 // ─── Tests ──────────────────────────────────────────────────────────
 
@@ -170,6 +170,7 @@ describe('updateHud', () => {
 			keys: new Set(['tab']),
 			ctrl: false,
 			shift: false,
+			mouseDeltaX: 0,
 		};
 
 		updateHud(hud, tabInput);
@@ -187,6 +188,7 @@ describe('updateHud', () => {
 			keys: new Set(['w', 'a']),
 			ctrl: false,
 			shift: false,
+			mouseDeltaX: 0,
 		};
 
 		updateHud(hud, otherInput);

@@ -1,0 +1,118 @@
+Phase 8: Island select screen, mount rendering, hermit cottage visuals, statue rendering, minimap.
+
+Read KINGDOM_TODO.md, types.ts, renderer.ts, hud.ts, index.ts, effects.ts, world/map.ts first.
+
+You own: renderer.ts, hud.ts, index.ts, types.ts, effects.ts, sound.ts, world/terrain.ts, world/map.ts, world/camera.ts
+
+TASK 1: ISLAND SELECT SCREEN IN index.ts
+After title screen, if player presses 'c' or starts new game after island 1:
+- Show island select screen with available islands
+- 5 islands in a horizontal row
+- Each island shown as:
+  Island 1: "Tutorial Isle" [CLEARED/ACTIVE/LOCKED]
+  Island 2: "Stone Coast"   [CLEARED/ACTIVE/LOCKED]
+  Island 3: "Forge Bay"     [CLEARED/ACTIVE/LOCKED]
+  Island 4: "Iron Reach"    [CLEARED/ACTIVE/LOCKED]
+  Island 5: "Crown's End"   [CLEARED/ACTIVE/LOCKED]
+- Arrow keys to highlight, Enter to select
+- Only unlocked islands selectable (unlock next after building boat)
+- Show island stats: days survived, portals destroyed, structures built
+- Add islandSelectPhase to GamePhase enum if not already there
+- Add islandUnlocked: boolean[5] to GameState (default [true, false, false, false, false])
+- Add islandStats: { portalsDestroyed: number, daysVisited: number }[] to GameState
+
+TASK 2: MOUNT TYPE RENDERING IN renderer.ts
+Different mounts should look different:
+- Add MountType enum to types.ts if not present: Horse=0, Stag=1, Griffin=2, Warhorse=3, Bear=4, Lizard=5, Unicorn=6
+- Add mountType: MountType to GameState (default Horse)
+- Rendering per mount type (monarch rides on these):
+  - Horse: '@' on 'H' (current, keep it)
+  - Stag: '@' on 'S' in brown (0xaa6633ff)
+  - Griffin: '@' on 'G' in gold (0xddaa33ff)
+  - Warhorse: '@' on 'W' in dark steel (0x778899ff)
+  - Bear: '@' on 'B' in dark brown (0x664422ff), wider (2 chars for bear body)
+  - Lizard: '@' on 'L' in green (0x55aa33ff)
+  - Unicorn: '@' on 'U' in sparkle white (0xffddffff)
+- Mount-specific idle animation: Bear sways, Griffin flaps (alternate chars)
+
+TASK 3: HERMIT COTTAGE RENDERING IN renderer.ts
+When hermit cottages exist in the world:
+- Add StructureType values for hermit cottages if needed:
+  - HermitCottage (generic, with hermitType field)
+- Render hermit cottage as small house in forest:
+  - 'h' in green (forest-colored) with dim roof char
+  - When hermit is home: show hermit type icon next to cottage
+  - When hermit is away (riding with monarch): cottage dim/empty
+- Hermit types have distinct markers:
+  - Ballista: 'b', Stable: 's', Bakery: 'k', Knight: 'n', Horn: 'o', Fire: 'f', Berserker: 'r'
+
+TASK 4: STATUE RENDERING IN renderer.ts
+Statues are unlockable structures on specific islands:
+- Add StructureType.Statue if not present
+- Statue rendering:
+  - Inactive (not blessed): '|' dim gray, small pedestal
+  - Active (blessed): '!' bright gold (0xffcc00ff), glowing particles around it
+  - Each statue type has a distinct icon above pedestal:
+    - Archer Statue: ')' (bow)
+    - Farmer Statue: '/' (scythe)
+    - Builder Statue: '#' (wall)
+    - Knight Statue: '+' (sword)
+- Blessing active indicator: small particles (dots) radiating outward from statue
+- Show cost to activate in HUD when monarch is within 5 tiles
+
+TASK 5: MINIMAP IN hud.ts
+Add a simple minimap to the HUD:
+- Toggle with Tab key (state.showMinimap boolean)
+- Render in top-right corner of screen, 30x5 chars
+- Map scale: entire map width compressed to 30 chars
+- Color coding:
+  - Blue dots: water/rivers
+  - Green dots: forest
+  - Brown dots: cleared land
+  - Yellow dots: structures (walls, towers, town center)
+  - Red dots: active portals
+  - White dot: monarch position (blinking)
+  - Gray dots: destroyed portals
+- Bordered with '+-|' chars
+- Show current camera viewport as highlighted region
+
+TASK 6: SOUND IMPROVEMENTS IN sound.ts
+Add more terminal bell/beep patterns:
+- Blood moon warning: 3 rapid beeps 40 seconds before midnight
+- Crown drop alert: continuous rapid beeping while crown is on ground
+- Recruitment sound: single short beep
+- Build completion: two short beeps
+- Greed breach: long beep (different from current)
+- Make sounds optional: add soundEnabled: boolean to state (default true)
+- Export: playBloodMoonWarning, playCrownAlert, playRecruit, playBuildComplete
+
+TASK 7: ISLAND-SPECIFIC MAP GENERATION IN world/map.ts
+Different islands should have different map layouts:
+- Island 1 (Tutorial): smallest map (600 tiles), few forest zones, no small portals
+  - 2 dock portals, 1 cliff portal
+  - 3 vagrant camps, merchant area
+- Island 2 (Stone): medium map (800 tiles), gem chest areas
+  - 3 cliff portals, 1 dock portal per side
+  - Dog location (fallen tree)
+  - Stone mine location
+- Island 3 (Forge): larger map (1000 tiles)
+  - 4-6 cliff portals + cave portal
+  - Forge ruin location
+- Island 4 (Iron): large map (1000 tiles), many portals
+  - No merchant, 6+ portals
+  - Bomb workshop area
+- Island 5 (Final): largest map (1200 tiles), maximum difficulty
+  - 8+ portals
+  - All statue locations
+- Export: generateIslandMap(islandIndex): MapData
+- MapData includes: terrain tiles, portal positions, special structure positions, vagrant camp positions
+
+TASK 8: PER-ISLAND SAVE/LOAD IN index.ts
+Expand save system for multi-island:
+- Save structure: { currentIsland: number, globalDayCount: number, gems: number, bankedCoins: number, islands: IslandSaveState[5] }
+- Each IslandSaveState: full GameState snapshot for that island
+- When sailing to new island: save current island state, load or generate destination
+- Cross-island persistent data: gems, globalDayCount, bankedCoins, islandUnlocked, mountType
+- Add saveIslandState(state, islandIndex) and loadIslandState(islandIndex): GameState
+
+Make sure everything typechecks when done.

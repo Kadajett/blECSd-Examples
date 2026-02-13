@@ -68,6 +68,7 @@ function makeState(workerPane: AgentPane): AppState {
 		orchestratorKind: 'claude',
 		workspacePath: '/workspace',
 		dbPath: './orchestrator.db',
+		mcpConfigPath: null,
 		startTime: Date.now(),
 		nextAgentId: 0,
 	};

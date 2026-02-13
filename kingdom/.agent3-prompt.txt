@@ -1,0 +1,36 @@
+You are Agent 3: Combat + Structures + Spawning. You are building a Kingdom-style side-scrolling TUI strategy game using blECSd 0.2.0. The project is at /home/kadajett/Dev/gameDev2026/blECSd-Examples/kingdom. Read types.ts first for all shared types/constants. Also look at the dvd-bounce and roguelike examples in sibling directories for blECSd API patterns.
+
+YOUR FILES ONLY (do NOT create or touch any other files):
+- entities/greed.ts
+- structures/wall.ts
+- structures/farm.ts
+- structures/portal.ts
+- structures/shrine.ts
+- systems/combat.ts
+- systems/construction.ts
+- systems/spawn.ts
+
+BLECSD API REFERENCE:
+- import { createWorld, addEntity, addComponent, removeEntity, Position, Velocity, setPosition, setVelocity, getPosition } from 'blecsd'
+- Direct array access: Position.x[eid], Velocity.x[eid]
+- Entity is a number type
+
+BUILD EACH FILE:
+
+1) entities/greed.ts - Export spawnGreed(state,x,type): create GreedData entity at given x, GROUND_Y-1. Types with stats: Basic(hp=1,speed=GREED_SPEED_BASE), Masked(hp=2,speed=GREED_SPEED_BASE), Floater(hp=1,speed=GREED_SPEED_FAST,flies over walls), Breeder(hp=3,speed=2,spawns mini greeds), CrownStealer(hp=2,speed=GREED_SPEED_FAST,targets monarch). Export updateGreed(state,greed,dt): move toward CAMP_CENTER_X. If wall in path, attack it. If no wall, continue to camp. If touches monarch with 0 coins, game over. Greeds steal coins on breach.
+
+2) structures/wall.ts - Export createWall(state,x,tier): add StructureData with hp based on tier (WALL_HP_WOOD/STONE/IRON). Export upgradeWall(state,x): wood->stone->iron, increase hp/maxHp. Export damageWall(state,x,dmg): reduce hp. If hp<=0, destroy wall (remove from state.structures). Export getOutermostWalls(state): return leftmost and rightmost wall x positions. Export getWallAt(state,x): find wall at position.
+
+3) structures/farm.ts - Export createFarm(state,x): add StructureData type=Farm at cleared land position. Export upgradeFarm(state,x): Farm->FarmIrrigated->FarmWindmill. Export getFarmOutput(farm): return coin yield based on tier (FARM_REWARD_BASE * level). Export getAvailableFarm(state): find farm needing workers.
+
+4) structures/portal.ts - Export createPortal(state,x): add StructureData type=Portal with PORTAL_HP. Export damagePortal(state,x,dmg): reduce hp. Export destroyPortal(state,x): remove portal, trigger retaliation wave flag. Export isPortalActive(state,x): check if portal exists and hp>0. Export getActivePortals(state): return all active portal positions.
+
+5) structures/shrine.ts - Export createShrine(state,x): add StructureData type=Shrine. Export activateShrine(state,x): costs SHRINE_COST coins, apply temporary buff. Track buff duration. Export ShrineBuffType enum (ArcherDamage, BuilderSpeed, WallDurability). Export getActiveBuff(state): return current buff or null.
+
+6) systems/combat.ts - Export updateCombat(state,dt): Process projectiles - move arrows, check collision with greeds (distance < 1 tile), apply ARROW_DAMAGE, remove arrow on hit. Process greed attacks - greeds adjacent to walls deal 1 damage per second. Handle greed-monarch collision: if monarch coins > 0, steal coins; if coins == 0, set phase to GameOver. Remove dead greeds (hp<=0) from state.greeds. Remove dead entities.
+
+7) systems/construction.ts - Export updateConstruction(state,dt): Find builders with aiState=Working. For each, reduce build timer on their target structure. When timer hits 0, mark structure as complete. Handle wall repairs similarly. Track build progress as percentage.
+
+8) systems/spawn.ts - Export updateSpawning(state,dt): Only spawn during Night. For each active portal, spawn wave. wave_size = 2 + state.dayCount * state.difficultyMultiplier. Blood moon every 7 days = 3x multiplier. Mix of greed types based on island: island 1 = basic only, island 2+ = add masked, island 3+ = add floaters, island 4+ = crown stealers. Spawn with random delay between greeds. Export isBloodMoon(dayCount): boolean.
+
+Each file exports functions taking (state: GameState, dt: number). Make sure everything typechecks against types.ts. Use Bundler module resolution (no .ts extensions on imports). Write all files now.

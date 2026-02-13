@@ -61,12 +61,18 @@ export function addWorker(state: AppState, spec: string): AgentPane {
 		}
 	}
 
+	// Build args, including MCP config for Claude agents
+	const workerArgs: string[] = [...preset.args];
+	if (state.mcpConfigPath && preset.kind === 'claude') {
+		workerArgs.push('--mcp-config', state.mcpConfigPath);
+	}
+
 	// Spawn the worker
 	const pane = spawnAgent(state, {
 		kind: preset.kind,
 		label: `${preset.label} (Worker)`,
 		command: preset.command,
-		args: preset.args,
+		args: workerArgs,
 		cwd,
 		env: preset.env,
 		mock: state.mockMode,

@@ -46,8 +46,8 @@ for (const sel of selects) {
 let focusIdx = 0;
 let lastChange = '';
 
-onSelectChange(selects[0]!.eid, (val) => { lastChange = `Color: ${val}`; });
-onSelectChange(selects[1]!.eid, (val) => { lastChange = `Size: ${val}`; });
+onSelectChange(world, selects[0]!.eid, (val) => { lastChange = `Color: ${val}`; });
+onSelectChange(world, selects[1]!.eid, (val) => { lastChange = `Size: ${val}`; });
 
 function render(): void {
 	const { height } = getTerminalSize();
@@ -59,8 +59,8 @@ function render(): void {
 		const sel = selects[i]!;
 		const focused = i === focusIdx;
 		const open = isSelectOpen(world, sel.eid);
-		const selected = getSelectedLabel(sel.eid) ?? '(none)';
-		const hlIdx = getHighlightedIndex(sel.eid);
+		const selected = getSelectedLabel(world, sel.eid) ?? '(none)';
+		const hlIdx = getHighlightedIndex(world, sel.eid);
 		const row = 5 + i * 5 + (i > 0 && isSelectOpen(world, selects[0]!.eid) ? selects[0]!.options.length + 1 : 0);
 		const border = focused ? '\x1b[1;33m' : '\x1b[0m';
 		const arrow = open ? '▲' : '▼';

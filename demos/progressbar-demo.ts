@@ -28,7 +28,7 @@ const bars = [
 
 for (const bar of bars) {
 	attachProgressBarBehavior(world, bar.eid);
-	onProgressComplete(bar.eid, () => { bar.auto = false; });
+	onProgressComplete(world, bar.eid, () => { bar.auto = false; });
 }
 
 let focusIdx = 0;
@@ -41,11 +41,11 @@ function render(): void {
 
 	for (let i = 0; i < bars.length; i++) {
 		const bar = bars[i]!;
-		const pct = getProgressPercentage(bar.eid);
-		const done = isProgressComplete(bar.eid);
+		const pct = getProgressPercentage(world, bar.eid);
+		const done = isProgressComplete(world, bar.eid);
 		const focused = i === focusIdx;
 		const indicator = focused ? '>' : ' ';
-		const barStr = renderProgressString(bar.eid, 30);
+		const barStr = renderProgressString(world, bar.eid, 30);
 		const status = done ? '\x1b[32m DONE\x1b[0m' : bar.auto ? '\x1b[36m AUTO\x1b[0m' : '';
 		const row = 5 + i * 3;
 		const color = focused ? '\x1b[1;33m' : '\x1b[0m';
@@ -73,7 +73,7 @@ render();
 timer = setInterval(() => {
 	let changed = false;
 	for (const bar of bars) {
-		if (bar.auto && !isProgressComplete(bar.eid)) {
+		if (bar.auto && !isProgressComplete(world, bar.eid)) {
 			incrementProgress(world, bar.eid, 1 + Math.random() * 2);
 			changed = true;
 		}

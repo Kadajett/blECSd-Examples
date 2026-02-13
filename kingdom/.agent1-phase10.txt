@@ -1,0 +1,151 @@
+Phase 10: Full integration pass - game loop wiring, rendering all new systems, screen flow.
+
+Read types.ts, index.ts, renderer.ts, hud.ts, effects.ts first. Then check what functions exist in
+structures/townCenter.ts, structures/bomb.ts, structures/lighthouse.ts, structures/forge.ts,
+structures/catapult.ts, systems/gems.ts, systems/decay.ts, entities/hermit.ts, entities/statue.ts,
+entities/dog.ts, entities/banker.ts, entities/merchant.ts, entities/pikeman.ts.
+
+You own: renderer.ts, hud.ts, index.ts, types.ts, effects.ts, sound.ts, world/terrain.ts, world/map.ts, world/camera.ts
+
+This phase is about INTEGRATION: making sure index.ts calls all systems, renderer.ts renders everything,
+and the game flows correctly from title screen through gameplay to victory.
+
+TASK 1: GAME LOOP COMPLETENESS IN index.ts
+Verify the main game loop calls ALL systems in the correct order. The full update order should be:
+1. pollInput()
+2. Check pause (consumePause)
+3. updateDayNight(state, dt) - day/night cycle
+4. Compute season: state.season = Math.floor((state.dayCount % 64) / 16)
+5. Set weather based on season (deterministic from dayCount)
+6. Dawn triggers: if just became Day:
+   - applyDawnBonus(state) from economy.ts
+   - applyBankerInterest(state) from banker.ts
+   - Seasonal transitions (spawnWinterBerries / clearWinterBerries)
+   - Blood moon check
+7. updateTownCenter(state, dt) from townCenter.ts
+8. updateMount(state, dt) from mount.ts
+9. updateMonarch(state, dt) from monarch.ts
+10. updateAI(state, dt) from ai.ts - this dispatches all entity updates
+11. updateMovement(state, dt)
+12. updateSpawning(state, dt) from spawn.ts
+13. updateCombat(state, dt) from combat.ts
+14. updateCatapults(state, dt) from catapult.ts
+15. updateBomb(state, dt) from bomb.ts
+16. updateConstruction(state, dt)
+17. updateShrineBuff(state, dt) from shrine.ts
+18. updateStatueBlessings(state, dt) from statue.ts
+19. updatePortalAssault(state, dt) from portal.ts
+20. updateCamera(state)
+21. render(state)
+
+Check each of these is actually imported and called. If any are missing, add them.
+Import anything that's not yet imported.
+
+TASK 2: INITIAL STATE COMPLETENESS IN index.ts
+When creating a new game state (createNewGameState or similar), make sure ALL fields are initialized:
+- season, seasonDay, weather, isBloodMoon
+- townCenterTier, townCenterCooldown
+- gems, gemCapacity
+- hasDog, dogCaptured
+- crownDropped, crownX, crownTimer
+- isPaused, showMinimap
+- islandIndex, islandUnlocked, islandStats
+- mountType, mountsUnlocked
+- All structure arrays (bombs, lighthouses, forges, catapults, etc.)
+- All state flags (portalAssaultActive, boatState, etc.)
+
+Scan types.ts GameState for every field and ensure none are missing from initialization.
+
+TASK 3: RENDER ALL NEW STRUCTURES IN renderer.ts
+Verify renderer draws everything:
+- Town center (per tier visual) - should exist from Phase 6
+- All 5 wall tiers (spikes through iron)
+- All 6 tower tiers (rock platform through quadruplet)
+- Special tower conversions (ballista, fire, bakery, knight, berserker)
+- Catapult (with loaded/unloaded visual)
+- Bomb (with builder pushers)
+- Lighthouse (3 tiers)
+- Forge (with sword ready indicator)
+- Farms (with tier visual and crop stage)
+- Boat (wreck/restoring/ready/launched states)
+- Hermit cottages
+- Statues (active/inactive visual)
+- Teleporters (converted portals)
+- Berry bushes (winter)
+- Gold veins (with depletion)
+- Dog ('d' with bark '!')
+- Merchant camp
+- Banker at town center
+- Dropped tools (bow/hammer/scythe/pike/shield/sword)
+- Bread loaves
+- All mount types on monarch
+
+If any are missing renderers, add a basic rendering section for them.
+
+TASK 4: RENDER ALL GREED TYPES DISTINCTLY
+Each greed type should look different:
+- Greedling: 'g' in purple (0x8833aaff)
+- Masked Greedling: 'G' in darker purple (0x663388ff), show mask break visual
+- Floater: 'f' in purple, rendered 1 row higher than ground (float effect)
+  - When carrying a unit: show unit char above floater
+- Breeder: 'B' in dark red (0xaa2222ff), larger visual (2 chars wide)
+  - Show spawn animation when creating greedlings
+- Crown Stealer: 'c' in bright purple (0xcc44ffff)
+  - When carrying crown: show 'W' above
+- Plague Crawler (challenge island): 'p' in green (0x44aa33ff)
+
+TASK 5: HUD COMPLETENESS IN hud.ts
+Verify HUD shows all relevant info:
+- Primary bar: Coins | Day N | Time icon | Season + day | Weather icon | Island N
+- Secondary bar: Unit counts (A:N B:N F:N K:N P:N) | Tower count | Gem count
+- When near entities, show interaction prompts:
+  - Town center: upgrade cost
+  - Shrine: activation cost and type
+  - Statue: unlock/activate cost
+  - Hermit cottage: coax cost
+  - Merchant: "Pay 1 coin"
+  - Banker: "Deposit/Withdraw"
+  - Forge: sword cost
+  - Boat: restoration/launch/depart cost
+  - Stable: mount switch cost
+  - Teleporter: "Teleport (2 coins)"
+- Blood moon pulsing warning
+- Crown dropped flashing alert
+- Dog bark direction indicator
+- Bomb escape timer countdown
+
+TASK 6: SCREEN FLOW IN index.ts
+Verify proper flow between game phases:
+- Title -> New Game -> Playing (island 1)
+- Title -> Continue -> Playing (loaded state)
+- Playing -> Island Select (when boarding boat)
+- Island Select -> Playing (selected island)
+- Playing -> Game Over (crown lost)
+- Game Over -> Heir Succession -> Playing (same island, decayed)
+- Game Over -> Title (if decline succession or press Q)
+- Playing -> Victory (all portals on island 5 destroyed)
+- Victory -> Title (or continue playing)
+- Playing -> Pause -> Playing (P key toggle)
+
+TASK 7: SEASONAL VISUAL COMPLETENESS IN renderer.ts
+Verify all seasonal effects render:
+- Spring: green terrain, occasional rain overlay, normal sky
+- Summer: bright terrain, no rain, warm sky
+- Autumn: yellow/red terrain (grass 0xbb9944ff, forest 0xcc5533ff)
+- Winter: white/gray terrain (0xccccddff), snow overlay, frozen water (=)
+- Northern lights during winter clear nights
+- Blood moon: red sky, red moon, red ground tint
+
+TASK 8: SOUND COMPLETENESS IN sound.ts
+Verify all sound triggers are wired:
+- Dawn bell (at sunrise)
+- Dusk bell (at sunset)
+- Blood moon warning (40 seconds before midnight)
+- Crown drop alert (continuous while crown on ground)
+- Wall breach (when wall HP reaches 0)
+- Build completion
+- Recruitment
+- Portal destruction
+Wire any that are missing into the appropriate system call sites.
+
+Make sure everything typechecks when done.

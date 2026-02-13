@@ -1,0 +1,98 @@
+Phase 6: Banker NPC, Merchant NPC, Pikemen, Squire/Knight split, seasonal farming.
+
+Read KINGDOM_TODO.md, .research-agent2-entities.md, economy.ts, types.ts, farmer.ts, knight.ts, ai.ts first.
+
+You own: monarch.ts, villager.ts, builder.ts, archer.ts, farmer.ts, knight.ts, animals.ts, mount.ts, economy.ts, ai.ts
+
+TASK 1: ADD PIKEMAN UNIT TYPE
+Create entities/pikeman.ts (NEW FILE):
+- UnitRole.Pikeman needs to be added to types.ts (add it, value after Knight)
+- Recruitment: 2 coins for pike at pike vendor (requires TownCenterTier >= 5, Stone Fort)
+- Day behavior: fish at nearest river/water tile. Earn 1 coin per fish, drop at fishing spot.
+  - Find water tiles in state.tiles, walk to nearest one, stand and "fish" every 8 seconds
+- Night behavior: defend at outermost wall, same as archers but with pike
+  - Pike thrust: kills all greed within 1.5 tile range (AoE melee)
+  - Only 1 pikeman actively attacks per wall section
+  - Good against floaters and crown stealers (melee range)
+- Carries 0 coins (drops immediately)
+- MAX_PIKEMEN = 6 in economy.ts
+
+Export: createPikeman, updatePikeman
+
+TASK 2: SQUIRE / KNIGHT PROGRESSION
+Modify knight.ts to split into squire and knight tiers:
+- Add UnitRole.Squire to types.ts
+- Squire: 4 coins for shield (at Castle tier, TownCenterTier >= 6)
+  - Commands a squad of up to 4 archers
+  - 3 HP, 5 coin capacity
+  - Can do everything knights do but weaker
+- Knight: promoted from Squire by picking up iron sword (12 coins at forge)
+  - 5 HP, 11 coin capacity
+  - Enhanced combat damage
+  - Full knight capabilities
+- For now, since forge doesn't exist yet, keep knight recruitment as-is but add the Squire role
+  for future use. Squires are recruited first, knights require forge (future phase).
+- Add isSquire flag to UnitData in types.ts (or check role === Squire)
+- Export: createSquire, updateSquire (similar to knight but weaker stats)
+
+TASK 3: BANKER NPC
+Create entities/banker.ts (NEW FILE):
+- Module-level state: bankedCoins = 0, lastInterestDay = 0
+- Banker appears when TownCenterTier >= 4 (Town Hall)
+- Behavior: stands near town center during day, hides at night
+- Deposit: When monarch drops coin near banker (within 2 tiles of town center), banker takes it
+  - Accumulates deposits, walks to castle door at 10+ coins
+- Withdrawal: monarch presses interact near banker
+  - Returns min(floor(bankedCoins / 3), pouch space remaining)
+  - Minimum 7 coins in bank to withdraw
+- Interest: 7% daily (applied at dawn), capped at 8 coins/day for 101+ stored
+  - if bankedCoins >= 3 && bankedCoins <= 100: interest = Math.ceil(bankedCoins * 0.07)
+  - if bankedCoins > 100: interest = 8
+- Coins persist across islands (store in save state)
+- Export: getBankedCoins, depositCoins, withdrawCoins, applyBankerInterest, updateBanker
+
+TASK 4: MERCHANT NPC
+Create entities/merchant.ts (NEW FILE):
+- Appears on islands 1-2 only (state.islandIndex <= 2)
+- Has a camp in the forest (like vagrant camps)
+- Mechanic: monarch drops 1 coin near merchant -> merchant returns 8 coins next dawn
+  - Module state: pendingPayout = 0
+  - At dawn, if pendingPayout > 0: drop 8 coins near town center, pendingPayout = 0
+- Only accepts during daytime, not during danger (no active greed nearby)
+- Merchant camp destroyed if trees around it are cut (not relevant yet, future feature)
+- Position: fixed x position on the map (e.g., x = 100 for island 1)
+- Export: updateMerchant, createMerchant, merchantAcceptCoin
+
+TASK 5: SEASONAL FARMING IN farmer.ts
+Modify farmer.ts for seasonal effects:
+- Spring/Summer: normal production (100%)
+- Autumn: reduced production (75%) - multiply harvest by 0.75
+- Winter: farms produce nothing. Farmers become idle or forage berries.
+  - If Season.Winter: skip farm work entirely
+  - Instead, find nearest berry bush (from resources.ts getResourceAt/harvestResource)
+  - Walk to berry bush, harvest for coins (1 coin per berry, ~4 berries per bush)
+  - Berry bushes only spawn in winter (Agent 3 will handle spawning)
+- Import Season from types.ts, check state.season in updateFarmerDay
+
+TASK 6: SEASONAL ANIMALS IN animals.ts
+- Spring/Summer: normal animal spawning
+- Autumn: reduced spawn rate (1.5x respawn interval)
+- Winter: no rabbits or deer spawn at all
+  - Instead, spawn 1 boar (worth 30 coins, high HP=5, slow, aggressive)
+  - Boar: charges at nearby entities, drops 30 coins on death
+  - Add AnimalType.Boar to animal types
+  - MAX_BOARS = 1 per winter season
+
+TASK 7: UPDATE ai.ts FOR NEW UNIT TYPES
+- Add dispatch for UnitRole.Pikeman -> updatePikeman
+- Add dispatch for UnitRole.Squire -> updateSquire (use knight update with weaker stats)
+- Import the new update functions
+
+TASK 8: UPDATE economy.ts
+- Add MAX_PIKEMEN = 6
+- Add pike vendor check: requires TownCenterTier >= 5
+- Add squire recruitment: requires TownCenterTier >= 6
+- Add getNearbyInteractable entries for banker ("Deposit coins") and merchant ("Pay merchant")
+- Update dropCoin to handle banker deposit (if near town center and banker exists)
+
+Make sure everything typechecks when done.

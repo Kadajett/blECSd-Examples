@@ -1,0 +1,93 @@
+Phase 9: Polish pass - campfire glow, water animation, constellation warning, northern lights, coin sparkle.
+
+Read types.ts, renderer.ts, hud.ts, effects.ts, world/terrain.ts first.
+
+You own: renderer.ts, hud.ts, index.ts, types.ts, effects.ts, sound.ts, world/terrain.ts, world/map.ts, world/camera.ts
+
+TASK 1: CAMPFIRE GLOW RADIUS IN renderer.ts
+- Town center campfire (and upgraded versions) should emit warm light
+- Light radius based on tier:
+  - Campfire (tier 1): 5 tiles radius
+  - Camp (tier 2): 8 tiles
+  - Village+ (tier 3+): 12 tiles
+- Effect: tiles within radius get warm tint added to bg color
+  - Blend: mix current bg with 0x442200 at 30% opacity
+  - Intensity falls off linearly with distance
+- Only visible at night (dusk/night phases)
+- During blood moon: glow is reddish instead of warm
+
+TASK 2: ANIMATED WATER IN renderer.ts AND world/terrain.ts
+- Water tiles (streams, rivers) should animate:
+  - Alternate between '~' and '-' every 500ms
+  - Color shifts between 0x3366aaff and 0x4477bbff
+- Frozen water in winter: static '=' in white/blue (0xaabbccff)
+- River flow direction: chars scroll right or left based on tile position
+- Water reflection: during night, show dim star reflections in water
+  - Random '.' chars in water at dim brightness
+
+TASK 3: CONSTELLATION WARNING IN renderer.ts
+Before crown stealer's first appearance:
+- 2 days before crown stealer is introduced (around day 28):
+  - Show a special constellation pattern in the night sky
+  - Pattern: 5-7 dim red stars forming a crown/skull shape
+  - Stars appear gradually over 2 nights (1-2 per night, building up)
+  - After crown stealer appears: constellation fades
+- Constellation positions: fixed relative to sky area (top 3 rows)
+- Use dim red color: 0x882222ff for constellation stars vs 0x888888ff for normal stars
+
+TASK 4: COIN SPARKLE EFFECTS IN effects.ts
+When coins are picked up or dropped:
+- Sparkle burst: 3-5 '*' chars radiate outward from coin position
+  - Duration: 300ms
+  - Color: gold 0xffcc00ff fading to dim
+  - Movement: each spark moves 1 tile in random direction per 100ms
+- Track active sparkle effects: sparkles: { x, y, dx, dy, timer }[]
+- Render sparkles in effects layer (above entities, below HUD)
+- Export: createCoinSparkle(x, y), updateSparkles(dt), renderSparkles(buffer)
+
+TASK 5: NORTHERN LIGHTS (WINTER SPECIAL) IN renderer.ts
+During winter nights:
+- Render aurora borealis in the upper sky area (rows 2-5)
+- Wavy bands of color: green (0x33aa66ff) and purple (0x8833aaff)
+- Animation: sine wave pattern shifts horizontally over time
+  - Each column: color = band[floor(sin(x/5 + time) * 3)]
+  - Bands are 2-3 rows tall, wavy
+- Only visible during clear winter nights (not during storms/blood moon)
+- Intensity: start dim at dusk, peak at midnight, fade at dawn
+
+TASK 6: IMPROVED DAY/NIGHT TRANSITION IN renderer.ts
+Smoother transitions between time phases:
+- Currently: abrupt color change between dawn/day/dusk/night
+- Improved: interpolate between phase colors over 30 frames
+  - Track transitionProgress: number (0-1) within each phase
+  - Lerp sky colors: result = colorA * (1-t) + colorB * t per channel
+  - Apply to both fg and bg colors
+- Sun/moon visual:
+  - Sun: 'O' in yellow, arcs across top of screen during day
+    - Position: x based on time within day phase (left to right)
+  - Moon: 'C' in white, arcs during night
+    - Blood moon: 'O' in red, larger
+  - Both use smooth x movement based on phase progress
+
+TASK 7: ENTITY DETAIL RENDERING IN renderer.ts
+Add more visual detail to entities:
+- Monarch: show coin count as small number next to '@' char
+- Builders: show '/' when actively building (hammer animation)
+- Archers: show ')' next to them (bow), '>' when firing
+- Farmers: show '/' (scythe) during day, nothing at night
+- Knights: show '+' (sword), shield '|' in front when defending
+- Pikemen: show '|' (pike), thrust animation 'I' when attacking
+- Squires: show ']' (shield only, no sword)
+- Hermit on mount: small 'h' above monarch
+- Dog: 'd' char, '!' when barking
+
+TASK 8: PERFORMANCE OPTIMIZATION IN renderer.ts
+- Only re-render cells that changed since last frame:
+  - Keep previousBuffer: same size as current CellBuffer
+  - Compare cell by cell, only setCell for changed cells
+  - This reduces terminal output significantly
+- Batch similar color sequences to reduce escape codes
+- Skip rendering entities that are off-screen (outside camera viewport + margin)
+- Use dirty rect tracking: only render sections that have moving entities
+
+Make sure everything typechecks when done.

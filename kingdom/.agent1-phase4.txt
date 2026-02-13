@@ -1,0 +1,34 @@
+Phase 4: Massive world with multiple settlements and consumable spots.
+
+Read types.ts, world/map.ts, world/terrain.ts, world/camera.ts, render/renderer.ts, index.ts first.
+
+CRITICAL CHANGES:
+
+1. Expand MAP_WIDTH to 1200 in types.ts. The world should feel massive. Update CAMP_CENTER_X to 600.
+
+2. Rewrite world/terrain.ts and world/map.ts to generate a huge varied world:
+   - Multiple biomes: dense forest, plains, swamp (water+dirt), mountains (double-height dirt), ruins
+   - 5 distinct settlement zones spread across the map at roughly x=150, 400, 600, 800, 1050
+   - Each settlement has: a campfire, tool stands, a few initial vagrants
+   - The player starts at the center settlement (x=600)
+   - Forests between settlements with portals at the edges
+   - Add terrain variety: some hills (ground level varies by +/-1), occasional ponds
+
+3. Add consumable spots to the map generation. These are special tiles the monarch walks over to activate:
+   - Food caches (restore 3 coins) - scattered in ruins, one-time use. Use CHAR_COIN with a different color.
+   - Rest shrines (restore stamina to full) - near settlements
+   - Power wells (temporary speed boost for 15 seconds) - deep in forests
+   - Track consumed spots in a Set<number> keyed by x position in GameState. Add a consumedSpots field to GameState in types.ts.
+
+4. Update render/renderer.ts to render the new biomes with distinct colors:
+   - Swamp: darker green ground, blue-green water
+   - Mountains: gray/brown elevated terrain
+   - Ruins: dark gray structures, broken walls (use box-drawing chars)
+   - Settlement campfires should glow (alternate between orange shades)
+   - Consumable spots should sparkle/pulse to attract player attention
+
+5. Update world/camera.ts: Smooth camera with slight look-ahead in the direction the monarch is moving (offset camera 5 tiles in move direction for better visibility).
+
+6. Update index.ts: Initialize the new GameState fields (consumedSpots: new Set()). When monarch walks over a consumable spot, activate its effect and add to consumedSpots. Add a message for each consumption.
+
+Write all changes. Make sure everything typechecks.

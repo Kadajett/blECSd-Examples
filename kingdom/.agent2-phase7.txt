@@ -1,0 +1,113 @@
+Phase 7: Dog companion, crown mechanic, unit coin capacities, builder tree cutting, farmer farmhouse, dawn bonus.
+
+Read KINGDOM_TODO.md, types.ts, monarch.ts, builder.ts, farmer.ts, knight.ts, economy.ts, ai.ts first.
+
+You own: monarch.ts, villager.ts, builder.ts, archer.ts, farmer.ts, knight.ts, animals.ts, mount.ts, economy.ts, ai.ts
+
+TASK 1: DOG COMPANION
+Create entities/dog.ts (NEW FILE):
+- Dog is found on Island 2 under a fallen tree (position depends on map, use x=200 default)
+- 1 coin to free (coin returned immediately)
+- Dog follows monarch at all times (stays within 5 tiles)
+- Movement: matches monarch speed, slightly behind (x - 3 if going right, x + 3 if going left)
+- Warning system: when greed entity is within 30 tiles of dog:
+  - Dog faces toward threat direction
+  - "bark" flag set to true (renderer will show '!')
+  - Bark lasts 2 seconds, then resets
+- Dog can be kidnapped by greedlings:
+  - If greedling reaches dog: dog.captured = true, dogCaptorId = greedling entity
+  - Dog is carried to nearest portal
+  - Recovery: destroy the portal OR lose crown (dog returns next day)
+- State in GameState: hasDog: boolean (default false), dogCaptured: boolean (default false)
+- State in dog module: dogX, dogY, barkTimer, barkDirection, captorEntity
+- Export: createDog, updateDog, freeDog, captureDog, isDogBarking, getDogBarkDirection
+
+TASK 2: CROWN MECHANIC IN monarch.ts
+The crown can be knocked off:
+- When monarch has 0 coins AND takes a hit from any greed:
+  - state.crownDropped = true
+  - state.crownX = monarch position x
+  - crown stays on ground for 10 seconds
+- Crown recovery: if monarch walks over crownX (within 2 tiles) before timer expires
+  - state.crownDropped = false
+  - Message: "Crown recovered!"
+- Crown lost: if timer expires OR crown stealer grabs it
+  - state.gamePhase = GamePhase.GameOver
+  - Message: "The crown has been lost!"
+- Crown stealer interaction:
+  - Crown stealer that reaches monarch instantly drops crown
+  - Crown stealer then tries to carry crown to portal (very fast)
+  - If crown stealer reaches portal with crown: permanent game over
+- Add crownTimer: number to track countdown (10 second recovery window)
+- Update updateMonarch to handle crown drop/recovery logic
+- Export: dropCrown, recoverCrown, isMonarchVulnerable
+
+TASK 3: UNIT COIN CAPACITIES IN economy.ts
+Each unit type should have a max coin carrying capacity:
+- Add UNIT_COIN_CAPACITY map:
+  - Vagrant: 0
+  - Builder: 2
+  - Archer: 11
+  - Farmer: 14
+  - Knight: 11
+  - Squire: 5
+  - Pikeman: 0 (drops immediately)
+  - Monarch: 40 (current pouch)
+- When a unit picks up coins, cap at their capacity
+- Overflow coins drop to ground (create dropped coin at unit position)
+- Export: getUnitCoinCapacity(role): number
+
+TASK 4: BUILDER TREE CUTTING IN builder.ts
+Builders can cut trees for coins:
+- When no higher-priority tasks (no build/repair work):
+  - Find nearest tree within builder's side of kingdom
+  - Walk to tree, "chop" for 3 seconds
+  - Tree removed, drops 1 coin at position
+  - Cleared land can now have walls/structures placed
+- Trees are in the terrain data (check state.tiles for tree tiles)
+- Only cut trees outside current wall perimeter (expand kingdom)
+- Add TreeCuttingTask to builder task types
+- Priority: repair damaged walls > build queued > cut trees > idle
+- Limit: builders only cut trees during daytime
+- Export: findNearestTree(state, builderX), cutTree(state, treeX)
+
+TASK 5: FARMER FARMHOUSE BEHAVIOR IN farmer.ts
+Farmers with access to a farmhouse (upgraded farm) stay there at night:
+- Check if the farm entity has farmhouse flag (StructureType.Farmhouse or farm level >= 2)
+- At night (dusk/night phase):
+  - If farm has farmhouse: farmer stays at farm position (safe, no travel)
+  - If farm has NO farmhouse: farmer walks to town center (current behavior)
+- Farmhouse provides shelter: farmer doesn't lose coins to greed while inside
+- Add isFarmerSheltered(state, farmerEntity): boolean check
+- Export: updateFarmerNight with shelter logic
+
+TASK 6: DAWN BONUS IN economy.ts
+Every dawn, the kingdom gets a small coin bonus:
+- At dawn transition (when timePhase changes to Day):
+  - Drop 2 coins near town center (at CAMP_CENTER_X + random(-3, 3))
+  - Message: "Dawn breaks. +2 coins"
+- This is the Kingdom "tax chest" mechanic simplified
+- Scale with town center tier: tier 1-2: 2 coins, tier 3-4: 3 coins, tier 5-7: 4 coins
+- Export: applyDawnBonus(state)
+- Call from index.ts game loop at dawn
+
+TASK 7: IMPROVED ARCHER BEHAVIOR IN archer.ts
+- Tower archers vs ground archers:
+  - If archer is assigned to a tower: stays at tower position, doesn't hunt
+  - Tower archers get range bonus: +5 tiles range per tower tier
+  - Tower archers have 100% accuracy (currently ~33% for ground)
+  - Ground archers: continue current hunt/defend behavior
+- Add isInTower flag to archer state (set when assigned to tower)
+- Archer distribution: try to keep even left/right split
+  - When recruiting, assign to side with fewer archers
+- Export: assignArcherToTower(state, archerId, towerId), isArcherInTower(archerId)
+
+TASK 8: UPDATE ai.ts FOR DOG AND CROWN
+- Add dog update call in the main AI update loop
+- Add crown recovery check in monarch update section
+- When crownDropped: all knights rush to defend crown position
+  - Override knight behavior to move toward crownX
+- When dogBarking: archers on that side get +2 range (alertness bonus)
+- Import and wire up updateDog from dog.ts
+
+Make sure everything typechecks when done.

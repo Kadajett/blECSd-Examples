@@ -1,0 +1,16 @@
+Phase 2: Polish the rendering and add a title screen. The game runs but needs visual improvements. Read the current files first (render/renderer.ts, render/hud.ts, render/effects.ts, index.ts, game/input.ts).
+
+Tasks:
+1. Title screen in render/renderer.ts or a new render/titleScreen.ts: Show ASCII art "KINGDOM" title, "Press ENTER to start", flicker effect. Game starts in GamePhase.Title, transitions to Playing on Enter. Update game/input.ts to handle title screen input.
+
+2. Game Over screen: When phase is GameOver, show "THE GREED TOOK YOUR CROWN" in red, show stats (days survived, coins collected), "Press R to restart". Handle restart in input.ts.
+
+3. Improve the HUD in render/hud.ts: Add a message log at the bottom (show last 3 messages from state.messages). Show unit counts (builders, archers, farmers). Show a health bar for outermost walls. Add blood moon warning.
+
+4. Improve render/effects.ts: Make night transition smoother with gradient darkening. Add a "wave incoming" flash at night start. Add coin pickup sparkle effect when coins are collected.
+
+5. Add parallax scrolling to renderer.ts: Background stars/clouds at 0.5x scroll speed behind the sky layer. Foreground grass details at 1.2x. Makes the side-scrolling feel more alive.
+
+6. Fix game/input.ts: The input currently resets flags each frame in index.ts which is wrong since input comes async. Instead, track key-down/key-up states properly. Left/right should be held states, space should be a one-shot trigger.
+
+Write all changes now. Make sure everything typechecks.
