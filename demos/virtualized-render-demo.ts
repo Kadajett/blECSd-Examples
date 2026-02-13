@@ -13,7 +13,7 @@ import {
 	Dimensions, setDimensions,
 	Renderable, setStyle,
 	Content, setContent, getContent,
-} from 'blecsd';
+, writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, formatHelpBar, formatTitle, isQuitKey, parseArrowKey, parseNavKey, getTerminalSize, moveTo } from './demo-utils';
 
 const world = createWorld();
@@ -97,7 +97,7 @@ function render(): void {
 	}
 
 	out.push(moveTo(height, 1) + formatHelpBar('[Arrows] Pan  [PgUp/PgDn] Fast  [Home] Reset  [q] Quit', `Rendering ${visible}/${TOTAL}`));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { shutdownTerminal(); process.exit(0); }

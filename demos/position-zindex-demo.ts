@@ -7,7 +7,7 @@
  * Run: npx tsx examples/demos/position-zindex-demo.ts
  * @module demos/position-zindex
  */
-import { createWorld, addEntity, addComponent, Position, setPosition, getPosition, ZOrder, setZIndex, getZIndex, Dimensions, setDimensions, Renderable, setStyle, sortByZIndex } from 'blecsd';
+import { createWorld, addEntity, addComponent, Position, setPosition, getPosition, ZOrder, setZIndex, getZIndex, Dimensions, setDimensions, Renderable, setStyle, sortByZIndex , writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, formatHelpBar, formatTitle, isQuitKey, parseArrowKey, getTerminalSize, moveTo } from './demo-utils';
 
 const world = createWorld();
@@ -73,7 +73,7 @@ function render(): void {
 	}
 
 	out.push(moveTo(height, 1) + formatHelpBar('[Arrows] Move  [Tab] Select  [+/-] Z-index  [q] Quit', `Selected: ${labels[selected]}`));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { shutdownTerminal(); process.exit(0); }

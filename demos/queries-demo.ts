@@ -20,7 +20,7 @@ import {
 	filterVisible, filterDirty, filterFocusable, filterClickable,
 	sortByZIndex, ZOrder, setZIndex,
 	isDirty, markDirty,
-} from 'blecsd';
+, writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, formatHelpBar, formatTitle, isQuitKey, getTerminalSize, moveTo } from './demo-utils';
 
 const world = createWorld();
@@ -86,7 +86,7 @@ function render(): void {
 	out.push('\n');
 
 	out.push(moveTo(height, 1) + formatHelpBar('[Left/Right] Switch query  [q] Quit', `Query ${qIdx + 1}/${queries.length}`));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { shutdownTerminal(); process.exit(0); }

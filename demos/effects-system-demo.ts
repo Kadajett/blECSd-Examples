@@ -16,7 +16,7 @@ import {
 	setShadowOffset, getShadowOffset, setShadowChar, getShadowChar,
 	SHADOW_CHAR_LIGHT, SHADOW_CHAR_MEDIUM, SHADOW_CHAR_DARK,
 	interpolateColor, packColor, unpackColor,
-} from 'blecsd';
+, writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, formatHelpBar, formatTitle, isQuitKey, getTerminalSize, moveTo, startLoop, parseArrowKey } from './demo-utils';
 
 const world = createWorld();
@@ -116,7 +116,7 @@ function render(): void {
 	out.push(moveTo(18, 1) + rainbow + '\x1b[0m');
 
 	out.push(moveTo(height, 1) + formatHelpBar('[Tab] Select  [s] Toggle shadow  [1-3] Shadow style  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { stop(); shutdownTerminal(); process.exit(0); }

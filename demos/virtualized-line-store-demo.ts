@@ -1,3 +1,4 @@
+import { writeRaw } from 'blecsd';
 /**
  * VirtualizedLineStore Demo
  *
@@ -56,7 +57,7 @@ function render(): void {
 	const maxScroll = Math.max(0, stats.lineCount - viewH);
 	const pct = maxScroll > 0 ? ((scrollPos / maxScroll) * 100).toFixed(0) : '100';
 	out.push(moveTo(height, 1) + formatHelpBar('[Up/Down] Scroll  [PgUp/PgDn] Page  [a] Add lines  [q] Quit', `${pct}%`));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { shutdownTerminal(); process.exit(0); }

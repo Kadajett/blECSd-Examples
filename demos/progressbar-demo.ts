@@ -12,7 +12,7 @@ import {
 	getProgressPercentage, isProgressComplete, incrementProgress,
 	decrementProgress, resetProgress, setProgressBarDisplay,
 	attachProgressBarBehavior, onProgressComplete, renderProgressString,
-	setProgressRange, completeProgress,
+	setProgressRange, completeProgress, writeRaw,
 } from 'blecsd';
 import type { World } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, clearScreen, formatHelpBar, moveTo, getTerminalSize, formatTitle } from './demo-utils';
@@ -54,7 +54,7 @@ function render(): void {
 	}
 
 	out.push(moveTo(height, 1) + formatHelpBar('[Tab] Switch  [Left/Right] Adjust  [Space] Auto  [r] Reset  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 let timer: ReturnType<typeof setInterval>;

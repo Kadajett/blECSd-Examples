@@ -7,8 +7,8 @@
  * Run: npx tsx examples/demos/event-bus-demo.ts
  * @module demos/event-bus
  */
-import { createEventBus } from 'blecsd';
-import type { Unsubscribe } from 'blecsd';
+import { createEventBus , writeRaw } from 'blecsd';
+import type { Unsubscribe , writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, formatHelpBar, formatTitle, isQuitKey, getTerminalSize, moveTo } from './demo-utils';
 
 // Define typed events
@@ -45,7 +45,7 @@ function render(): void {
 	const start = Math.max(0, log.length - maxLog);
 	for (let i = start; i < log.length; i++) out.push(`    ${log[i]}\n`);
 	out.push(moveTo(height, 1) + formatHelpBar('[1-3] Emit events  [c] Clear  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { unsubs.forEach((u) => u()); shutdownTerminal(); process.exit(0); }

@@ -8,6 +8,15 @@
  * @module demos/ansi-sequences
  */
 
+import {
+	enterAlternateScreen,
+	hideCursor,
+	leaveAlternateScreen,
+	setOutputStream,
+	showCursor,
+	writeRaw,
+} from 'blecsd';
+
 export {};
 
 let view: 1 | 2 | 3 | 4 = 1;
@@ -96,11 +105,13 @@ function render(): void {
 	else if (view === 3) out.push(...renderCursor());
 	else out.push(...renderScreen());
 
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function main(): void {
-	process.stdout.write('\x1b[?1049h\x1b[?25l');
+	setOutputStream(process.stdout);
+	enterAlternateScreen();
+	hideCursor();
 	process.stdin.setRawMode(true);
 	process.stdin.resume();
 	render();
@@ -118,7 +129,8 @@ function main(): void {
 
 function shutdown(): void {
 	process.stdin.setRawMode(false);
-	process.stdout.write('\x1b[?25h\x1b[?1049l');
+	showCursor();
+	leaveAlternateScreen();
 	process.exit(0);
 }
 

@@ -9,6 +9,15 @@
  * @module demos/resize-handling
  */
 
+import {
+	enterAlternateScreen,
+	hideCursor,
+	leaveAlternateScreen,
+	setOutputStream,
+	showCursor,
+	writeRaw,
+} from 'blecsd';
+
 export {};
 let cols = process.stdout.columns || 80;
 let rows = process.stdout.rows || 24;
@@ -47,7 +56,7 @@ function render(): void {
 		lines.push('  \x1b[2m(resize terminal to see history)\x1b[0m\n');
 	}
 
-	process.stdout.write(lines.join(''));
+	writeRaw(lines.join(''));
 }
 
 function onResize(): void {
@@ -61,7 +70,7 @@ function onResize(): void {
 }
 
 function main(): void {
-	process.stdout.write('\x1b[?1049h\x1b[?25l');
+	writeRaw('\x1b[?1049h\x1b[?25l');
 	process.stdin.setRawMode(true);
 	process.stdin.resume();
 
@@ -80,7 +89,7 @@ function main(): void {
 function shutdown(): void {
 	process.removeListener('SIGWINCH', onResize);
 	process.stdin.setRawMode(false);
-	process.stdout.write('\x1b[?25h\x1b[?1049l');
+	writeRaw('\x1b[?25h\x1b[?1049l');
 	process.exit(0);
 }
 

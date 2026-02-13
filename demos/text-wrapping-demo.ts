@@ -7,7 +7,7 @@
  * Run: npx tsx examples/demos/text-wrapping-demo.ts
  * @module demos/text-wrapping
  */
-import { wordWrap, truncate, alignLine, stripAnsi, getVisibleWidth } from 'blecsd';
+import { wordWrap, truncate, alignLine, stripAnsi, getVisibleWidth , writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, formatHelpBar, formatTitle, isQuitKey, getTerminalSize, moveTo } from './demo-utils';
 
 const sampleText = 'The quick brown fox jumps over the lazy dog. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.';
@@ -58,7 +58,7 @@ function render(): void {
 	}
 
 	out.push(moveTo(height, 1) + formatHelpBar('[m] Mode  [+/-] Width  [a] Align  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { shutdownTerminal(); process.exit(0); }

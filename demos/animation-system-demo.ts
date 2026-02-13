@@ -8,7 +8,7 @@
  * Run: npx tsx examples/demos/animation-system-demo.ts
  * @module demos/animation-system
  */
-import { createWorld, addEntity, addComponent, Position, Velocity, setVelocity, getVelocity, type World, type Entity } from 'blecsd';
+import { createWorld, addEntity, addComponent, Position, Velocity, setVelocity, getVelocity, type World, type Entity , writeRaw } from 'blecsd';
 
 const CHARS = ['*', 'o', '+', '#', '@', '~'];
 const COLORS = [31, 32, 33, 34, 35, 36]; // ANSI colors
@@ -72,13 +72,13 @@ function render(): void {
 		const y = Math.round(Position.y[eid]!);
 		lines.push(`\x1b[${y};${x}H\x1b[${color}m${char}\x1b[0m`);
 	}
-	process.stdout.write(lines.join(''));
+	writeRaw(lines.join(''));
 }
 
 let timer: ReturnType<typeof setInterval>;
 
 function main(): void {
-	process.stdout.write('\x1b[?1049h\x1b[?25l');
+	writeRaw('\x1b[?1049h\x1b[?25l');
 	process.stdin.setRawMode(true);
 	process.stdin.resume();
 
@@ -95,7 +95,7 @@ function main(): void {
 function shutdown(): void {
 	clearInterval(timer);
 	process.stdin.setRawMode(false);
-	process.stdout.write('\x1b[?25h\x1b[?1049l');
+	writeRaw('\x1b[?25h\x1b[?1049l');
 	process.exit(0);
 }
 

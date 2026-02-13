@@ -10,8 +10,8 @@
 import {
 	createWorld, addEntity, addComponent, Position, Velocity, Dimensions,
 	setPosition, setVelocity, getVelocity, setDimensions,
-} from 'blecsd';
-import type { World, Entity } from 'blecsd';
+, writeRaw } from 'blecsd';
+import type { World, Entity , writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, clearScreen, formatHelpBar, moveTo, getTerminalSize, formatTitle, isQuitKey, startLoop } from './demo-utils';
 
 const world = createWorld() as World;
@@ -94,7 +94,7 @@ function render(): void {
 	}
 
 	out.push(moveTo(height, 1) + formatHelpBar('[Space] Add  [f] Freeze  [r] Reset  [q] Quit', `${collisionCount} collisions`));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function reset(): void {

@@ -10,8 +10,8 @@
 import {
 	createWorld, addEntity, addComponent, Position, Velocity,
 	setPosition, setVelocity, getVelocity,
-} from 'blecsd';
-import type { World, Entity } from 'blecsd';
+, writeRaw } from 'blecsd';
+import type { World, Entity , writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, clearScreen, formatHelpBar, moveTo, getTerminalSize, formatTitle, isQuitKey } from './demo-utils';
 
 const world = createWorld() as World;
@@ -76,7 +76,7 @@ function render(): void {
 	// Fixed timestep diagram
 	out.push(moveTo(height - 3, 3) + `\x1b[90mFixed dt: ${(FIXED_DT * 1000).toFixed(1)}ms | Accumulator: ${(accumulator * 1000).toFixed(1)}ms\x1b[0m`);
 	out.push(moveTo(height, 1) + formatHelpBar('[Space] Pause  [+/-] Speed  [q] Quit', `${fps} FPS`));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 let lastTime = Date.now();

@@ -13,7 +13,7 @@ import {
 	createWorld, addEntity,
 	createRadioButtonEntity, attachRadioButtonBehavior,
 	selectRadioButton, onRadioSelect,
-} from 'blecsd';
+, writeRaw } from 'blecsd';
 
 const world = createWorld();
 
@@ -96,11 +96,11 @@ function render(): void {
 		out.push('  \x1b[3mAa Bb Cc (custom)\x1b[0m\n');
 	}
 
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function main(): void {
-	process.stdout.write('\x1b[?1049h\x1b[?25l');
+	writeRaw('\x1b[?1049h\x1b[?25l');
 	process.stdin.setRawMode(true);
 	process.stdin.resume();
 	render();
@@ -122,7 +122,7 @@ function main(): void {
 
 function shutdown(): void {
 	process.stdin.setRawMode(false);
-	process.stdout.write('\x1b[?25h\x1b[?1049l');
+	writeRaw('\x1b[?25h\x1b[?1049l');
 	process.exit(0);
 }
 

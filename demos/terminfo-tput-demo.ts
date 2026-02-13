@@ -9,6 +9,15 @@
  * @module demos/terminfo-tput
  */
 
+import {
+	enterAlternateScreen,
+	hideCursor,
+	leaveAlternateScreen,
+	setOutputStream,
+	showCursor,
+	writeRaw,
+} from 'blecsd';
+
 export {};
 // Capability data derived from environment and ANSI queries
 const TERM = process.env['TERM'] || 'unknown';
@@ -87,11 +96,11 @@ function render(): void {
 	}
 	lines.push('\n');
 
-	process.stdout.write(lines.join(''));
+	writeRaw(lines.join(''));
 }
 
 function main(): void {
-	process.stdout.write('\x1b[?1049h\x1b[?25l');
+	writeRaw('\x1b[?1049h\x1b[?25l');
 	process.stdin.setRawMode(true);
 	process.stdin.resume();
 	render();
@@ -108,7 +117,7 @@ function main(): void {
 
 function shutdown(): void {
 	process.stdin.setRawMode(false);
-	process.stdout.write('\x1b[?25h\x1b[?1049l');
+	writeRaw('\x1b[?25h\x1b[?1049l');
 	process.exit(0);
 }
 

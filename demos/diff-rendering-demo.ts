@@ -7,8 +7,8 @@
  * Run: npx tsx examples/demos/diff-rendering-demo.ts
  * @module demos/diff-rendering
  */
-import { createDoubleBuffer } from 'blecsd';
-import type { DoubleBufferData } from 'blecsd';
+import { createDoubleBuffer , writeRaw } from 'blecsd';
+import type { DoubleBufferData , writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, formatHelpBar, formatTitle, isQuitKey, getTerminalSize, moveTo, startLoop } from './demo-utils';
 
 // Simple diff tracking
@@ -89,7 +89,7 @@ function render(): void {
 	out.push(`  \x1b[90mEfficiency: only ${changeCount} cells need update vs ${totalCells} full redraw\x1b[0m\n`);
 
 	out.push(moveTo(height, 1) + formatHelpBar('[m] Mode  [Space] Step  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function step(): void {

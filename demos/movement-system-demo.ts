@@ -14,7 +14,7 @@ import {
 	Acceleration, setAcceleration, getAcceleration, hasAcceleration,
 	applyVelocityToEntity, applyAccelerationToEntity, applyFrictionToEntity,
 	setFriction, setMaxSpeed, getSpeed, stopEntity,
-} from 'blecsd';
+, writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, formatHelpBar, formatTitle, isQuitKey, parseArrowKey, getTerminalSize, moveTo, startLoop } from './demo-utils';
 
 const world = createWorld();
@@ -90,7 +90,7 @@ function render(): void {
 	out.push(moveTo(Math.round(pp.y), Math.round(pp.x)) + '\x1b[1;33m@\x1b[0m');
 
 	out.push(moveTo(height, 1) + formatHelpBar('[Arrows] Accelerate  [Space] Friction  [s] Stop  [r] Reset  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { stop(); shutdownTerminal(); process.exit(0); }

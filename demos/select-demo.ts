@@ -13,8 +13,8 @@ import {
 	getSelectedValue, getSelectedLabel, getSelectOptions,
 	highlightNext, highlightPrev, selectHighlighted, toggleSelect,
 	getHighlightedIndex, onSelectChange, getSelectState,
-} from 'blecsd';
-import type { World, SelectOption } from 'blecsd';
+, writeRaw } from 'blecsd';
+import type { World, SelectOption , writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, clearScreen, formatHelpBar, moveTo, getTerminalSize, formatTitle, isQuitKey } from './demo-utils';
 
 const world = createWorld() as World;
@@ -81,7 +81,7 @@ function render(): void {
 
 	if (lastChange) out.push(moveTo(20, 4) + `\x1b[32mLast: ${lastChange}\x1b[0m`);
 	out.push(moveTo(height, 1) + formatHelpBar('[Tab] Switch  [Enter] Toggle  [Up/Down] Navigate  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { shutdownTerminal(); process.exit(0); }

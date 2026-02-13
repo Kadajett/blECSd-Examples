@@ -8,7 +8,7 @@
  * Run: npx tsx examples/demos/kitty-protocol-demo.ts
  * @module demos/kitty-protocol
  */
-import { parseKeyBuffer, type KeyEvent } from 'blecsd';
+import { parseKeyBuffer, type KeyEvent , writeRaw } from 'blecsd';
 
 // Kitty keyboard protocol constants
 const CSI = '\x1b[';
@@ -48,7 +48,7 @@ function render(): void {
 	}
 
 	lines.push('\n  \x1b[2mNote: Kitty protocol requires a compatible terminal (Kitty, WezTerm, foot, etc.)\x1b[0m\n');
-	process.stdout.write(lines.join(''));
+	writeRaw(lines.join(''));
 }
 
 function logEvent(label: string, data: Buffer): void {
@@ -66,7 +66,7 @@ function logEvent(label: string, data: Buffer): void {
 }
 
 function main(): void {
-	process.stdout.write('\x1b[?1049h\x1b[?25l');
+	writeRaw('\x1b[?1049h\x1b[?25l');
 	process.stdin.setRawMode(true);
 	process.stdin.resume();
 	render();
@@ -87,11 +87,11 @@ function main(): void {
 		// Toggle Kitty mode
 		if (str === 'k' && !kittyActive) {
 			kittyActive = true;
-			process.stdout.write(KITTY_PUSH);
+			writeRaw(KITTY_PUSH);
 			eventLog.push('  >> Pushed Kitty mode 1 (disambiguate)');
 		} else if (str === 'k' && kittyActive) {
 			kittyActive = false;
-			process.stdout.write(KITTY_POP);
+			writeRaw(KITTY_POP);
 			eventLog.push('  >> Popped Kitty mode (legacy)');
 		} else {
 			logEvent(kittyActive ? 'KITTY' : 'LEGCY', data);
@@ -101,7 +101,7 @@ function main(): void {
 	});
 
 	// Query if kitty is supported
-	process.stdout.write(KITTY_QUERY);
+	writeRaw(KITTY_QUERY);
 	setTimeout(() => {
 		if (kittySupported === null) kittySupported = false;
 		render();
@@ -109,9 +109,9 @@ function main(): void {
 }
 
 function shutdown(): void {
-	if (kittyActive) process.stdout.write(KITTY_POP);
+	if (kittyActive) writeRaw(KITTY_POP);
 	process.stdin.setRawMode(false);
-	process.stdout.write('\x1b[?25h\x1b[?1049l');
+	writeRaw('\x1b[?25h\x1b[?1049l');
 	process.exit(0);
 }
 

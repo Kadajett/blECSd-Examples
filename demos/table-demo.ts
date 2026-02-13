@@ -7,7 +7,7 @@
  * Run: npx tsx examples/demos/table-demo.ts
  * @module demos/table
  */
-import { createWorld, addEntity } from 'blecsd';
+import { createWorld, addEntity , writeRaw } from 'blecsd';
 import { attachTableBehavior, setHeaders, appendRow, getDataRows, renderTableLines, removeRow, setTableDisplay } from 'blecsd/components';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, formatHelpBar, formatTitle, isQuitKey, getTerminalSize, moveTo, parseArrowKey } from './demo-utils';
 
@@ -60,7 +60,7 @@ function render(): void {
 
 	out.push(`\n  \x1b[90mPress 'a' to add row, 'd' to delete selected, 'r' to randomize\x1b[0m\n`);
 	out.push(moveTo(height, 1) + formatHelpBar('[Up/Down] Navigate  [a] Add  [d] Delete  [r] Random  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function randomName(): string {

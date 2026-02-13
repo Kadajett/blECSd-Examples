@@ -7,7 +7,7 @@
  * Run: npx tsx examples/demos/padding-demo.ts
  * @module demos/padding
  */
-import { createWorld, addEntity, addComponent, Position, setPosition, Dimensions, setDimensions, Padding, setPadding, setPaddingAll, setPaddingHV, getPadding, getHorizontalPadding, getVerticalPadding, hasPaddingValue, Content, setContent, getContent } from 'blecsd';
+import { createWorld, addEntity, addComponent, Position, setPosition, Dimensions, setDimensions, Padding, setPadding, setPaddingAll, setPaddingHV, getPadding, getHorizontalPadding, getVerticalPadding, hasPaddingValue, Content, setContent, getContent , writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, formatHelpBar, formatTitle, isQuitKey, getTerminalSize, moveTo } from './demo-utils';
 
 const world = createWorld();
@@ -98,7 +98,7 @@ function render(): void {
 	const vpad = getVerticalPadding(world, box.eid);
 	out.push(moveTo(height - 2, 2) + `\x1b[1mSelected:\x1b[0m ${box.label}  T:${pad!.top} R:${pad!.right} B:${pad!.bottom} L:${pad!.left}  H:${hpad} V:${vpad}  hasPad:${hasPaddingValue(world, box.eid)}`);
 	out.push(moveTo(height, 1) + formatHelpBar('[Tab] Select box  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { shutdownTerminal(); process.exit(0); }

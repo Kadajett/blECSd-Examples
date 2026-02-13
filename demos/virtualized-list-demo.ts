@@ -7,7 +7,7 @@
  * Run: npx tsx examples/demos/virtualized-list-demo.ts
  * @module demos/virtualized-list
  */
-import { createWorld } from 'blecsd';
+import { createWorld , writeRaw } from 'blecsd';
 import { createVirtualizedList, handleVirtualizedListKey } from 'blecsd/widgets';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, formatHelpBar, formatTitle, isQuitKey, getTerminalSize, moveTo } from './demo-utils';
 
@@ -60,7 +60,7 @@ function render(): void {
 
 	const scrollPct = total > 0 ? ((cursor + 1) / total * 100).toFixed(0) : '0';
 	out.push(moveTo(height, 1) + formatHelpBar('[Up/Down] Navigate  [PgUp/PgDn] Page  [Home/End] Jump  [q] Quit', `${scrollPct}%`));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { list.destroy(); shutdownTerminal(); process.exit(0); }

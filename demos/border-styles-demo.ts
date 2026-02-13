@@ -8,7 +8,7 @@
  * @module demos/border-styles
  */
 
-import { BOX_SINGLE, BOX_DOUBLE, BOX_ROUNDED, BOX_BOLD, BOX_ASCII } from 'blecsd';
+import { BOX_SINGLE, BOX_DOUBLE, BOX_ROUNDED, BOX_BOLD, BOX_ASCII , writeRaw } from 'blecsd';
 
 const styles = [
 	{ name: 'Single',  chars: BOX_SINGLE },
@@ -50,11 +50,11 @@ function render(): void {
 		out.push('\n');
 	}
 
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function main(): void {
-	process.stdout.write('\x1b[?1049h\x1b[?25l');
+	writeRaw('\x1b[?1049h\x1b[?25l');
 	process.stdin.setRawMode(true);
 	process.stdin.resume();
 	render();
@@ -70,7 +70,7 @@ function main(): void {
 
 function shutdown(): void {
 	process.stdin.setRawMode(false);
-	process.stdout.write('\x1b[?25h\x1b[?1049l');
+	writeRaw('\x1b[?25h\x1b[?1049l');
 	process.exit(0);
 }
 

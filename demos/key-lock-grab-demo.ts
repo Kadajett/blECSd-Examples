@@ -1,3 +1,4 @@
+import { writeRaw } from 'blecsd';
 /**
  * Key Lock/Grab Demo
  *
@@ -65,7 +66,7 @@ function render(): void {
 		? formatHelpBar('[Enter] Submit  [Esc] Cancel  [All keys captured]')
 		: formatHelpBar('[Up/Down] Select  [Enter] Edit  [g] Grab  [q] Quit');
 	out.push(moveTo(height, 1) + help);
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function grabInput(target: string): void {

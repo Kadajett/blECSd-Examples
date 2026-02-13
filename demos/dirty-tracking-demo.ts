@@ -14,7 +14,7 @@ import {
 	Dimensions, setDimensions,
 	Content, setContent, getContent,
 	queryRenderable, filterDirty, filterVisibleDirty,
-} from 'blecsd';
+, writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, formatHelpBar, formatTitle, isQuitKey, getTerminalSize, moveTo } from './demo-utils';
 
 const world = createWorld();
@@ -73,7 +73,7 @@ function render(): void {
 
 	out.push(moveTo(height - 1, 2) + `\x1b[90mPress [d] to dirty selected, [c] to clean, [a] to dirty all, [x] to clean all\x1b[0m`);
 	out.push(moveTo(height, 1) + formatHelpBar('[Tab] Select  [d] Dirty  [c] Clean  [a/x] All  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { shutdownTerminal(); process.exit(0); }

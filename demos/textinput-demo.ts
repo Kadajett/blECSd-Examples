@@ -9,7 +9,7 @@
  * @module demos/textinput
  */
 
-import { parseKeyBuffer } from 'blecsd';
+import { parseKeyBuffer , writeRaw } from 'blecsd';
 
 let value = '';
 let cursor = 0;
@@ -43,7 +43,7 @@ function render(): void {
 		out.push('  \x1b[2m(press Enter to submit)\x1b[0m\n');
 	}
 
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function handleKey(ch: string, buf: Buffer): void {
@@ -81,7 +81,7 @@ function handleKey(ch: string, buf: Buffer): void {
 }
 
 function main(): void {
-	process.stdout.write('\x1b[?1049h\x1b[?25l');
+	writeRaw('\x1b[?1049h\x1b[?25l');
 	process.stdin.setRawMode(true);
 	process.stdin.resume();
 	render();
@@ -97,7 +97,7 @@ function main(): void {
 
 function shutdown(): void {
 	process.stdin.setRawMode(false);
-	process.stdout.write('\x1b[?25h\x1b[?1049l');
+	writeRaw('\x1b[?25h\x1b[?1049l');
 	process.exit(0);
 }
 

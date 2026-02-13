@@ -12,8 +12,8 @@ import {
 	setSliderValue, getSliderValue, getSliderPercentage,
 	incrementSlider, decrementSlider, setSliderRange,
 	setSliderStep, renderSliderString, onSliderChange,
-} from 'blecsd';
-import type { World } from 'blecsd';
+, writeRaw } from 'blecsd';
+import type { World , writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, clearScreen, formatHelpBar, moveTo, getTerminalSize, formatTitle, isQuitKey, parseArrowKey } from './demo-utils';
 
 const world = createWorld() as World;
@@ -56,7 +56,7 @@ function render(): void {
 
 	if (lastChange) out.push(moveTo(19, 4) + `\x1b[32mLast: ${lastChange}\x1b[0m`);
 	out.push(moveTo(height, 1) + formatHelpBar('[Tab] Switch  [Left/Right] Adjust  [Home/End] Min/Max  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { shutdownTerminal(); process.exit(0); }

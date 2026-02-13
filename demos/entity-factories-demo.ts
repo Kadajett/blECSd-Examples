@@ -8,7 +8,7 @@
  * Run: npx tsx examples/demos/entity-factories-demo.ts
  * @module demos/entity-factories
  */
-import { createWorld, addEntity, addComponent, Position, Velocity, Renderable, setVelocity, type World, type Entity } from 'blecsd';
+import { createWorld, addEntity, addComponent, Position, Velocity, Renderable, setVelocity, type World, type Entity , writeRaw } from 'blecsd';
 
 const world = createWorld() as World;
 
@@ -83,11 +83,11 @@ function render(): void {
 	}
 	for (const row of grid) lines.push(`  |${row.join('')}|\n`);
 
-	process.stdout.write(lines.join(''));
+	writeRaw(lines.join(''));
 }
 
 function main(): void {
-	process.stdout.write('\x1b[?1049h\x1b[?25l');
+	writeRaw('\x1b[?1049h\x1b[?25l');
 	process.stdin.setRawMode(true);
 	process.stdin.resume();
 	render();
@@ -108,7 +108,7 @@ function main(): void {
 
 function shutdown(): void {
 	process.stdin.setRawMode(false);
-	process.stdout.write('\x1b[?25h\x1b[?1049l');
+	writeRaw('\x1b[?25h\x1b[?1049l');
 	process.exit(0);
 }
 

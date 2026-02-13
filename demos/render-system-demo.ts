@@ -15,8 +15,8 @@ import {
 	Content, setContent,
 	Border, setBorder, setBorderChars, BORDER_SINGLE, BORDER_DOUBLE, BORDER_ROUNDED, BORDER_BOLD,
 	markDirty,
-} from 'blecsd';
-import type { BorderCharset } from 'blecsd';
+, writeRaw } from 'blecsd';
+import type { BorderCharset , writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, formatHelpBar, formatTitle, isQuitKey, getTerminalSize, moveTo } from './demo-utils';
 
 const world = createWorld();
@@ -96,7 +96,7 @@ function render(): void {
 	for (let i = 0; i < panels.length; i++) renderPanel(out, panels[i]!, i);
 
 	out.push(moveTo(height, 1) + formatHelpBar('[1-4] Stage  [Tab] Select  [v] Toggle visible  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { shutdownTerminal(); process.exit(0); }

@@ -19,7 +19,7 @@ import {
 	setTabIndex,
 	type Entity,
 	type World,
-} from 'blecsd';
+, writeRaw } from 'blecsd';
 
 const LABELS = ['[ Save ]', '[ Cancel ]', '[ Help ]', '[ Settings ]', '[ Quit ]'];
 
@@ -43,7 +43,7 @@ function render(world: World, entities: Entity[]): void {
 	const focused = getFocusedEntity();
 	const idx = focused !== null ? entities.indexOf(focused) : -1;
 	lines.push(`\n  Focused index: ${idx >= 0 ? idx : 'none'}\n`);
-	process.stdout.write(lines.join(''));
+	writeRaw(lines.join(''));
 }
 
 function main(): void {
@@ -60,7 +60,7 @@ function main(): void {
 	// Focus the first element
 	focus(world, entities[0]!);
 
-	process.stdout.write('\x1b[?1049h\x1b[?25l'); // alt screen, hide cursor
+	writeRaw('\x1b[?1049h\x1b[?25l'); // alt screen, hide cursor
 	process.stdin.setRawMode(true);
 	process.stdin.resume();
 	render(world, entities);
@@ -83,7 +83,7 @@ function main(): void {
 
 function shutdown(): void {
 	process.stdin.setRawMode(false);
-	process.stdout.write('\x1b[?25h\x1b[?1049l');
+	writeRaw('\x1b[?25h\x1b[?1049l');
 	process.exit(0);
 }
 

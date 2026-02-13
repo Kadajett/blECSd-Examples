@@ -12,8 +12,8 @@ import {
 	getLabelText, getLabelPosition, setLabelPosition, setLabelOffset,
 	hasLabel, removeLabel, Label, LabelPosition, Position, setPosition,
 	Dimensions, setDimensions, Border, setBorder,
-} from 'blecsd';
-import type { World, Entity } from 'blecsd';
+, writeRaw } from 'blecsd';
+import type { World, Entity , writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, clearScreen, formatHelpBar, moveTo, getTerminalSize, formatTitle } from './demo-utils';
 
 const world = createWorld() as World;
@@ -80,7 +80,7 @@ function render(): void {
 	}
 
 	out.push(moveTo(height, 1) + formatHelpBar('[Tab] Cycle  [Up/Down] Position  [+/-] Offset  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { shutdownTerminal(); process.exit(0); }

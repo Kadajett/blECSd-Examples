@@ -8,8 +8,8 @@
  * @module demos/mouse-input
  */
 
-import { parseMouseSequence, isMouseBuffer } from 'blecsd';
-import type { ParsedMouseEvent } from 'blecsd';
+import { parseMouseSequence, isMouseBuffer , writeRaw } from 'blecsd';
+import type { ParsedMouseEvent , writeRaw } from 'blecsd';
 
 let lastEvent = '(none)';
 let clickCount = 0;
@@ -34,7 +34,7 @@ function render(): void {
 		lines.push('  \x1b[2m(click or move to see positions)\x1b[0m\n');
 	}
 
-	process.stdout.write(lines.join(''));
+	writeRaw(lines.join(''));
 }
 
 function handleMouse(ev: ParsedMouseEvent): void {
@@ -51,9 +51,9 @@ function handleMouse(ev: ParsedMouseEvent): void {
 }
 
 function main(): void {
-	process.stdout.write('\x1b[?1049h\x1b[?25l');
+	writeRaw('\x1b[?1049h\x1b[?25l');
 	// Enable SGR mouse mode (1006) and any-event tracking (1003)
-	process.stdout.write('\x1b[?1003h\x1b[?1006h');
+	writeRaw('\x1b[?1003h\x1b[?1006h');
 	process.stdin.setRawMode(true);
 	process.stdin.resume();
 	render();
@@ -74,9 +74,9 @@ function main(): void {
 }
 
 function shutdown(): void {
-	process.stdout.write('\x1b[?1006l\x1b[?1003l');
+	writeRaw('\x1b[?1006l\x1b[?1003l');
 	process.stdin.setRawMode(false);
-	process.stdout.write('\x1b[?25h\x1b[?1049l');
+	writeRaw('\x1b[?25h\x1b[?1049l');
 	process.exit(0);
 }
 

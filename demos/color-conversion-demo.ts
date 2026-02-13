@@ -7,7 +7,7 @@
  * Run: npx tsx examples/demos/color-conversion-demo.ts
  * @module demos/color-conversion
  */
-import { packColor, unpackColor, hexToColor, colorToHex, interpolateColor } from 'blecsd';
+import { packColor, unpackColor, hexToColor, colorToHex, interpolateColor , writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, clearScreen, formatHelpBar, moveTo, getTerminalSize, formatTitle, isQuitKey, parseArrowKey } from './demo-utils';
 
 let r = 128, g = 64, b = 200;
@@ -91,7 +91,7 @@ function render(): void {
 	}
 
 	out.push(moveTo(height, 1) + formatHelpBar('[Tab] Channel  [Up/Down] +/-1  [PgUp/PgDn] +/-10  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function adjust(delta: number): void {

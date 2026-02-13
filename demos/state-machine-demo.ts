@@ -10,8 +10,8 @@
 import {
 	createWorld, addEntity, attachStateMachine, getState, getPreviousState,
 	sendEvent,
-} from 'blecsd';
-import type { World, Entity } from 'blecsd';
+, writeRaw } from 'blecsd';
+import type { World, Entity , writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, clearScreen, formatHelpBar, moveTo, getTerminalSize, formatTitle, isQuitKey, parseArrowKey, startLoop } from './demo-utils';
 
 const world = createWorld() as World;
@@ -115,7 +115,7 @@ function render(): void {
 	}
 
 	out.push(moveTo(height, 1) + formatHelpBar('[Up/Down] Select  [Enter] Transition  [r] Reset  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { stop(); shutdownTerminal(); process.exit(0); }

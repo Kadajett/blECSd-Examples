@@ -9,6 +9,15 @@
  * @module demos/streaming-renderer
  */
 
+import {
+	enterAlternateScreen,
+	hideCursor,
+	leaveAlternateScreen,
+	setOutputStream,
+	showCursor,
+	writeRaw,
+} from 'blecsd';
+
 export {};
 
 const spinFrames = ['|', '/', '-', '\\'];
@@ -50,7 +59,7 @@ function render(): void {
 	const chars = out.join('').length;
 	out.push(`\n  \x1b[2mFrame bytes: ${chars}  Total frames: ${frame}\x1b[0m\n`);
 
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function tick(): void {
@@ -64,7 +73,7 @@ function tick(): void {
 }
 
 function main(): void {
-	process.stdout.write('\x1b[?1049h\x1b[?25l');
+	writeRaw('\x1b[?1049h\x1b[?25l');
 	process.stdin.setRawMode(true);
 	process.stdin.resume();
 	render();
@@ -80,7 +89,7 @@ function main(): void {
 function shutdown(): void {
 	if (timer) clearInterval(timer);
 	process.stdin.setRawMode(false);
-	process.stdout.write('\x1b[?25h\x1b[?1049l');
+	writeRaw('\x1b[?25h\x1b[?1049l');
 	process.exit(0);
 }
 

@@ -7,8 +7,8 @@
  * Run: npx tsx examples/demos/cell-buffer-demo.ts
  * @module demos/cell-buffer
  */
-import { createCellBuffer } from 'blecsd';
-import type { CellBuffer } from 'blecsd';
+import { createCellBuffer , writeRaw } from 'blecsd';
+import type { CellBuffer , writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, clearScreen, formatHelpBar, moveTo, getTerminalSize, formatTitle, parseArrowKey, isQuitKey } from './demo-utils';
 
 const BUF_W = 40;
@@ -64,7 +64,7 @@ function render(): void {
 	out.push(moveTo(startRow + 4, infoCol) + `Char: ${CHARS[charIdx]} [Tab]`);
 
 	out.push(moveTo(height, 1) + formatHelpBar('[Arrows] Move  [Space] Paint  [1-6] Color  [Tab] Char  [c] Clear  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function paint(): void {

@@ -9,7 +9,7 @@
  * Run: npx tsx examples/demos/terminal-focus-demo.ts
  * @module demos/terminal-focus
  */
-import { parseMouseSequence, type FocusEvent } from 'blecsd';
+import { parseMouseSequence, type FocusEvent , writeRaw } from 'blecsd';
 
 // Focus reporting escape sequences
 const ENABLE_FOCUS = '\x1b[?1004h';  // Enable focus reporting mode
@@ -57,7 +57,7 @@ function render(): void {
 	}
 
 	lines.push('\n  \x1b[2mRequires focus reporting support (xterm, iTerm2, WezTerm, etc.)\x1b[0m\n');
-	process.stdout.write(lines.join(''));
+	writeRaw(lines.join(''));
 }
 
 function handleFocus(ev: FocusEvent): void {
@@ -74,9 +74,9 @@ function handleFocus(ev: FocusEvent): void {
 }
 
 function main(): void {
-	process.stdout.write('\x1b[?1049h\x1b[?25l');
+	writeRaw('\x1b[?1049h\x1b[?25l');
 	// Enable focus reporting
-	process.stdout.write(ENABLE_FOCUS);
+	writeRaw(ENABLE_FOCUS);
 	process.stdin.setRawMode(true);
 	process.stdin.resume();
 	render();
@@ -105,9 +105,9 @@ function main(): void {
 
 function shutdown(): void {
 	// Disable focus reporting
-	process.stdout.write('\x1b[?1004l');
+	writeRaw('\x1b[?1004l');
 	process.stdin.setRawMode(false);
-	process.stdout.write('\x1b[?25h\x1b[?1049l');
+	writeRaw('\x1b[?25h\x1b[?1049l');
 	process.exit(0);
 }
 

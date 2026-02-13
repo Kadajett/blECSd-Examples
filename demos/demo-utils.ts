@@ -7,6 +7,14 @@
  * @module demos/demo-utils
  */
 
+import {
+	enterAlternateScreen,
+	hideCursor,
+	leaveAlternateScreen,
+	setOutputStream,
+	showCursor,
+} from 'blecsd';
+
 const stdout = process.stdout;
 const stdin = process.stdin;
 
@@ -22,7 +30,9 @@ const stdin = process.stdin;
  * ```
  */
 export function setupTerminal(): void {
-	stdout.write('\x1b[?1049h\x1b[?25l');
+	setOutputStream(process.stdout);
+	enterAlternateScreen();
+	hideCursor();
 	if (stdin.setRawMode) {
 		stdin.setRawMode(true);
 	}
@@ -43,7 +53,8 @@ export function shutdownTerminal(): void {
 	if (stdin.setRawMode) {
 		stdin.setRawMode(false);
 	}
-	stdout.write('\x1b[?25h\x1b[?1049l');
+	showCursor();
+	leaveAlternateScreen();
 }
 
 /**
@@ -90,7 +101,7 @@ export function getTerminalSize(): { width: number; height: number } {
  * @example
  * ```typescript
  * import { clearScreen } from './demo-utils';
- * process.stdout.write(clearScreen());
+ * writeRaw(clearScreen());
  * ```
  */
 export function clearScreen(): string {
@@ -106,7 +117,7 @@ export function clearScreen(): string {
  * @example
  * ```typescript
  * import { moveTo } from './demo-utils';
- * process.stdout.write(moveTo(5, 10) + 'Hello');
+ * writeRaw(moveTo(5, 10) + 'Hello');
  * ```
  */
 export function moveTo(row: number, col: number): string {
@@ -126,7 +137,7 @@ export function moveTo(row: number, col: number): string {
  * import { formatHelpBar, moveTo, getTerminalSize } from './demo-utils';
  * const { height } = getTerminalSize();
  * const help = formatHelpBar('[Up/Down] Navigate  [q] Quit', 'Items: 42');
- * process.stdout.write(moveTo(height, 1) + help);
+ * writeRaw(moveTo(height, 1) + help);
  * ```
  */
 export function formatHelpBar(commands: string, secondary?: string): string {
@@ -144,7 +155,7 @@ export function formatHelpBar(commands: string, secondary?: string): string {
  * @example
  * ```typescript
  * import { formatTitle } from './demo-utils';
- * process.stdout.write(formatTitle('My Demo'));
+ * writeRaw(formatTitle('My Demo'));
  * ```
  */
 export function formatTitle(title: string): string {
@@ -160,7 +171,7 @@ export function formatTitle(title: string): string {
  * @example
  * ```typescript
  * import { horizontalRule } from './demo-utils';
- * process.stdout.write('  ' + horizontalRule(40));
+ * writeRaw('  ' + horizontalRule(40));
  * ```
  */
 export function horizontalRule(width: number): string {

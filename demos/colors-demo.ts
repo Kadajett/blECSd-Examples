@@ -7,7 +7,7 @@
  * Run: npx tsx examples/demos/colors-demo.ts
  * @module demos/colors
  */
-import { packColor, unpackColor, hexToColor, colorToHex, interpolateColor } from 'blecsd';
+import { packColor, unpackColor, hexToColor, colorToHex, interpolateColor , writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, clearScreen, formatHelpBar, moveTo, getTerminalSize, formatTitle, isQuitKey } from './demo-utils';
 
 let section = 0;
@@ -80,7 +80,7 @@ function render(): void {
 	}
 
 	out.push(moveTo(height, 1) + formatHelpBar('[Tab] Section  [q] Quit', `${section + 1}/${SECTIONS.length}`));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function hslToRgb(h: number, s: number, l: number): [number, number, number] {

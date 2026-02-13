@@ -14,8 +14,8 @@ import {
 	enableShadow, disableShadow, isShadowEnabled, toggleShadow,
 	setBorder, SHADOW_CHAR_LIGHT, SHADOW_CHAR_MEDIUM, SHADOW_CHAR_DARK,
 	DEFAULT_SHADOW_CHAR,
-} from 'blecsd';
-import type { World, Entity } from 'blecsd';
+, writeRaw } from 'blecsd';
+import type { World, Entity , writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, clearScreen, formatHelpBar, moveTo, getTerminalSize, formatTitle, isQuitKey, parseArrowKey } from './demo-utils';
 
 const world = createWorld() as World;
@@ -85,7 +85,7 @@ function render(): void {
 	}
 
 	out.push(moveTo(height, 1) + formatHelpBar('[Tab] Cycle  [Arrows] Offset  [+/-] Opacity  [s] Char  [t] Toggle  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { shutdownTerminal(); process.exit(0); }

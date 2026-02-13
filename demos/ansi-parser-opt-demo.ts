@@ -7,7 +7,7 @@
  * Run: npx tsx examples/demos/ansi-parser-opt-demo.ts
  * @module demos/ansi-parser-opt
  */
-import { stripAnsi, getVisibleWidth, parseKeyBuffer } from 'blecsd';
+import { stripAnsi, getVisibleWidth, parseKeyBuffer , writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, formatHelpBar, formatTitle, isQuitKey, getTerminalSize, moveTo } from './demo-utils';
 
 // Sample ANSI strings for parsing
@@ -86,7 +86,7 @@ function render(): void {
 	}
 
 	out.push(moveTo(height, 1) + formatHelpBar('[Up/Down] Select  [b] Benchmark  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { shutdownTerminal(); process.exit(0); }

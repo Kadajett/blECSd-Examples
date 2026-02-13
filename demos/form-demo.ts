@@ -10,8 +10,8 @@
 import {
 	createWorld, createFormEntity, attachFormBehavior,
 	onFormSubmit, submitForm, resetForm,
-} from 'blecsd';
-import type { World } from 'blecsd';
+, writeRaw } from 'blecsd';
+import type { World , writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, clearScreen, formatHelpBar, moveTo, getTerminalSize, formatTitle, isQuitKey } from './demo-utils';
 
 const world = createWorld() as World;
@@ -76,7 +76,7 @@ function render(): void {
 
 	const mode = editing ? '\x1b[33mEDIT\x1b[90m' : 'NAV';
 	out.push(moveTo(height, 1) + formatHelpBar('[Tab] Field  [Enter] Edit  [Esc] Stop  [Ctrl+S] Submit  [q] Quit', `Mode: ${mode}`));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { shutdownTerminal(); process.exit(0); }

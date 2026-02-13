@@ -14,7 +14,7 @@ import {
 	Renderable, setStyle,
 	Dimensions, setDimensions,
 	queryRenderable,
-} from 'blecsd';
+, writeRaw } from 'blecsd';
 import { setupTerminal, shutdownTerminal, setupSignalHandlers, formatHelpBar, formatTitle, isQuitKey, getTerminalSize, moveTo } from './demo-utils';
 
 interface BenchResult { name: string; ops: number; time: number; count: number }
@@ -127,7 +127,7 @@ function render(): void {
 	}
 
 	out.push(moveTo(height, 1) + formatHelpBar('[r] Run benchmarks  [q] Quit'));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { shutdownTerminal(); process.exit(0); }

@@ -1,3 +1,4 @@
+import { writeRaw } from 'blecsd';
 /**
  * Text Styles Demo
  *
@@ -61,7 +62,7 @@ function render(): void {
 	}
 
 	out.push(moveTo(height, 1) + formatHelpBar('[Up/Down] Navigate  [Tab] Next  [q] Quit', `Style: ${styles[selected]!.name}`));
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function shutdown(): void { shutdownTerminal(); process.exit(0); }

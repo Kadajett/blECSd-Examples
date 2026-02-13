@@ -13,8 +13,8 @@ import {
 	createWorld, addEntity,
 	createButtonEntity, attachButtonBehavior, onButtonPress, pressButton,
 	getButtonState,
-} from 'blecsd';
-import type { ButtonState } from 'blecsd';
+, writeRaw } from 'blecsd';
+import type { ButtonState , writeRaw } from 'blecsd';
 
 const world = createWorld();
 
@@ -58,11 +58,11 @@ function render(): void {
 	out.push(`\n  Last pressed: \x1b[32m${lastPressed}\x1b[0m\n`);
 	out.push(`  Focused: \x1b[33m${buttons[focusIdx].label}\x1b[0m\n`);
 
-	process.stdout.write(out.join(''));
+	writeRaw(out.join(''));
 }
 
 function main(): void {
-	process.stdout.write('\x1b[?1049h\x1b[?25l');
+	writeRaw('\x1b[?1049h\x1b[?25l');
 	process.stdin.setRawMode(true);
 	process.stdin.resume();
 	render();
@@ -82,7 +82,7 @@ function main(): void {
 
 function shutdown(): void {
 	process.stdin.setRawMode(false);
-	process.stdout.write('\x1b[?25h\x1b[?1049l');
+	writeRaw('\x1b[?25h\x1b[?1049l');
 	process.exit(0);
 }
 

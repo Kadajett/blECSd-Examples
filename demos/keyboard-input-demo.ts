@@ -7,7 +7,7 @@
  * Run: npx tsx examples/demos/keyboard-input-demo.ts
  * @module demos/keyboard-input
  */
-import { parseKeyBuffer, type KeyEvent } from 'blecsd';
+import { parseKeyBuffer, type KeyEvent , writeRaw } from 'blecsd';
 
 const history: string[] = [];
 const MAX_HISTORY = 15;
@@ -42,11 +42,11 @@ function render(): void {
 	if (history.length === 0) {
 		lines.push('  \x1b[2m(waiting for input...)\x1b[0m\n');
 	}
-	process.stdout.write(lines.join(''));
+	writeRaw(lines.join(''));
 }
 
 function main(): void {
-	process.stdout.write('\x1b[?1049h\x1b[?25l');
+	writeRaw('\x1b[?1049h\x1b[?25l');
 	process.stdin.setRawMode(true);
 	process.stdin.resume();
 	render();
@@ -74,7 +74,7 @@ function main(): void {
 
 function shutdown(): void {
 	process.stdin.setRawMode(false);
-	process.stdout.write('\x1b[?25h\x1b[?1049l');
+	writeRaw('\x1b[?25h\x1b[?1049l');
 	process.exit(0);
 }
 
