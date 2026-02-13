@@ -23,6 +23,9 @@
  *   Enter           - submit input / newline with Shift+Enter
  *   Ctrl+C          - quit
  *
+ * Options:
+ *   --buffer        - run on alternate screen (default: primary screen)
+ *
  * @module examples/claude-chat
  */
 
@@ -496,6 +499,9 @@ async function main(): Promise<void> {
 	const width = stdout.columns ?? 80;
 	const height = stdout.rows ?? 24;
 
+	// Check for --buffer flag to enable alternate screen mode
+	const useBuffer = process.argv.includes('--buffer');
+
 	const world = createWorld();
 
 	// -------------------------------------------------------------------------
@@ -552,10 +558,13 @@ async function main(): Promise<void> {
 	// -------------------------------------------------------------------------
 	// Terminal setup
 	// -------------------------------------------------------------------------
-	enterAlternateScreen();
+	if (useBuffer) {
+		enterAlternateScreen();
+	}
 	hideCursor();
-	writeRaw('\x1b[?1003h'); // Enable any-event mouse tracking
-	writeRaw('\x1b[?1006h'); // Enable SGR mouse protocol
+	// Use process.stdout.write() directly for mouse tracking to ensure immediate flush
+	process.stdout.write('\x1b[?1003h'); // Enable any-event mouse tracking
+	process.stdout.write('\x1b[?1006h'); // Enable SGR mouse protocol
 	stdin.setRawMode?.(true);
 	stdin.resume();
 
@@ -729,10 +738,12 @@ async function main(): Promise<void> {
 
 	function render(): void {
 		if (!running) {
-			writeRaw('\x1b[?1006l'); // Disable SGR mouse protocol
-			writeRaw('\x1b[?1003l'); // Disable mouse tracking
+			process.stdout.write('\x1b[?1006l'); // Disable SGR mouse protocol
+			process.stdout.write('\x1b[?1003l'); // Disable mouse tracking
 			showTerminalCursor();
-			leaveAlternateScreen();
+			if (useBuffer) {
+				leaveAlternateScreen();
+			}
 			process.exit(0);
 		}
 
@@ -872,10 +883,12 @@ async function main(): Promise<void> {
 }
 
 main().catch((err) => {
-	writeRaw('\x1b[?1006l'); // Disable SGR mouse protocol
-	writeRaw('\x1b[?1003l'); // Disable mouse tracking
+	process.stdout.write('\x1b[?1006l'); // Disable SGR mouse protocol
+	process.stdout.write('\x1b[?1003l'); // Disable mouse tracking
 	showTerminalCursor();
-	leaveAlternateScreen();
+	if (process.argv.includes('--buffer')) {
+		leaveAlternateScreen();
+	}
 	console.error('Error:', err);
 	process.exit(1);
 });
