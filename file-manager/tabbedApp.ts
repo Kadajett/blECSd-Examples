@@ -624,7 +624,7 @@ async function handleKeyInput(state: AppState, event: KeyEvent): Promise<void> {
 	}
 
 	if (event.ctrl && key === 'a') {
-		const total = tab.fileStore.count;
+		const total = fileStoreCount(tab.fileStore);
 		for (let i = 0; i < total; i++) {
 			tab.selection.add(i);
 		}
@@ -783,11 +783,18 @@ async function handleKeyInput(state: AppState, event: KeyEvent): Promise<void> {
 
 function handleMouseInput(state: AppState, event: ParsedMouseEvent): void {
 	const tab = getActiveTab(state);
-	if (!tab) return;
+	if (!tab) {
+		jerbInput.warn('[jerb] handleMouseInput: no active tab, ignoring');
+		return;
+	}
+
+	const totalEntries = fileStoreCount(tab.fileStore);
+	jerbInput.trace('[jerb] handleMouseInput: action=%s button=%s x=%d y=%d totalEntries=%d', event.action, event.button, event.x, event.y, totalEntries);
 
 	if (event.y === 0 && event.action === 'press') {
 		const hit = state.renderState.tabHitRegions.find((region) => event.x >= region.start && event.x <= region.end);
 		if (hit) {
+			jerbInput.trace('[jerb] handleMouseInput: tab click at index=%d', hit.index);
 			setActiveTab(state, hit.index);
 			return;
 		}
@@ -827,8 +834,12 @@ function handleMouseInput(state: AppState, event: ParsedMouseEvent): void {
 	}
 
 	if (event.action === 'press' && event.button === 'left') {
-		if (event.y >= listStartY && event.y <= listEndY && event.x <= listEndX) {
-			const index = getVisibleIndexAtRow(tab.listEid, event.y - listStartY, tab.fileStore.count);
+		const inListBounds = event.y >= listStartY && event.y <= listEndY && event.x <= listEndX;
+		jerbInput.trace('[jerb] handleMouseInput: LEFT PRESS bounds check: y=%d in [%d..%d]=%s x=%d <= %d=%s inBounds=%s', event.y, listStartY, listEndY, event.y >= listStartY && event.y <= listEndY, event.x, listEndX, event.x <= listEndX, inListBounds);
+		if (inListBounds) {
+			const row = event.y - listStartY;
+			const index = getVisibleIndexAtRow(tab.listEid, row, fileStoreCount(tab.fileStore));
+			jerbInput.trace('[jerb] handleMouseInput: row=%d index=%s totalEntries=%d', row, index, totalEntries);
 			if (index !== null) {
 				const now = Date.now();
 				const isDoubleClick =
