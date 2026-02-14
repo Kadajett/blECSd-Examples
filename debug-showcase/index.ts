@@ -32,6 +32,12 @@ import {
 	Position,
 	Velocity,
 	cleanup as cleanupOutput,
+	enableSystemTiming,
+	getSystemTimings,
+	timedSystem,
+	listEntities,
+	getPerformanceStats,
+	resetSystemTimings,
 } from 'blecsd';
 import type { World } from 'blecsd';
 import {
@@ -62,18 +68,6 @@ const MIN_SPEED = 10;
 // TYPES
 // =============================================================================
 
-interface SystemTimings {
-	movement: number;
-	bounce: number;
-}
-
-interface PerformanceData {
-	fps: number;
-	frameTime: number;
-	frameCount: number;
-	lastFpsUpdate: number;
-}
-
 interface AppState {
 	world: World;
 	particles: Particle[];
@@ -84,8 +78,6 @@ interface AppState {
 	burstMode: boolean;
 	burstState: ReturnType<typeof createBurstState>;
 	currentWorkload: keyof typeof WORKLOADS;
-	timings: SystemTimings;
-	performance: PerformanceData;
 }
 
 // =============================================================================
@@ -93,17 +85,10 @@ interface AppState {
 // =============================================================================
 
 /**
- * Get all entities that have Position component
- */
-function getEntitiesWithPosition(world: World, particles: Particle[]): number[] {
-	return particles.map(p => p.eid);
-}
-
-/**
  * Movement system - updates positions based on velocity
  */
-function movementSystem(world: World, deltaTime: number, particles: Particle[]): void {
-	const entities = getEntitiesWithPosition(world, particles);
+function movementSystem(world: World, deltaTime: number): World {
+	const entities = listEntities(world);
 
 	for (const eid of entities) {
 		const x = Position.x[eid];
@@ -118,13 +103,15 @@ function movementSystem(world: World, deltaTime: number, particles: Particle[]):
 		Position.x[eid] = x + vx * deltaTime;
 		Position.y[eid] = y + vy * deltaTime;
 	}
+
+	return world;
 }
 
 /**
  * Bounce system - handles boundary collision
  */
-function bounceSystem(world: World, width: number, height: number, particles: Particle[]): void {
-	const entities = getEntitiesWithPosition(world, particles);
+function bounceSystem(world: World, width: number, height: number): World {
+	const entities = listEntities(world);
 
 	for (const eid of entities) {
 		let x = Position.x[eid];
@@ -166,6 +153,8 @@ function bounceSystem(world: World, width: number, height: number, particles: Pa
 		Velocity.x[eid] = vx;
 		Velocity.y[eid] = vy;
 	}
+
+	return world;
 }
 
 // =============================================================================
@@ -173,7 +162,7 @@ function bounceSystem(world: World, width: number, height: number, particles: Pa
 // =============================================================================
 
 function render(state: AppState): void {
-	const { world, particles, width, height, performance: perf } = state;
+	const { world, particles, width, height } = state;
 
 	// Clear screen
 	cursorHome();
@@ -204,17 +193,18 @@ function render(state: AppState): void {
 	}
 
 	// Render status bar
+	const perfStats = getPerformanceStats(world);
 	const workloadDesc = state.burstMode
 		? 'Burst Mode'
 		: WORKLOADS[state.currentWorkload].description;
-	const statusText = `${workloadDesc} | Entities: ${particles.length} | FPS: ${perf.fps.toFixed(0)} | Press F12 for debug overlay | q to quit`;
+	const statusText = `${workloadDesc} | Entities: ${particles.length} | FPS: ${perfStats.fps.toFixed(0)} | Press F12 for debug overlay | q to quit`;
 	writeRaw('\x1b[1;1H');
 	writeRaw('\x1b[48;2;40;40;60;38;2;255;255;255m');
 	writeRaw(statusText.padEnd(width).slice(0, width));
 	writeRaw('\x1b[0m');
 
 	// Render debug overlay
-	renderOverlay(world, state.overlay, width, height, perf, state.timings);
+	renderOverlay(world, state.overlay, width, height);
 }
 
 // =============================================================================
@@ -226,7 +216,7 @@ function switchWorkload(state: AppState, workload: keyof typeof WORKLOADS): AppS
 	clearParticles(state.world, state.particles);
 
 	// Reset system timings
-	const timings: SystemTimings = { movement: 0, bounce: 0 };
+	resetSystemTimings();
 
 	// Create new workload
 	const particles = createWorkload(
@@ -245,7 +235,6 @@ function switchWorkload(state: AppState, workload: keyof typeof WORKLOADS): AppS
 		overlay,
 		currentWorkload: workload,
 		burstMode: false,
-		timings,
 	};
 }
 
@@ -254,7 +243,7 @@ function enableBurstMode(state: AppState): AppState {
 	clearParticles(state.world, state.particles);
 
 	// Reset system timings
-	const timings: SystemTimings = { movement: 0, bounce: 0 };
+	resetSystemTimings();
 
 	return {
 		...state,
@@ -262,7 +251,6 @@ function enableBurstMode(state: AppState): AppState {
 		burstMode: true,
 		burstState: createBurstState(),
 		overlay: { ...state.overlay, selectedEntity: null },
-		timings,
 	};
 }
 
@@ -329,7 +317,7 @@ function handleInput(state: AppState, key: string): AppState {
 // =============================================================================
 
 function update(state: AppState, deltaTime: number): AppState {
-	const { world, width, height, particles, timings } = state;
+	const { world, width, height } = state;
 
 	// Update burst mode
 	if (state.burstMode) {
@@ -347,13 +335,11 @@ function update(state: AppState, deltaTime: number): AppState {
 	}
 
 	// Run systems with timing
-	const movementStart = performance.now();
-	movementSystem(world, deltaTime, particles);
-	timings.movement = performance.now() - movementStart;
+	const timedMovement = timedSystem('movement', (w: World) => movementSystem(w, deltaTime));
+	timedMovement(world);
 
-	const bounceStart = performance.now();
-	bounceSystem(world, width, height, particles);
-	timings.bounce = performance.now() - bounceStart;
+	const timedBounce = timedSystem('bounce', (w: World) => bounceSystem(w, width, height));
+	timedBounce(world);
 
 	return state;
 }
@@ -369,8 +355,9 @@ async function main(): Promise<void> {
 	const width = stdout.columns ?? 80;
 	const height = stdout.rows ?? 24;
 
-	// Create world
+	// Create world and enable system timing
 	const world = createWorld();
+	enableSystemTiming(true);
 
 	// Setup terminal
 	setOutputStream(process.stdout);
@@ -391,13 +378,6 @@ async function main(): Promise<void> {
 		burstMode: false,
 		burstState: createBurstState(),
 		currentWorkload: 'light',
-		timings: { movement: 0, bounce: 0 },
-		performance: {
-			fps: 0,
-			frameTime: 0,
-			frameCount: 0,
-			lastFpsUpdate: Date.now(),
-		},
 	};
 
 	// Setup input handler
@@ -426,24 +406,11 @@ async function main(): Promise<void> {
 		const deltaTime = (now - lastTime) / 1000;
 		lastTime = now;
 
-		// Update FPS counter
-		state.performance.frameCount++;
-		if (now - state.performance.lastFpsUpdate >= 1000) {
-			state.performance.fps = state.performance.frameCount / ((now - state.performance.lastFpsUpdate) / 1000);
-			state.performance.frameCount = 0;
-			state.performance.lastFpsUpdate = now;
-		}
-
 		// Update
 		state = update(state, deltaTime);
 
-		// Track frame time
-		const frameStart = performance.now();
-
 		// Render
 		render(state);
-
-		state.performance.frameTime = performance.now() - frameStart;
 
 		// Schedule next frame
 		const elapsed = Date.now() - now;
