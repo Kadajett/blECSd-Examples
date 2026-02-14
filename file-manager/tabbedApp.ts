@@ -1664,7 +1664,13 @@ function setupTerminal(): void {
 	jerbSetup.info('[jerb] setupTerminal: complete (alt screen, cursor hidden, mouse enabled)');
 }
 
+let terminalRestored = false;
 function restoreTerminal(): void {
+	if (terminalRestored) {
+		jerbSetup.warn('[jerb] restoreTerminal: SKIPPED (already restored, was being called twice)');
+		return;
+	}
+	terminalRestored = true;
 	jerbSetup.info('[jerb] restoreTerminal: tearing down');
 	writeRaw('\x1b[?1006l');
 	writeRaw('\x1b[?1000l');
