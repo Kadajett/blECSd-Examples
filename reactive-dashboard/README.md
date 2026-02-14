@@ -1,48 +1,72 @@
 # Reactive Dashboard Example
 
-A reactive-style system monitor dashboard demonstrating clean separation of concerns with live data sources, side effects, and runtime theme switching.
+A reactive system monitor dashboard demonstrating blECSd's signal system with live data sources, computed values, effects, and runtime theme switching.
 
 ## Features
 
-- **Data Polling**: Live system metrics (CPU, memory, network, system info)
-- **Side Effects**: Alert logging when thresholds are exceeded
-- **Theme Switching**: Multiple themes (Dark, Light, Nord, Dracula) switchable at runtime
-- **Functional Architecture**: Pure functions with clear separation of data, rendering, and effects
-- **Reactive Patterns**: Data-driven rendering with minimal manual state management
+- **Polling Signals**: Live system metrics using `createPollingSignal` (CPU, memory, network, system info)
+- **Computed Signals**: Derived values using `createComputed` (color thresholds based on usage)
+- **Reactive Effects**: Side effects using `createEffect` (automatic alert logging when thresholds exceeded)
+- **Signal-Based Theme Switching**: Multiple themes switchable at runtime using `createSignal`
+- **Automatic Dependency Tracking**: All signals and effects automatically track dependencies
 
 ## Architecture
 
 ```
 reactive-dashboard/
-  index.ts          # Main entry point with polling and render loop
-  data.ts           # Data collection functions (CPU, memory, network, system)
+  index.ts          # Main entry point with signal-based reactivity
+  data.ts           # Signal factories (polling, computed)
   layout.ts         # Rendering functions for each panel
-  effects.ts        # Side effects (alerts, logging)
+  effects.ts        # Effect factories (alerts with dependency tracking)
   theme.ts          # Theme definitions and switching
 ```
 
-## Implementation Pattern
+## Signal System
 
-While this example uses polling with `setInterval` (matching the system-monitor pattern), it demonstrates reactive programming principles:
+### Polling Signals (Data Sources)
 
-- **Pure Functions**: All data collection and rendering functions are pure
-- **Separation of Concerns**: Data, rendering, and effects are cleanly separated
-- **Data-Driven**: UI updates automatically when data changes
-- **Composable**: Each module can be used independently
+These signals poll OS data at regular intervals and automatically notify dependents:
 
-## Data Collection
+- `createCpuSignal()` - Returns `[getter, dispose]`. Polls CPU usage every 1s
+- `createMemorySignal()` - Returns `[getter, dispose]`. Polls memory every 1s
+- `createNetworkSignal()` - Returns `[getter, dispose]`. Simulated network I/O
+- `createSystemSignal()` - Returns `[getter, dispose]`. System info every 5s
 
-- `calculateCpuUsage()` - Tracks CPU usage per core with delta calculation
-- `getMemoryData()` - Collects memory usage statistics
-- `getNetworkData()` - Simulated network I/O (can be replaced with real data source)
-- `getSystemData()` - System info (uptime, hostname, platform)
+### Computed Signals (Derived Values)
 
-## Side Effects
+These signals derive values from other signals and auto-update:
 
-- `checkCpuAlert()` - Logs alerts when CPU exceeds 80%
-- `checkMemoryAlert()` - Logs alerts when memory exceeds 80%
+- `createCpuColorSignal(cpuGetter)` - Returns `getter`. Computes color based on CPU usage
+- `createMemoryColorSignal(memoryGetter)` - Returns `getter`. Computes color based on memory usage
 
-Both effects have 10-second cooldown to prevent alert spam.
+### Effects (Side Effects)
+
+These effects run automatically when their dependencies change:
+
+- `createCpuAlertEffect(cpuGetter)` - Logs alerts when CPU exceeds 80% (10s cooldown)
+- `createMemoryAlertEffect(memoryGetter)` - Logs alerts when memory exceeds 80% (10s cooldown)
+
+### Signal API Pattern
+
+```typescript
+// Create a basic signal [getter, setter]
+const [getTheme, setTheme] = createSignal<Theme>(darkTheme);
+
+// Create a polling signal [getter, dispose]
+const [getCpu, disposeCpu] = createPollingSignal(async () => data, 1000, initialValue);
+
+// Create a computed signal (just getter)
+const getColor = createComputed(() => {
+  const cpu = getCpu(); // Auto-tracks dependency
+  return cpu.average >= 80 ? 'red' : 'green';
+});
+
+// Create an effect (runs when dependencies change)
+createEffect(() => {
+  const cpu = getCpu(); // Auto-tracks dependency
+  console.log(`CPU: ${cpu.average}%`);
+});
+```
 
 ## Usage
 
@@ -68,17 +92,25 @@ pnpm start
 
 ## What This Demonstrates
 
-1. **Functional Programming**: Pure functions, no classes, explicit state
-2. **Separation of Concerns**: Data, rendering, and effects are independent modules
-3. **Theme Switching**: Runtime theme changes propagate through the entire UI
-4. **Clean Architecture**: Easy to test, extend, and maintain
-5. **Alert Side Effects**: Demonstrates running effects on data changes
+1. **Reactive Signals**: `createSignal`, `createPollingSignal` for reactive data sources
+2. **Computed Values**: `createComputed` for derived values that auto-update
+3. **Automatic Effects**: `createEffect` for side effects with dependency tracking
+4. **No Manual Subscriptions**: Effects and computed values track dependencies automatically
+5. **Clean Disposal**: Polling signals return dispose functions for cleanup
+6. **Tuple API**: Signals use `[getter, setter]` tuples, not object methods
+
+## Implementation Notes
+
+- Signals are tuples: `const [get, set] = createSignal(value)`
+- Call getters as functions: `const data = getCpu()` (not `getCpu.get()`)
+- Effects automatically track which signals they read
+- Polling signals require 3 args: `createPollingSignal(asyncFn, intervalMs, initialValue)`
+- Computed signals are just getter functions (no setter)
 
 ## Extending This Example
 
-- Add more data sources (disk I/O, process list, network interfaces)
-- Implement real network I/O reading from `/proc/net/dev` or OS APIs
-- Add logging to file or send notifications via external service
-- Build time-series history and render sparklines
-- Add more themes or allow custom theme configuration
-- Implement data export or snapshot features
+- Add more polling signals for disk I/O, process list, network interfaces
+- Create computed signals that combine multiple data sources
+- Add effects for logging to file or sending notifications
+- Build derived signals for historical data or moving averages
+- Implement signal-driven animations or transitions

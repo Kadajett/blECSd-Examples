@@ -1,7 +1,7 @@
 /**
- * Data collection functions for the reactive dashboard.
+ * Data source signals for the reactive dashboard.
  *
- * Provides system metrics collection:
+ * Provides live system metrics using blECSd's signal system:
  * - CPU usage per core
  * - Memory usage
  * - System uptime and load average
@@ -9,6 +9,10 @@
  */
 
 import * as os from 'node:os';
+import { createPollingSignal, createComputed } from 'blecsd';
+import type { SignalGetter, ComputedSignal } from 'blecsd';
+
+type Dispose = () => void;
 
 // =============================================================================
 // TYPES
@@ -57,7 +61,7 @@ let previousCpuTimes: CpuTimes[] = [];
 /**
  * Calculate CPU usage percentage from current and previous times.
  */
-export function calculateCpuUsage(): CpuData {
+function calculateCpuUsage(): CpuData {
 	const cpus = os.cpus();
 	const perCore: number[] = [];
 
@@ -95,63 +99,110 @@ export function calculateCpuUsage(): CpuData {
 }
 
 // =============================================================================
-// MEMORY DATA
+// DATA SOURCE SIGNALS
 // =============================================================================
 
 /**
- * Get memory usage data.
+ * CPU usage signal (polls every second).
+ * Returns [getter, dispose] tuple.
  */
-export function getMemoryData(): MemoryData {
-	const total = os.totalmem();
-	const free = os.freemem();
-	const used = total - free;
-	const percent = (used / total) * 100;
-	return { used, total, percent };
+export function createCpuSignal(): readonly [SignalGetter<CpuData>, Dispose] {
+	const initialValue: CpuData = { perCore: [], average: 0, loadAvg: [0, 0, 0] };
+	return createPollingSignal(async () => calculateCpuUsage(), 1000, initialValue);
 }
 
-// =============================================================================
-// SYSTEM INFO
-// =============================================================================
+/**
+ * Memory usage signal (polls every second).
+ * Returns [getter, dispose] tuple.
+ */
+export function createMemorySignal(): readonly [SignalGetter<MemoryData>, Dispose] {
+	const initialValue: MemoryData = { used: 0, total: os.totalmem(), percent: 0 };
+	return createPollingSignal(async () => {
+		const total = os.totalmem();
+		const free = os.freemem();
+		const used = total - free;
+		const percent = (used / total) * 100;
+		return { used, total, percent };
+	}, 1000, initialValue);
+}
 
 /**
- * Get system information.
+ * System info signal (polls every 5 seconds).
+ * Returns [getter, dispose] tuple.
  */
-export function getSystemData(): SystemData {
-	return {
-		uptime: os.uptime(),
+export function createSystemSignal(): readonly [SignalGetter<SystemData>, Dispose] {
+	const initialValue: SystemData = {
+		uptime: 0,
 		hostname: os.hostname(),
 		platform: os.platform(),
 		arch: os.arch(),
 	};
+	return createPollingSignal(async () => {
+		return {
+			uptime: os.uptime(),
+			hostname: os.hostname(),
+			platform: os.platform(),
+			arch: os.arch(),
+		};
+	}, 5000, initialValue);
+}
+
+/**
+ * Network I/O signal (simulated, polls every second).
+ * In a real app, this would read from /proc/net/dev or similar.
+ * Returns [getter, dispose] tuple.
+ */
+export function createNetworkSignal(): readonly [SignalGetter<NetworkData>, Dispose] {
+	let lastRx = 0;
+	let lastTx = 0;
+	let lastTime = Date.now();
+
+	const initialValue: NetworkData = { rx: 0, tx: 0, rxRate: 0, txRate: 0 };
+
+	return createPollingSignal(async () => {
+		const now = Date.now();
+		const elapsed = (now - lastTime) / 1000;
+
+		// Simulate network traffic (random walk)
+		const rx = lastRx + Math.random() * 1024 * 100;
+		const tx = lastTx + Math.random() * 1024 * 50;
+		const rxRate = elapsed > 0 ? (rx - lastRx) / elapsed : 0;
+		const txRate = elapsed > 0 ? (tx - lastTx) / elapsed : 0;
+
+		lastRx = rx;
+		lastTx = tx;
+		lastTime = now;
+
+		return { rx, tx, rxRate, txRate };
+	}, 1000, initialValue);
 }
 
 // =============================================================================
-// NETWORK DATA (SIMULATED)
+// COMPUTED SIGNALS
 // =============================================================================
 
-let lastRx = 0;
-let lastTx = 0;
-let lastTime = Date.now();
+/**
+ * Create a computed signal for CPU color based on usage threshold.
+ */
+export function createCpuColorSignal(cpuGetter: SignalGetter<CpuData>): ComputedSignal<string> {
+	return createComputed(() => {
+		const cpu = cpuGetter();
+		if (cpu.average >= 80) return 'red';
+		if (cpu.average >= 50) return 'yellow';
+		return 'green';
+	});
+}
 
 /**
- * Get simulated network I/O data.
- * In a real app, this would read from /proc/net/dev or similar.
+ * Create a computed signal for memory color based on usage threshold.
  */
-export function getNetworkData(): NetworkData {
-	const now = Date.now();
-	const elapsed = (now - lastTime) / 1000;
-
-	// Simulate network traffic (random walk)
-	const rx = lastRx + Math.random() * 1024 * 100;
-	const tx = lastTx + Math.random() * 1024 * 50;
-	const rxRate = elapsed > 0 ? (rx - lastRx) / elapsed : 0;
-	const txRate = elapsed > 0 ? (tx - lastTx) / elapsed : 0;
-
-	lastRx = rx;
-	lastTx = tx;
-	lastTime = now;
-
-	return { rx, tx, rxRate, txRate };
+export function createMemoryColorSignal(memoryGetter: SignalGetter<MemoryData>): ComputedSignal<string> {
+	return createComputed(() => {
+		const mem = memoryGetter();
+		if (mem.percent >= 80) return 'red';
+		if (mem.percent >= 50) return 'yellow';
+		return 'green';
+	});
 }
 
 // =============================================================================

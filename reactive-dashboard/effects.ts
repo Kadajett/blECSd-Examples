@@ -1,9 +1,11 @@
 /**
  * Side effects for the reactive dashboard.
  *
- * Logs alerts when thresholds are exceeded.
+ * Demonstrates using createEffect for logging alerts when thresholds are exceeded.
  */
 
+import { createEffect } from 'blecsd';
+import type { SignalGetter } from 'blecsd';
 import type { CpuData, MemoryData } from './data';
 
 // =============================================================================
@@ -15,36 +17,39 @@ const MEMORY_WARNING_THRESHOLD = 80;
 const ALERT_COOLDOWN_MS = 10000; // Only alert once per 10 seconds
 
 // =============================================================================
-// ALERT STATE
-// =============================================================================
-
-let lastCpuAlertTime = 0;
-let lastMemoryAlertTime = 0;
-
-// =============================================================================
-// ALERT FUNCTIONS
+// EFFECT SETUP
 // =============================================================================
 
 /**
- * Check CPU usage and log alert if threshold exceeded.
+ * Create an effect that logs CPU warnings when usage exceeds threshold.
  */
-export function checkCpuAlert(cpu: CpuData): void {
-	const now = Date.now();
+export function createCpuAlertEffect(cpuGetter: SignalGetter<CpuData>): void {
+	let lastAlertTime = 0;
 
-	if (cpu.average >= CPU_WARNING_THRESHOLD && now - lastCpuAlertTime > ALERT_COOLDOWN_MS) {
-		console.error(`[ALERT] CPU usage high: ${cpu.average.toFixed(1)}%`);
-		lastCpuAlertTime = now;
-	}
+	createEffect(() => {
+		const cpu = cpuGetter();
+		const now = Date.now();
+
+		if (cpu.average >= CPU_WARNING_THRESHOLD && now - lastAlertTime > ALERT_COOLDOWN_MS) {
+			console.error(`[ALERT] CPU usage high: ${cpu.average.toFixed(1)}%`);
+			lastAlertTime = now;
+		}
+	});
 }
 
 /**
- * Check memory usage and log alert if threshold exceeded.
+ * Create an effect that logs memory warnings when usage exceeds threshold.
  */
-export function checkMemoryAlert(memory: MemoryData): void {
-	const now = Date.now();
+export function createMemoryAlertEffect(memoryGetter: SignalGetter<MemoryData>): void {
+	let lastAlertTime = 0;
 
-	if (memory.percent >= MEMORY_WARNING_THRESHOLD && now - lastMemoryAlertTime > ALERT_COOLDOWN_MS) {
-		console.error(`[ALERT] Memory usage high: ${memory.percent.toFixed(1)}%`);
-		lastMemoryAlertTime = now;
-	}
+	createEffect(() => {
+		const mem = memoryGetter();
+		const now = Date.now();
+
+		if (mem.percent >= MEMORY_WARNING_THRESHOLD && now - lastAlertTime > ALERT_COOLDOWN_MS) {
+			console.error(`[ALERT] Memory usage high: ${mem.percent.toFixed(1)}%`);
+			lastAlertTime = now;
+		}
+	});
 }
