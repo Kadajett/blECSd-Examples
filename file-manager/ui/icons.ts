@@ -6,20 +6,25 @@
 import type { FileCategory } from '../data';
 
 /**
- * Unicode icons for file types.
+ * Single-width Unicode icons for file types.
+ *
+ * IMPORTANT: All icons MUST be single-width (1 terminal column) characters.
+ * Double-width characters (emoji) break CellBuffer column alignment because
+ * the buffer treats each cell as 1 column but the terminal renders wide chars
+ * as 2 columns, shifting all subsequent content right.
  */
 export const FILE_ICONS: Record<FileCategory | 'selected' | 'cursor', string> = {
-	directory: '📁',
-	file: '📄',
-	symlink: '🔗',
-	executable: '⚙️',
-	image: '🖼️',
-	audio: '🎵',
-	video: '🎬',
-	archive: '📦',
-	code: '💻',
-	text: '📝',
-	document: '📋',
+	directory: '▸',
+	file: '·',
+	symlink: '→',
+	executable: '★',
+	image: '◇',
+	audio: '♪',
+	video: '▷',
+	archive: '◆',
+	code: '#',
+	text: '≡',
+	document: '□',
 	selected: '✓',
 	cursor: '>',
 };

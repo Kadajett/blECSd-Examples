@@ -1200,7 +1200,7 @@ function renderPathBar(state: AppState, tab: TabState, width: number): void {
 
 	if (state.filterMode) {
 		// Show filter input prominently
-		const prompt = '🔍 ' + state.filterQuery + '█';
+		const prompt = '/ ' + state.filterQuery + '█';
 		renderText(buffer, 2, y, prompt.slice(0, width - 4), COLORS.filterFg, COLORS.headBg);
 
 		const hint = 'ESC cancel │ Enter apply';
@@ -1233,8 +1233,8 @@ function renderPathBar(state: AppState, tab: TabState, width: number): void {
 	const rightText = `${countText} │ ${focusText}`;
 	const maxPathWidth = width - rightText.length - 4;
 
-	renderText(buffer, 2, y, ' 📁 ', COLORS.headFg, COLORS.headBg);
-	renderText(buffer, 6, y, pathDisplay.slice(0, maxPathWidth), COLORS.headFg, COLORS.headBg);
+	renderText(buffer, 2, y, '▸ ', COLORS.headFg, COLORS.headBg);
+	renderText(buffer, 4, y, pathDisplay.slice(0, maxPathWidth), COLORS.headFg, COLORS.headBg);
 	renderText(buffer, width - rightText.length - 1, y, rightText, COLORS.headFg, COLORS.headBg);
 }
 
@@ -1287,6 +1287,7 @@ function renderList(
 	const sizeWidth = 10;
 	const dateWidth = 12;
 	const typeWidth = 6;
+	// Layout: marker(1) + space(1) + icon(1) + space(1) + name(nameWidth) + size(sizeWidth) + date(dateWidth) + gap(1) + type(typeWidth)
 	const nameWidth = Math.max(8, contentWidth - sizeWidth - dateWidth - typeWidth - 6);
 
 	for (let row = 0; row < height; row++) {
@@ -1331,21 +1332,22 @@ function renderList(
 		const iconFg = isCurrent || isSelected ? fg : fileFg(entry);
 		renderText(buffer, x + 2, y + row, icon, iconFg, bg);
 
-		// Name with match highlighting
+		// Name with match highlighting (middle-truncated for long names)
 		const nameFg = isCurrent || isSelected ? fg : (entry.type === FileType.Directory ? COLORS.directoryFg : fg);
-		renderNameWithMatch(buffer, x + 4, y + row, nameText, nameWidth - 1, nameFg, bg, fileStoreGetMatchInfo(tab.fileStore, index)?.indices ?? []);
+		renderNameWithMatch(buffer, x + 4, y + row, nameText, nameWidth, nameFg, bg, fileStoreGetMatchInfo(tab.fileStore, index)?.indices ?? []);
 
+		// Data columns aligned with header (offset by 1 for icon column)
 		// Size (right-aligned, dimmer for directories)
 		const sizeFg = entry.type === FileType.Directory ? COLORS.previewMetaFg : fg;
-		renderText(buffer, x + 3 + nameWidth, y + row, sizeText, sizeFg, bg);
+		renderText(buffer, x + 4 + nameWidth, y + row, sizeText, sizeFg, bg);
 
 		// Modified date
 		const dateFg = isCurrent || isSelected ? fg : COLORS.previewMetaFg;
-		renderText(buffer, x + 3 + nameWidth + sizeWidth, y + row, dateText.slice(0, dateWidth), dateFg, bg);
+		renderText(buffer, x + 4 + nameWidth + sizeWidth, y + row, dateText.slice(0, dateWidth), dateFg, bg);
 
 		// Type/extension
 		const typeFg = isCurrent || isSelected ? fg : COLORS.previewMetaFg;
-		renderText(buffer, x + 3 + nameWidth + sizeWidth + dateWidth + 1, y + row, typeText.padEnd(typeWidth), typeFg, bg);
+		renderText(buffer, x + 4 + nameWidth + sizeWidth + dateWidth + 1, y + row, typeText.padEnd(typeWidth), typeFg, bg);
 	}
 
 	// Render scrollbar
@@ -1396,10 +1398,41 @@ function renderNameWithMatch(
 	const indexSet = new Set(indices);
 	const hasMatches = indices.length > 0;
 
+	// Middle truncation: show beginning + ellipsis + end (preserving extension)
+	// e.g. "fooVanMissleDesign.stl_0.05_2.5_2025_06_12_12_59_00.goo" -> "fooVanMissle…_59_00.goo"
+	if (text.length > width && width > 8) {
+		const ellipsis = '…';
+		// Show more of the end to preserve extension and context
+		const endLen = Math.min(Math.ceil(width * 0.35), text.length);
+		const startLen = width - endLen - 1; // 1 for ellipsis
+		const startPart = text.slice(0, startLen);
+		const endPart = text.slice(text.length - endLen);
+
+		for (let i = 0; i < width; i++) {
+			let char: string;
+			let originalIndex: number;
+			if (i < startLen) {
+				char = startPart[i] ?? ' ';
+				originalIndex = i;
+			} else if (i === startLen) {
+				char = ellipsis;
+				originalIndex = -1; // ellipsis is never a match
+			} else {
+				const endOffset = i - startLen - 1;
+				char = endPart[endOffset] ?? ' ';
+				originalIndex = text.length - endLen + endOffset;
+			}
+			const isMatch = originalIndex >= 0 && indexSet.has(originalIndex);
+			const charFg = isMatch ? COLORS.matchHighlightFg : fg;
+			const charBg = isMatch && hasMatches ? COLORS.matchHighlightBg : bg;
+			buffer.setCell(x + i, y, char, charFg, charBg);
+		}
+		return;
+	}
+
 	for (let i = 0; i < width; i++) {
 		const char = text[i] ?? ' ';
 		const isMatch = indexSet.has(i);
-		// Use highlight background for matches to make them stand out
 		const charFg = isMatch ? COLORS.matchHighlightFg : fg;
 		const charBg = isMatch && hasMatches ? COLORS.matchHighlightBg : bg;
 		buffer.setCell(x + i, y, char, charFg, charBg);
@@ -1553,7 +1586,7 @@ function renderStatusBar(state: AppState, tab: TabState, width: number, y: numbe
 	// Right side: position and filter
 	const position = selectedIndex >= 0 ? `${selectedIndex + 1}/${fileStoreCount(tab.fileStore)}` : '─';
 	const hiddenText = state.config.showHidden ? 'H:on' : 'H:off';
-	const filterText = state.filterQuery ? `🔍"${state.filterQuery}"` : '';
+	const filterText = state.filterQuery ? `/"${state.filterQuery}"` : '';
 	const rightParts = [position, hiddenText];
 	if (filterText) rightParts.push(filterText);
 	const right = rightParts.join(' │ ');
