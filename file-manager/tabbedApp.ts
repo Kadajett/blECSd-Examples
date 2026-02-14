@@ -5,26 +5,8 @@
  * @module tabbedApp
  */
 
-import { appendFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
-
-// Debug logging to file (doesn't interfere with TUI)
-const DEBUG_LOG_PATH = '/tmp/filemanager-debug.log';
-let debugEnabled = process.env.DEBUG_FILEMANAGER === '1';
-
-function debugLog(message: string, data?: unknown): void {
-	if (!debugEnabled) return;
-	const timestamp = new Date().toISOString();
-	const line = data
-		? `${timestamp} ${message}: ${JSON.stringify(data)}\n`
-		: `${timestamp} ${message}\n`;
-	appendFileSync(DEBUG_LOG_PATH, line);
-}
-
-function clearDebugLog(): void {
-	if (!debugEnabled) return;
-	writeFileSync(DEBUG_LOG_PATH, `--- Debug log started at ${new Date().toISOString()} ---\n`);
-}
+import { resolve } from 'node:path';
 import { addEntity } from 'blecsd';
 import type { Entity, World, KeyEvent, ParsedMouseEvent, CellBuffer } from 'blecsd';
 import {
@@ -78,6 +60,11 @@ import {
 	leaveAlternateScreen,
 	writeRaw,
 	setOutputStream,
+	// Debug logging
+	configureDebugLogger,
+	createDebugLogger,
+	clearLog,
+	LogLevel,
 } from 'blecsd';
 import { getIcon } from './ui/icons';
 import {
@@ -105,6 +92,34 @@ import {
 import { FileType, getFileCategory } from './data/fileEntry';
 import { getHomePath } from './data/filesystem';
 import { loadPreview, createQuickPreview, EMPTY_PREVIEW, type PreviewContent } from './data/preview';
+
+// =============================================================================
+// JERB DEBUG LOGGING (search "jerb" to find/remove all debug logging)
+// =============================================================================
+
+const JERB_LOG_FILE = resolve(import.meta.dirname ?? '.', 'filemanager-jerb.log');
+
+configureDebugLogger({
+	enabled: true,
+	logFile: JERB_LOG_FILE,
+	level: LogLevel.TRACE,
+	namespaceFilter: 'jerb:*',
+	timestamps: true,
+	includeLevel: true,
+});
+clearLog();
+
+const jerbLoop = createDebugLogger('jerb:loop');
+const jerbRender = createDebugLogger('jerb:render');
+const jerbInput = createDebugLogger('jerb:input');
+const jerbPreview = createDebugLogger('jerb:preview');
+const jerbSetup = createDebugLogger('jerb:setup');
+const jerbState = createDebugLogger('jerb:state');
+const jerbBuffer = createDebugLogger('jerb:buffer');
+
+let jerbRenderCount = 0;
+let jerbLoopCount = 0;
+let jerbLastRenderTime = 0;
 
 // =============================================================================
 // TYPES
@@ -367,6 +382,7 @@ function createRenderState(width: number, height: number, splitRatio: number, sh
 
 function updateRenderState(state: RenderState, width: number, height: number, splitRatio: number, showPreview: boolean): void {
 	if (state.width !== width || state.height !== height) {
+		jerbState.info('[jerb] updateRenderState: RECREATING BUFFER %dx%d -> %dx%d', state.width, state.height, width, height);
 		state.buffer = createCellBuffer(width, height) as CellBufferWithCells;
 		state.width = width;
 		state.height = height;
@@ -797,22 +813,7 @@ function handleMouseInput(state: AppState, event: ParsedMouseEvent): void {
 		const inListX = event.x <= listEndX;
 		const inListY = event.y >= listStartY && event.y <= listEndY;
 
-		// DEBUG: Log hit test info (enable with DEBUG_FILEMANAGER=1)
-		debugLog('SCROLL', {
-			mouseX: event.x,
-			mouseY: event.y,
-			listEndX,
-			previewStartX,
-			previewStartY,
-			previewEndY,
-			listStartY,
-			listEndY,
-			inPreviewX,
-			inPreviewY,
-			inListX,
-			inListY,
-			will: inPreviewX && inPreviewY ? 'scrollPreview' : inListX && inListY ? 'scrollList' : 'nothing',
-		});
+		jerbInput.trace('[jerb] SCROLL mouse=(%d,%d) listEndX=%d prevStartX=%d inList=%s inPreview=%s will=%s', event.x, event.y, listEndX, previewStartX, inListX && inListY, inPreviewX && inPreviewY, inPreviewX && inPreviewY ? 'scrollPreview' : inListX && inListY ? 'scrollList' : 'nothing');
 
 		if (inPreviewX && inPreviewY) {
 			scrollPreview(tab.preview, delta, state.renderState.contentHeight);
@@ -892,14 +893,7 @@ function scrollListBy(world: World, listEid: Entity, delta: number): void {
 	const totalCount = info.totalCount ?? 0;
 	const maxStart = Math.max(0, totalCount - visibleCount);
 	const newFirst = Math.max(0, Math.min(maxStart, firstVisible + delta));
-	debugLog('scrollListBy', {
-		oldFirst: firstVisible,
-		newFirst,
-		delta,
-		visibleCount,
-		totalCount,
-		maxStart,
-	});
+	jerbInput.trace('[jerb] scrollListBy: first=%d->%d delta=%d visible=%d total=%d max=%d', firstVisible, newFirst, delta, visibleCount, totalCount, maxStart);
 	setFirstVisible(world, listEid, newFirst);
 }
 
@@ -1004,19 +998,27 @@ async function updatePreviewForSelection(state: AppState, tab: TabState, force =
 	const index = getListSelectedIndex(tab.listEid);
 	const preview = tab.preview;
 
+	jerbPreview.trace('[jerb] updatePreview: index=%d force=%s isLoading=%s loadingIndex=%d', index, force, preview.isLoading, preview.loadingIndex);
+
 	if (index < 0) {
+		jerbPreview.trace('[jerb] updatePreview: index<0, clearing preview');
 		buildPreviewScrollback(preview, EMPTY_PREVIEW);
 		state.needsRedraw = true;
 		return;
 	}
 
 	if (!force && preview.loadingIndex === index && preview.isLoading) {
+		jerbPreview.trace('[jerb] updatePreview: already loading index=%d, skipping', index);
 		return;
 	}
 
 	const entry = fileStoreGetEntryAt(tab.fileStore, index);
-	if (!entry) return;
+	if (!entry) {
+		jerbPreview.warn('[jerb] updatePreview: no entry at index=%d', index);
+		return;
+	}
 
+	jerbPreview.trace('[jerb] updatePreview: quick preview for "%s"', entry.name);
 	const quick = createQuickPreview(entry, state.config.sizeFormat);
 	preview.isLoading = true;
 	preview.loadingIndex = index;
@@ -1026,21 +1028,35 @@ async function updatePreviewForSelection(state: AppState, tab: TabState, force =
 
 	preview.debounceTimer = setTimeout(async () => {
 		const stillSelected = getListSelectedIndex(tab.listEid) === index;
-		if (!stillSelected) return;
+		if (!stillSelected) {
+			jerbPreview.trace('[jerb] updatePreview debounce: selection changed from %d, aborting load', index);
+			return;
+		}
 
+		jerbPreview.trace('[jerb] updatePreview debounce: loading full preview for "%s" index=%d', entry.name, index);
+		const loadStart = performance.now();
 		try {
 			// Limit preview to 5000 lines to prevent performance issues with very large files
 			const full = await loadPreview(entry, state.config.sizeFormat, 5000);
+			const loadMs = performance.now() - loadStart;
+			jerbPreview.trace('[jerb] updatePreview: full preview loaded in %.1fms, name=%s content=%d lines', loadMs, full.name, full.content.length);
+
+			if (loadMs > 100) {
+				jerbPreview.warn('[jerb] updatePreview: SLOW preview load %.1fms for "%s"', loadMs, entry.name);
+			}
+
 			if (getListSelectedIndex(tab.listEid) === index) {
 				buildPreviewScrollback(preview, full);
+				jerbPreview.trace('[jerb] updatePreview: scrollback built, setting needsRedraw');
 			}
 		} catch {
-			// ignore
+			jerbPreview.warn('[jerb] updatePreview: load failed for "%s"', entry.name);
 		} finally {
 			if (preview.loadingIndex === index) {
 				preview.isLoading = false;
 			}
 			state.needsRedraw = true;
+			jerbPreview.trace('[jerb] updatePreview: done, needsRedraw=true');
 		}
 	}, 120);
 }
@@ -1050,14 +1066,7 @@ function scrollPreview(preview: PreviewState, delta: number, viewportHeight: num
 	const maxOffset = Math.max(0, preview.scrollback.totalLines - viewportHeight + PREVIEW_BOTTOM_BUFFER);
 	const range = scrollScrollbackBy(preview.scrollback, preview.scrollLine, delta, viewportHeight);
 	preview.scrollLine = Math.min(maxOffset, range.startLine);
-	debugLog('scrollPreview', {
-		oldScrollLine,
-		newScrollLine: preview.scrollLine,
-		delta,
-		viewportHeight,
-		totalLines: preview.scrollback.totalLines,
-		maxOffset,
-	});
+	jerbPreview.trace('[jerb] scrollPreview: line=%d->%d delta=%d viewport=%d total=%d max=%d', oldScrollLine, preview.scrollLine, delta, viewportHeight, preview.scrollback.totalLines, maxOffset);
 }
 
 // =============================================================================
@@ -1065,22 +1074,58 @@ function scrollPreview(preview: PreviewState, delta: number, viewportHeight: num
 // =============================================================================
 
 function renderApp(state: AppState): void {
+	jerbRenderCount++;
+	const t0 = performance.now();
+
 	const tab = getActiveTab(state);
-	if (!tab) return;
+	if (!tab) {
+		jerbRender.warn('[jerb] renderApp #%d: NO ACTIVE TAB, skipping render!', jerbRenderCount);
+		return;
+	}
 
 	const { buffer, width, height, listWidth, previewWidth, contentHeight, listHeight } = state.renderState;
 
+	jerbRender.trace('[jerb] renderApp #%d: dims=%dx%d listW=%d prevW=%d contentH=%d listH=%d activeTab=%d tabs=%d', jerbRenderCount, width, height, listWidth, previewWidth, contentHeight, listHeight, state.activeTab, state.tabs.length);
+
+	// Check for zero or negative dimensions
+	if (width <= 0 || height <= 0) {
+		jerbRender.error('[jerb] renderApp #%d: INVALID DIMENSIONS w=%d h=%d, this will cause blackout!', jerbRenderCount, width, height);
+	}
+
+	// Check buffer dimensions match
+	const bufCells = (buffer as CellBufferWithCells).cells;
+	if (bufCells) {
+		const bufH = bufCells.length;
+		const bufW = bufCells[0]?.length ?? 0;
+		if (bufH !== height || bufW !== width) {
+			jerbRender.error('[jerb] renderApp #%d: BUFFER SIZE MISMATCH! buffer=%dx%d state=%dx%d', jerbRenderCount, bufW, bufH, width, height);
+		}
+	}
+
 	// Clear entire screen with background
+	const tClear = performance.now();
 	fillRect(buffer, 0, 0, width, height, ' ', COLORS.rowFg, COLORS.bg);
+	const tClearEnd = performance.now();
+	jerbRender.trace('[jerb] renderApp #%d: fillRect clear took %.1fms', jerbRenderCount, tClearEnd - tClear);
 
 	// Render UI sections
+	const tTabBar = performance.now();
 	renderTabBar(state, width);
+	const tPathBar = performance.now();
 	renderPathBar(state, tab, width);
+	const tColHeaders = performance.now();
 	renderColumnHeaders(state, listWidth - 1);
+	const tList = performance.now();
 	renderList(state, tab, listWidth, listHeight, 0, 3);
+	const tListEnd = performance.now();
+
+	jerbRender.trace('[jerb] renderApp #%d sections: tabBar=%.1fms pathBar=%.1fms colHeaders=%.1fms list=%.1fms', jerbRenderCount, tPathBar - tTabBar, tColHeaders - tPathBar, tList - tColHeaders, tListEnd - tList);
 
 	if (state.config.showPreview && previewWidth > 0) {
+		const tPreview = performance.now();
 		renderPreview(state, tab, listWidth + 1, 3, previewWidth - 1, contentHeight);
+		const tPreviewEnd = performance.now();
+		jerbRender.trace('[jerb] renderApp #%d: preview took %.1fms', jerbRenderCount, tPreviewEnd - tPreview);
 
 		// Vertical divider between list and preview
 		const dividerColor = state.focusedPane === 'list' ? COLORS.borderFg : COLORS.borderFocused;
@@ -1093,6 +1138,12 @@ function renderApp(state: AppState): void {
 
 	renderStatusBar(state, tab, width, height - 2);
 	renderActionBar(state, width, height - 1);
+
+	const totalMs = performance.now() - t0;
+	jerbRender.trace('[jerb] renderApp #%d total: %.1fms', jerbRenderCount, totalMs);
+	if (totalMs > 30) {
+		jerbRender.warn('[jerb] renderApp #%d SLOW: %.1fms', jerbRenderCount, totalMs);
+	}
 }
 
 function renderTabBar(state: AppState, width: number): void {
@@ -1547,13 +1598,24 @@ function bufferToAnsi(state: RenderState): string {
 	const { buffer, width, height } = state;
 	const lines: string[] = [];
 
+	let emptyCellCount = 0;
+	let totalCellCount = 0;
+	let nullCellCount = 0;
+
 	for (let y = 0; y < height; y++) {
 		let line = '';
 		let prevFg = -1;
 		let prevBg = -1;
 		for (let x = 0; x < width; x++) {
 			const cell = buffer.cells[y]?.[x];
-			if (!cell) continue;
+			totalCellCount++;
+			if (!cell) {
+				nullCellCount++;
+				continue;
+			}
+			if (cell.char === ' ' && cell.fg === 0 && cell.bg === 0) {
+				emptyCellCount++;
+			}
 			if (cell.fg !== prevFg || cell.bg !== prevBg) {
 				const fgR = (cell.fg >> 16) & 0xff;
 				const fgG = (cell.fg >> 8) & 0xff;
@@ -1570,7 +1632,18 @@ function bufferToAnsi(state: RenderState): string {
 		lines.push(line);
 	}
 
-	return '\x1b[H' + lines.join('\n') + '\x1b[0m';
+	// jerb: detect if buffer is mostly empty (possible blackout)
+	if (nullCellCount > 0) {
+		jerbBuffer.warn('[jerb] bufferToAnsi: %d/%d cells were null!', nullCellCount, totalCellCount);
+	}
+	const emptyPct = (emptyCellCount / totalCellCount) * 100;
+	if (emptyPct > 95) {
+		jerbBuffer.warn('[jerb] bufferToAnsi: %.1f%% of cells are empty (fg=0 bg=0 char=space), possible blank frame!', emptyPct);
+	}
+
+	const result = '\x1b[H' + lines.join('\n') + '\x1b[0m';
+	jerbBuffer.trace('[jerb] bufferToAnsi: %dx%d total=%d null=%d empty=%.1f%% output=%d bytes', width, height, totalCellCount, nullCellCount, emptyPct, result.length);
+	return result;
 }
 
 // =============================================================================
@@ -1578,6 +1651,7 @@ function bufferToAnsi(state: RenderState): string {
 // =============================================================================
 
 function setupTerminal(): void {
+	jerbSetup.info('[jerb] setupTerminal: isTTY=%s', process.stdin.isTTY);
 	if (process.stdin.isTTY) {
 		process.stdin.setRawMode(true);
 	}
@@ -1587,9 +1661,11 @@ function setupTerminal(): void {
 	enterAlternateScreen();
 	writeRaw('\x1b[?1000h');
 	writeRaw('\x1b[?1006h');
+	jerbSetup.info('[jerb] setupTerminal: complete (alt screen, cursor hidden, mouse enabled)');
 }
 
 function restoreTerminal(): void {
+	jerbSetup.info('[jerb] restoreTerminal: tearing down');
 	writeRaw('\x1b[?1006l');
 	writeRaw('\x1b[?1000l');
 	leaveAlternateScreen();
@@ -1598,66 +1674,136 @@ function restoreTerminal(): void {
 	if (process.stdin.isTTY) {
 		process.stdin.setRawMode(false);
 	}
+	jerbSetup.info('[jerb] restoreTerminal: complete');
 }
 
 function startRenderLoop(state: AppState): void {
+	jerbLoop.info('[jerb] render loop started, interval=50ms');
 	const interval = setInterval(() => {
+		jerbLoopCount++;
 		if (!state.running) {
+			jerbLoop.info('[jerb] loop stopping, running=false, tick=%d', jerbLoopCount);
 			clearInterval(interval);
 			return;
 		}
 
 		if (state.needsRedraw) {
+			const loopStart = performance.now();
+			jerbLoop.trace('[jerb] tick=%d needsRedraw=true, starting render', jerbLoopCount);
+
 			renderApp(state);
-			writeRaw(bufferToAnsi(state.renderState));
+			const renderEnd = performance.now();
+			const renderMs = renderEnd - loopStart;
+
+			const ansi = bufferToAnsi(state.renderState);
+			const ansiEnd = performance.now();
+			const ansiMs = ansiEnd - renderEnd;
+			const ansiLen = ansi.length;
+
+			jerbBuffer.trace('[jerb] tick=%d ansi length=%d bytes, conversion took %.1fms', jerbLoopCount, ansiLen, ansiMs);
+
+			// Check for suspiciously short output (possible blackout cause)
+			if (ansiLen < 100) {
+				jerbBuffer.warn('[jerb] SUSPICIOUS: ansi output only %d bytes at tick=%d, possible blank frame!', ansiLen, jerbLoopCount);
+			}
+
+			// Check for missing cursor-home escape at start
+			if (!ansi.startsWith('\x1b[H')) {
+				jerbBuffer.warn('[jerb] SUSPICIOUS: ansi output missing cursor-home prefix at tick=%d', jerbLoopCount);
+			}
+
+			writeRaw(ansi);
+			const writeEnd = performance.now();
+			const writeMs = writeEnd - ansiEnd;
+			const totalMs = writeEnd - loopStart;
+
 			state.needsRedraw = false;
+
+			jerbLoop.trace('[jerb] tick=%d render complete: render=%.1fms ansi=%.1fms write=%.1fms total=%.1fms', jerbLoopCount, renderMs, ansiMs, writeMs, totalMs);
+
+			// Log slow frames
+			if (totalMs > 50) {
+				jerbLoop.warn('[jerb] SLOW FRAME tick=%d total=%.1fms (render=%.1fms ansi=%.1fms write=%.1fms)', jerbLoopCount, totalMs, renderMs, ansiMs, writeMs);
+			}
+
+			// Log gaps between renders
+			const gap = loopStart - jerbLastRenderTime;
+			if (jerbLastRenderTime > 0 && gap > 200) {
+				jerbLoop.warn('[jerb] LONG GAP between renders: %.0fms at tick=%d', gap, jerbLoopCount);
+			}
+			jerbLastRenderTime = loopStart;
+		} else {
+			// Log every 100th idle tick to show loop is alive
+			if (jerbLoopCount % 100 === 0) {
+				jerbLoop.trace('[jerb] tick=%d idle (needsRedraw=false), loop alive', jerbLoopCount);
+			}
 		}
 	}, 50);
 }
 
 async function main(): Promise<void> {
-	clearDebugLog();
-	debugLog('App starting');
+	jerbSetup.info('[jerb] main: app starting, log file=%s', JERB_LOG_FILE);
 
 	const stdout = process.stdout;
 	const stdin = process.stdin;
 
 	let width = stdout.columns ?? 80;
 	let height = stdout.rows ?? 24;
+	jerbSetup.info('[jerb] main: initial terminal size=%dx%d', width, height);
 	const args = process.argv.slice(2);
 	const pathArg = args.find((arg) => !arg.startsWith('-'));
 	const initialPath = pathArg ?? getHomePath();
 
-	const state = await createAppState(initialPath, width, height);	
+	jerbSetup.info('[jerb] main: creating app state for path=%s', initialPath);
+	const state = await createAppState(initialPath, width, height);
+	jerbSetup.info('[jerb] main: app state created, tabs=%d', state.tabs.length);
+
 	const initialTab = getActiveTab(state);
 	if (initialTab) {
+		jerbSetup.info('[jerb] main: loading initial preview');
 		await updatePreviewForSelection(state, initialTab);
 	}
 	setupTerminal();
 
+	jerbSetup.info('[jerb] main: performing initial render');
 	renderApp(state);
-	writeRaw(bufferToAnsi(state.renderState));
+	const initialAnsi = bufferToAnsi(state.renderState);
+	jerbSetup.info('[jerb] main: initial render output=%d bytes', initialAnsi.length);
+	writeRaw(initialAnsi);
 	state.needsRedraw = false;
 
 	stdin.on('data', (data: Buffer) => {
 		if (!state.running) return;
-		const str = data.toString();
+		const dataHex = data.length < 20 ? data.toString('hex') : `${data.slice(0, 20).toString('hex')}...(${data.length}b)`;
+		jerbInput.trace('[jerb] stdin data: %d bytes hex=%s', data.length, dataHex);
+
 		const mouse = parseMouseSequence(data);
 		if (mouse?.type === 'mouse') {
+			jerbInput.trace('[jerb] mouse event: action=%s button=%s x=%d y=%d', mouse.event.action, mouse.event.button, mouse.event.x, mouse.event.y);
 			handleMouseInput(state, mouse.event);
 			return;
 		}
 
 		const keyEvents = parseKeyBuffer(data);
 		for (const keyEvent of keyEvents) {
+			jerbInput.trace('[jerb] key event: name=%s ctrl=%s shift=%s meta=%s seq=%s', keyEvent.name, keyEvent.ctrl, keyEvent.shift, keyEvent.meta, JSON.stringify(keyEvent.sequence));
 			void handleKeyInput(state, keyEvent).catch(() => undefined);
 		}
 	});
 
 	stdout.on('resize', () => {
+		const oldW = width;
+		const oldH = height;
 		width = stdout.columns ?? 80;
 		height = stdout.rows ?? 24;
+		jerbState.info('[jerb] RESIZE: %dx%d -> %dx%d', oldW, oldH, width, height);
+
+		// jerb: check if resize creates a new buffer
+		const oldBufW = state.renderState.width;
+		const oldBufH = state.renderState.height;
 		updateRenderState(state.renderState, width, height, state.config.splitRatio, state.config.showPreview);
+		jerbState.info('[jerb] RESIZE: renderState updated, buffer was %dx%d now %dx%d', oldBufW, oldBufH, state.renderState.width, state.renderState.height);
+
 		state.actionBar.setPosition(0, height - 1);
 		for (const tab of state.tabs) {
 			setVisibleCount(state.world, tab.listEid, state.renderState.listHeight);
@@ -1666,10 +1812,12 @@ async function main(): Promise<void> {
 	});
 
 	startRenderLoop(state);
+	jerbSetup.info('[jerb] main: render loop started, app running');
 
 	// Return a promise that resolves when the app exits
 	return new Promise<void>((resolve) => {
 		const exit = (): void => {
+			jerbSetup.info('[jerb] EXIT requested');
 			state.running = false;
 			restoreTerminal();
 			resolve();
