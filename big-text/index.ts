@@ -8,28 +8,27 @@
  * Quit: Ctrl+C
  */
 
-import { addEntity, createWorld } from 'blecsd';
 import {
+	addEntity,
 	cleanup as cleanupOutput,
 	clearScreen,
-	createDirtyTracker,
 	createDoubleBuffer,
 	createScreenEntity,
-	enterAlternateScreen,
-	getComputedLayout,
-	getContent,
-	getStyle,
-	hexToColor,
+	createWorld,
 	layoutSystem,
 	outputSystem,
-	renderSystem,
+	type Entity,
+} from 'blecsd';
+import { getContent, getStyle, hexToColor } from 'blecsd/components';
+import { createDirtyTracker } from 'blecsd/core';
+import {
+	enterAlternateScreen,
+	getComputedLayout,
+	hideCursor,
 	setOutputBuffer,
 	setOutputStream,
 	setRenderBuffer,
-	type Entity,
-	type World,
-} from 'blecsd';
-import { hideCursor } from 'blecsd/systems';
+} from 'blecsd/systems';
 import { createBigText } from 'blecsd/widgets';
 import { loadFont } from 'blecsd/widgets/fonts';
 

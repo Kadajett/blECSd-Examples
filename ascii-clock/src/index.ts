@@ -7,34 +7,31 @@
 
 import {
 	addEntity,
-	cleanup as cleanupOutput,
 	clearBuffer,
 	clearScreen,
-	createDirtyTracker,
 	createDoubleBuffer,
-	createInputHandler,
 	createScreenEntity,
 	createWorld,
-	type Entity,
-	enterAlternateScreen,
-	getContent,
-	getOutputBuffer,
-	getStyle,
-	hexToColor,
 	outputSystem,
 	setDimensions,
+	type Entity,
+	type World,
+} from 'blecsd';
+import { getContent, getStyle, hexToColor } from 'blecsd/components';
+import { createDirtyTracker } from 'blecsd/core';
+import {
+	cleanup as cleanupOutput,
+	enterAlternateScreen,
+	getOutputBuffer,
+	hideCursor,
 	setOutputBuffer,
 	setOutputStream,
 	setRenderBuffer,
-	setupSigwinchHandler,
-	triggerResize,
-	type World,
 	writeRaw,
-	writeString,
-} from 'blecsd';
+} from 'blecsd/systems';
+import { createInputHandler, setupSigwinchHandler, triggerResize, writeString } from 'blecsd/terminal';
 import { createBigText, type FontDefinition } from 'blecsd/widgets';
 import { loadFont } from 'blecsd/widgets/fonts';
-import { hideCursor } from 'blecsd/systems';
 
 interface ClockOptions {
 	showSeconds: boolean;

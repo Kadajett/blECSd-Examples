@@ -20,16 +20,16 @@
  */
 
 import * as os from 'node:os';
+import { clearScreen } from 'blecsd';
 import {
-	clearScreen,
 	cursorHome,
 	enterAlternateScreen,
 	hideCursor,
 	leaveAlternateScreen,
+	setOutputStream,
 	showCursor,
 	writeRaw,
-	setOutputStream,
-} from 'blecsd';
+} from 'blecsd/systems';
 
 // =============================================================================
 // CONFIGURATION

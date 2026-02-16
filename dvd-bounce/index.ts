@@ -22,34 +22,29 @@
  * @module examples/dvd-bounce
  */
 
-import { addEntity, hasComponent } from 'blecsd';
-import type { World, Entity } from 'blecsd';
 import {
-	createWorld,
-	createWorldAdapter,
-	Position,
-	setPosition,
-	getPosition,
-	Velocity,
-	setVelocity,
-	Shadow,
-	setShadow,
-	ZOrder,
-	setZIndex,
-	getZIndex,
-	sortByZIndex,
-	setWorldAdapter,
-	createCellBuffer,
-	packColor,
-	enterAlternateScreen,
-	leaveAlternateScreen,
-	hideCursor,
-	showCursor,
+	addEntity,
 	clearScreen,
-	cursorHome,
-	writeRaw,
-	setOutputStream,
+	createWorld,
+	getPosition,
+	getZIndex,
+	setPosition,
+	setZIndex,
+	type Entity,
+	type World,
 } from 'blecsd';
+import { Position, setShadow, setVelocity, Velocity } from 'blecsd/components';
+import { createWorldAdapter, setWorldAdapter } from 'blecsd/core';
+import {
+	cursorHome,
+	enterAlternateScreen,
+	hideCursor,
+	leaveAlternateScreen,
+	setOutputStream,
+	showCursor,
+	writeRaw,
+} from 'blecsd/systems';
+import { createCellBuffer } from 'blecsd/utils';
 
 // =============================================================================
 // CONFIGURATION
