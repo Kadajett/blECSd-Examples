@@ -1,61 +1,88 @@
+import { renderText } from 'blecsd';
+import { BOX_SINGLE, renderBox, renderHLine, type CellBuffer } from 'blecsd/utils';
 import type { WidgetDemo } from './demoData.js';
 
-export function renderDemo(
+function fill(buffer: CellBuffer, x: number, y: number, w: number, h: number, char: string, fg: number, bg: number): void {
+  for (let row = 0; row < h; row++) {
+    for (let col = 0; col < w; col++) {
+      buffer.setCell(x + col, y + row, char, fg, bg);
+    }
+  }
+}
+
+export interface DemoColors {
+  readonly fg: number;
+  readonly bg: number;
+  readonly borderFg: number;
+  readonly headingFg: number;
+  readonly descFg: number;
+}
+
+export function renderDemoToBuffer(
+  buffer: CellBuffer,
   widget: WidgetDemo,
+  x: number,
+  y: number,
   width: number,
-  height: number
-): string {
-  const lines: string[] = [];
+  height: number,
+  colors: DemoColors,
+): void {
+  // Background + border
+  fill(buffer, x, y, width, height, ' ', colors.fg, colors.bg);
+  renderBox(buffer, x, y, width, height, BOX_SINGLE, { fg: colors.borderFg, bg: colors.bg });
+
   const innerWidth = width - 2;
-  const innerHeight = height - 2;
+  const innerX = x + 1;
 
-  // Top border
-  lines.push(`┌${'─'.repeat(innerWidth)}┐`);
+  // Title
+  const title = `${widget.name} - ${widget.category}`;
+  renderText(buffer, innerX + 1, y + 1, title.slice(0, innerWidth - 1), colors.headingFg, colors.bg);
 
-  // Title and description
-  const title = ` ${widget.name} - ${widget.category}`;
-  const paddedTitle = title.padEnd(innerWidth);
-  lines.push(`│\x1b[1m\x1b[36m${paddedTitle}\x1b[0m│`);
-
-  const descLines = wrapText(widget.description, innerWidth);
-  for (const descLine of descLines) {
-    const paddedDesc = descLine.padEnd(innerWidth);
-    lines.push(`│\x1b[90m${paddedDesc}\x1b[0m│`);
+  // Description (word-wrap)
+  const descLines = wrapText(widget.description, innerWidth - 1);
+  let row = y + 2;
+  for (const line of descLines) {
+    if (row >= y + height - 1) break;
+    renderText(buffer, innerX + 1, row, line.slice(0, innerWidth - 1), colors.descFg, colors.bg);
+    row++;
   }
 
   // Separator
-  lines.push(`├${'─'.repeat(innerWidth)}┤`);
+  if (row < y + height - 1) {
+    renderHLine(buffer, x, row, width, BOX_SINGLE.horizontal, colors.borderFg, colors.bg);
+    // T-junctions
+    buffer.setCell(x, row, '\u251c', colors.borderFg, colors.bg);
+    buffer.setCell(x + width - 1, row, '\u2524', colors.borderFg, colors.bg);
+    row++;
+  }
 
-  // Render the widget preview
-  const preview = widget.render(innerWidth - 4, innerHeight - descLines.length - 4);
+  // Preview area
+  const previewAvailable = y + height - 1 - row;
+  const preview = widget.render(innerWidth - 4, previewAvailable);
   const previewLines = preview.split('\n');
 
-  // Center the preview vertically
-  const remainingLines = innerHeight - descLines.length - 2;
-  const topPadding = Math.floor((remainingLines - previewLines.length) / 2);
+  // Strip ANSI from preview lines for width calculation
+  const stripped = previewLines.map(l => l.replace(/\x1b\[[0-9;]*m/g, ''));
 
-  for (let i = 0; i < topPadding; i++) {
-    lines.push(`│${' '.repeat(innerWidth)}│`);
+  // Center vertically
+  const topPad = Math.max(0, Math.floor((previewAvailable - previewLines.length) / 2));
+
+  for (let i = 0; i < previewLines.length; i++) {
+    const py = row + topPad + i;
+    if (py >= y + height - 1) break;
+
+    const visibleWidth = stripped[i]?.length ?? 0;
+    const leftPad = Math.max(0, Math.floor((innerWidth - visibleWidth) / 2));
+
+    // Write preview character by character (plain text only, strip ANSI)
+    const cleanLine = stripped[i] ?? '';
+    for (let c = 0; c < cleanLine.length; c++) {
+      const ch = cleanLine[c];
+      if (ch && innerX + leftPad + c < x + width - 1) {
+        buffer.setCell(innerX + leftPad + c, py, ch, colors.fg, colors.bg);
+      }
+    }
   }
-
-  for (const previewLine of previewLines) {
-    // Center horizontally
-    const strippedLine = stripAnsi(previewLine);
-    const padding = Math.floor((innerWidth - strippedLine.length) / 2);
-    const leftPad = ' '.repeat(padding);
-    const rightPad = ' '.repeat(innerWidth - padding - strippedLine.length);
-    lines.push(`│${leftPad}${previewLine}${rightPad}│`);
-  }
-
-  // Fill remaining space
-  while (lines.length < height - 1) {
-    lines.push(`│${' '.repeat(innerWidth)}│`);
-  }
-
-  // Bottom border
-  lines.push(`└${'─'.repeat(innerWidth)}┘`);
-
-  return lines.join('\n');
 }
 
 function wrapText(text: string, width: number): string[] {
@@ -67,20 +94,11 @@ function wrapText(text: string, width: number): string[] {
     if (currentLine.length + word.length + 1 <= width) {
       currentLine += (currentLine ? ' ' : '') + word;
     } else {
-      if (currentLine) {
-        lines.push(currentLine);
-      }
+      if (currentLine) lines.push(currentLine);
       currentLine = word;
     }
   }
 
-  if (currentLine) {
-    lines.push(currentLine);
-  }
-
+  if (currentLine) lines.push(currentLine);
   return lines;
-}
-
-function stripAnsi(text: string): string {
-  return text.replace(/\x1b\[[0-9;]*m/g, '');
 }

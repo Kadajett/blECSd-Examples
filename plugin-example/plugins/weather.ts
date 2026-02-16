@@ -1,4 +1,6 @@
-import { definePlugin, writeRaw, type World } from 'blecsd';
+import { renderText, type World } from 'blecsd';
+import { definePlugin } from 'blecsd/core';
+import { BOX_SINGLE, packColor, renderBox, type CellBuffer } from 'blecsd/utils';
 
 interface WeatherData {
   temperature: number;
@@ -55,12 +57,29 @@ export const weatherPlugin = definePlugin({
   },
 });
 
-export function renderWeather(x: number, y: number): void {
-  writeRaw(`\x1b[${y};${x}H\x1b[36m╔════════════════════════╗\x1b[0m`);
-  writeRaw(`\x1b[${y + 1};${x}H\x1b[36m║\x1b[0m Weather Data         \x1b[36m║\x1b[0m`);
-  writeRaw(`\x1b[${y + 2};${x}H\x1b[36m╠════════════════════════╣\x1b[0m`);
-  writeRaw(`\x1b[${y + 3};${x}H\x1b[36m║\x1b[0m Temp: ${weatherData.temperature}°C        \x1b[36m║\x1b[0m`);
-  writeRaw(`\x1b[${y + 4};${x}H\x1b[36m║\x1b[0m Humidity: ${weatherData.humidity}%       \x1b[36m║\x1b[0m`);
-  writeRaw(`\x1b[${y + 5};${x}H\x1b[36m║\x1b[0m ${weatherData.condition.padEnd(20)} \x1b[36m║\x1b[0m`);
-  writeRaw(`\x1b[${y + 6};${x}H\x1b[36m╚════════════════════════╝\x1b[0m`);
+export function getWeatherData(): WeatherData {
+  return weatherData;
+}
+
+export function renderWeatherToBuffer(
+  buffer: CellBuffer,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): void {
+  const cyan = packColor(0, 255, 255);
+  const white = packColor(255, 255, 255);
+  const black = packColor(0, 0, 0);
+
+  // Draw box border
+  renderBox(buffer, x, y, w, h, BOX_SINGLE, { fg: cyan, bg: black });
+
+  // Draw title
+  renderText(buffer, x + 2, y, ' Weather Data ', white, black);
+
+  // Draw weather data
+  renderText(buffer, x + 2, y + 2, `Temp: ${weatherData.temperature}°C`, white, black);
+  renderText(buffer, x + 2, y + 3, `Humidity: ${weatherData.humidity}%`, white, black);
+  renderText(buffer, x + 2, y + 4, weatherData.condition, white, black);
 }

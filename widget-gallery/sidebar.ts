@@ -1,19 +1,28 @@
+import { renderText } from 'blecsd';
+import { BOX_SINGLE, renderBox, type CellBuffer } from 'blecsd/utils';
 import { widgetDemos, type WidgetCategory } from './demoData.js';
+
+function fill(buffer: CellBuffer, x: number, y: number, w: number, h: number, char: string, fg: number, bg: number): void {
+  for (let row = 0; row < h; row++) {
+    for (let col = 0; col < w; col++) {
+      buffer.setCell(x + col, y + row, char, fg, bg);
+    }
+  }
+}
 
 export interface SidebarState {
   readonly selectedIndex: number;
   readonly scrollOffset: number;
 }
 
-const categories: readonly WidgetCategory[] = [
-  "Layout",
-  "Text",
-  "Controls",
-  "Input",
-  "Data",
-  "Visualization",
-  "Specialized",
-];
+export interface SidebarColors {
+  readonly fg: number;
+  readonly bg: number;
+  readonly categoryFg: number;
+  readonly selectedFg: number;
+  readonly selectedBg: number;
+  readonly borderFg: number;
+}
 
 export function createSidebarState(): SidebarState {
   return {
@@ -40,59 +49,61 @@ export function navigateSidebar(state: SidebarState, delta: number, visibleLines
 }
 
 export function renderSidebar(
+  buffer: CellBuffer,
   state: SidebarState,
+  x: number,
+  y: number,
   width: number,
-  height: number
-): string {
-  const lines: string[] = [];
-  const visibleLines = height - 2; // Account for top/bottom borders
+  height: number,
+  colors: SidebarColors,
+): void {
+  // Background fill
+  fill(buffer, x, y, width, height, ' ', colors.fg, colors.bg);
 
-  // Top border
-  lines.push(`┌${'─'.repeat(width - 2)}┐`);
+  // Border
+  renderBox(buffer, x, y, width, height, BOX_SINGLE, { fg: colors.borderFg, bg: colors.bg });
 
-  let currentLine = 0;
-  let itemIndex = 0;
+  const innerWidth = width - 2;
+  const visibleLines = height - 2;
+
+  // Build flat list of rows: category headers + widget items
+  const rows: Array<{ type: 'category'; label: string } | { type: 'widget'; index: number; name: string }> = [];
   let lastCategory: WidgetCategory | null = null;
+  let itemIndex = 0;
 
   for (const widget of widgetDemos) {
-    // Add category header
     if (widget.category !== lastCategory) {
       lastCategory = widget.category;
-
-      if (currentLine >= state.scrollOffset && currentLine < state.scrollOffset + visibleLines) {
-        const categoryLine = ` ${widget.category}`.padEnd(width - 2);
-        lines.push(`│\x1b[1m\x1b[33m${categoryLine}\x1b[0m│`);
-      }
-      currentLine++;
+      rows.push({ type: 'category', label: widget.category });
     }
-
-    // Add widget item
-    if (currentLine >= state.scrollOffset && currentLine < state.scrollOffset + visibleLines) {
-      const isSelected = itemIndex === state.selectedIndex;
-      const prefix = isSelected ? '>' : ' ';
-      const name = `  ${prefix} ${widget.name}`;
-      const paddedName = name.padEnd(width - 2);
-
-      if (isSelected) {
-        lines.push(`│\x1b[7m${paddedName}\x1b[0m│`); // Reverse video for selection
-      } else {
-        lines.push(`│${paddedName}│`);
-      }
-    }
-
-    currentLine++;
+    rows.push({ type: 'widget', index: itemIndex, name: widget.name });
     itemIndex++;
   }
 
-  // Fill remaining lines
-  while (lines.length < height - 1) {
-    lines.push(`│${' '.repeat(width - 2)}│`);
+  // Render visible rows
+  for (let i = 0; i < visibleLines; i++) {
+    const rowIndex = state.scrollOffset + i;
+    const row = rows[rowIndex];
+    if (!row) break;
+
+    const ry = y + 1 + i;
+
+    if (row.type === 'category') {
+      const label = row.label.slice(0, innerWidth);
+      renderText(buffer, x + 2, ry, label, colors.categoryFg, colors.bg);
+    } else {
+      const isSelected = row.index === state.selectedIndex;
+      const prefix = isSelected ? '> ' : '  ';
+      const label = (prefix + row.name).slice(0, innerWidth);
+      const lineBg = isSelected ? colors.selectedBg : colors.bg;
+      const lineFg = isSelected ? colors.selectedFg : colors.fg;
+
+      if (isSelected) {
+        fill(buffer, x + 1, ry, innerWidth, 1, ' ', lineFg, lineBg);
+      }
+      renderText(buffer, x + 2, ry, label, lineFg, lineBg);
+    }
   }
-
-  // Bottom border
-  lines.push(`└${'─'.repeat(width - 2)}┘`);
-
-  return lines.join('\n');
 }
 
 export function getSelectedWidget(state: SidebarState): typeof widgetDemos[number] {

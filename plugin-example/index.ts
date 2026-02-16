@@ -1,172 +1,300 @@
 import process from 'node:process';
+import { createWorld, renderText, type World } from 'blecsd';
 import {
-  createWorld,
-  createScreenEntity,
-  createScheduler,
-  setOutputStream,
-  enterAlternateScreen,
-  clearScreen,
-  cursorHome,
-  writeRaw,
-  hideCursor,
-  showCursor,
-  leaveAlternateScreen,
-  createInputHandler,
-  cleanup as cleanupOutput,
-  createPluginRegistry,
-  registerPlugin,
   activatePlugin,
+  createPluginRegistry,
+  createScheduler,
   deactivatePlugin,
-  isPluginActive,
   getPlugins,
-  type KeyEvent,
-} from 'blecsd';
+  isPluginActive,
+  registerPlugin,
+} from 'blecsd/core';
+import {
+  enterAlternateScreen,
+  hideCursor,
+  leaveAlternateScreen,
+  setOutputStream,
+  showCursor,
+  writeRaw,
+} from 'blecsd/systems';
+import { parseKeyBuffer, type ParsedKeyEvent as KeyEvent } from 'blecsd/terminal';
+import {
+  BOX_SINGLE,
+  createCellBuffer,
+  packColor,
+  renderBox,
+  type CellBuffer,
+} from 'blecsd/utils';
 
-import { weatherPlugin, renderWeather } from './plugins/weather.js';
+import { weatherPlugin, renderWeatherToBuffer } from './plugins/weather.js';
 import { customThemePlugin, getThemeStatus } from './plugins/custom-theme.js';
-import { chartsPlugin, renderChart } from './plugins/charts.js';
+import { chartsPlugin, renderChartToBuffer } from './plugins/charts.js';
+
+type BufferWithCells = ReturnType<typeof createCellBuffer>;
+
+interface AppState {
+  running: boolean;
+  termWidth: number;
+  termHeight: number;
+  needsRedraw: boolean;
+}
+
+function fill(
+  buffer: CellBuffer,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  char: string,
+  fg: number,
+  bg: number,
+): void {
+  for (let row = 0; row < h; row++) {
+    for (let col = 0; col < w; col++) {
+      buffer.setCell(x + col, y + row, char, fg, bg);
+    }
+  }
+}
+
+function bufferToAnsi(buffer: BufferWithCells): string {
+  const lines: string[] = [];
+  for (let y = 0; y < buffer.height; y++) {
+    let line = '';
+    let prevFg = -1;
+    let prevBg = -1;
+    for (let x = 0; x < buffer.width; x++) {
+      const cell = buffer.cells[y]?.[x];
+      if (!cell) continue;
+      if (cell.fg !== prevFg || cell.bg !== prevBg) {
+        const fgR = (cell.fg >> 16) & 0xff;
+        const fgG = (cell.fg >> 8) & 0xff;
+        const fgB = cell.fg & 0xff;
+        const bgR = (cell.bg >> 16) & 0xff;
+        const bgG = (cell.bg >> 8) & 0xff;
+        const bgB = cell.bg & 0xff;
+        line += `\x1b[38;2;${fgR};${fgG};${fgB};48;2;${bgR};${bgG};${bgB}m`;
+        prevFg = cell.fg;
+        prevBg = cell.bg;
+      }
+      line += cell.char;
+    }
+    lines.push(line);
+  }
+  return '\x1b[H' + lines.join('\n') + '\x1b[0m';
+}
+
+function createAppState(): AppState {
+  return {
+    running: true,
+    termWidth: process.stdout.columns || 80,
+    termHeight: process.stdout.rows || 24,
+    needsRedraw: false,
+  };
+}
+
+function handleKeypress(
+  state: AppState,
+  registry: ReturnType<typeof createPluginRegistry>,
+  scheduler: ReturnType<typeof createScheduler>,
+  world: ReturnType<typeof createWorld>,
+  keyEvent: KeyEvent,
+): void {
+  const key = keyEvent.name;
+  const ctrl = keyEvent.ctrl;
+
+  if (key === 'q' || (key === 'c' && ctrl)) {
+    state.running = false;
+    return;
+  }
+
+  if (key === '1') {
+    if (isPluginActive(registry, 'weather')) {
+      deactivatePlugin(registry, scheduler, world, 'weather');
+    } else {
+      activatePlugin(registry, scheduler, world, 'weather');
+    }
+    state.needsRedraw = true;
+  }
+
+  if (key === '2') {
+    if (isPluginActive(registry, 'custom-theme')) {
+      deactivatePlugin(registry, scheduler, world, 'custom-theme');
+    } else {
+      activatePlugin(registry, scheduler, world, 'custom-theme');
+    }
+    state.needsRedraw = true;
+  }
+
+  if (key === '3') {
+    if (isPluginActive(registry, 'charts')) {
+      deactivatePlugin(registry, scheduler, world, 'charts');
+    } else {
+      activatePlugin(registry, scheduler, world, 'charts');
+    }
+    state.needsRedraw = true;
+  }
+
+  if (key === 'a') {
+    activatePlugin(registry, scheduler, world, 'weather');
+    activatePlugin(registry, scheduler, world, 'custom-theme');
+    activatePlugin(registry, scheduler, world, 'charts');
+    state.needsRedraw = true;
+  }
+
+  if (key === 'd') {
+    deactivatePlugin(registry, scheduler, world, 'weather');
+    deactivatePlugin(registry, scheduler, world, 'custom-theme');
+    deactivatePlugin(registry, scheduler, world, 'charts');
+    state.needsRedraw = true;
+  }
+}
+
+function renderToBuffer(
+  state: AppState,
+  registry: ReturnType<typeof createPluginRegistry>,
+): BufferWithCells {
+  const buffer = createCellBuffer(state.termWidth, state.termHeight);
+
+  // Colors
+  const white = packColor(255, 255, 255);
+  const blue = packColor(0, 0, 255);
+  const yellow = packColor(255, 255, 0);
+  const green = packColor(0, 255, 0);
+  const red = packColor(255, 0, 0);
+  const cyan = packColor(0, 255, 255);
+  const magenta = packColor(255, 0, 255);
+  const black = packColor(0, 0, 0);
+
+  // Draw title bar
+  fill(buffer, 0, 0, state.termWidth, 1, ' ', white, blue);
+  renderText(buffer, 1, 0, 'Plugin System Demo', white, blue);
+
+  // Draw plugin status panel
+  const panelWidth = 50;
+  const panelX = 1;
+  const panelY = 2;
+  const plugins = getPlugins(registry);
+  const panelHeight = plugins.length + 4;
+
+  renderBox(buffer, panelX, panelY, panelWidth, panelHeight, BOX_SINGLE, {
+    fg: yellow,
+    bg: black,
+  });
+  renderText(buffer, panelX + 2, panelY, ' Plugin Status ', white, black);
+
+  let row = panelY + 2;
+  for (const plugin of plugins) {
+    const active = isPluginActive(registry, plugin.name);
+    const statusColor = active ? green : red;
+    const status = active ? 'ACTIVE' : 'INACTIVE';
+    const name = plugin.name.padEnd(15);
+    const version = plugin.version.padEnd(10);
+
+    renderText(buffer, panelX + 2, row, `${name} ${version}`, white, black);
+    renderText(buffer, panelX + 2 + 15 + 1 + 10 + 1, row, status, statusColor, black);
+    row++;
+  }
+
+  // Draw plugin outputs
+  let outputY = panelY + panelHeight + 1;
+
+  if (isPluginActive(registry, 'weather')) {
+    renderWeatherToBuffer(buffer, panelX, outputY, 26, 7);
+    outputY += 8;
+  }
+
+  if (isPluginActive(registry, 'charts')) {
+    renderChartToBuffer(buffer, panelX, outputY, 26, 9);
+    outputY += 10;
+  }
+
+  if (isPluginActive(registry, 'custom-theme')) {
+    const themeStatus = getThemeStatus();
+    renderText(buffer, panelX, outputY, themeStatus, magenta, black);
+  }
+
+  // Draw footer with controls
+  const footerY = state.termHeight - 2;
+  renderText(
+    buffer,
+    panelX,
+    footerY,
+    'Controls: 1=Weather 2=Theme 3=Charts a=Activate All d=Deactivate All q=Quit',
+    cyan,
+    black,
+  );
+
+  return buffer;
+}
 
 function main(): void {
-  // Initialize world, scheduler, and screen
   const world = createWorld();
   const scheduler = createScheduler();
-  createScreenEntity(world, { width: 80, height: 24 });
-
-  // Setup terminal
-  setOutputStream(process.stdout);
-  enterAlternateScreen();
-  clearScreen();
-  cursorHome();
-  hideCursor();
-
-  // Create plugin registry
   const registry = createPluginRegistry();
 
-  // Register all plugins
   registerPlugin(registry, scheduler, world, weatherPlugin);
   registerPlugin(registry, scheduler, world, customThemePlugin);
   registerPlugin(registry, scheduler, world, chartsPlugin);
 
-  let running = true;
+  const state = createAppState();
 
-  // Cleanup handler
-  function cleanup(): void {
-    running = false;
-    showCursor();
+  if (process.stdin.isTTY) process.stdin.setRawMode(true);
+  process.stdin.resume();
+  setOutputStream(process.stdout);
+  hideCursor();
+  enterAlternateScreen();
+
+  let terminalRestored = false;
+  const restoreTerminal = (): void => {
+    if (terminalRestored) return;
+    terminalRestored = true;
     leaveAlternateScreen();
-    cleanupOutput();
-  }
+    showCursor();
+    writeRaw('\x1b[0m');
+    if (process.stdin.isTTY) process.stdin.setRawMode(false);
+    process.stdin.pause();
+  };
 
-  // Handle exit signals
-  process.on('SIGINT', cleanup);
-  process.on('SIGTERM', cleanup);
-
-  // Input handler
-  const inputHandler = createInputHandler(process.stdin);
-
-  inputHandler.onKey((event: KeyEvent) => {
-    const key = event.name;
-    const ctrl = event.ctrl;
-
-    if (key === 'q' || (key === 'c' && ctrl)) {
-      cleanup();
-      process.exit(0);
-    }
-
-    if (key === '1') {
-      if (isPluginActive(registry, 'weather')) {
-        deactivatePlugin(registry, scheduler, world, 'weather');
-      } else {
-        activatePlugin(registry, scheduler, world, 'weather');
-      }
-    }
-
-    if (key === '2') {
-      if (isPluginActive(registry, 'custom-theme')) {
-        deactivatePlugin(registry, scheduler, world, 'custom-theme');
-      } else {
-        activatePlugin(registry, scheduler, world, 'custom-theme');
-      }
-    }
-
-    if (key === '3') {
-      if (isPluginActive(registry, 'charts')) {
-        deactivatePlugin(registry, scheduler, world, 'charts');
-      } else {
-        activatePlugin(registry, scheduler, world, 'charts');
-      }
-    }
-
-    if (key === 'a') {
-      activatePlugin(registry, scheduler, world, 'weather');
-      activatePlugin(registry, scheduler, world, 'custom-theme');
-      activatePlugin(registry, scheduler, world, 'charts');
-    }
-
-    if (key === 'd') {
-      deactivatePlugin(registry, scheduler, world, 'weather');
-      deactivatePlugin(registry, scheduler, world, 'custom-theme');
-      deactivatePlugin(registry, scheduler, world, 'charts');
+  process.stdin.on('data', (data: Buffer) => {
+    if (!state.running) return;
+    const keyEvents = parseKeyBuffer(data);
+    for (const keyEvent of keyEvents) {
+      handleKeypress(state, registry, scheduler, world, keyEvent);
     }
   });
 
-  inputHandler.start();
+  process.stdout.on('resize', () => {
+    state.termWidth = process.stdout.columns || 80;
+    state.termHeight = process.stdout.rows || 24;
+    state.needsRedraw = true;
+  });
 
-  // Render loop
-  function render(): void {
-    if (!running) {
+  writeRaw(bufferToAnsi(renderToBuffer(state, registry)));
+  state.needsRedraw = false;
+
+  const renderInterval = setInterval(() => {
+    if (!state.running) {
+      clearInterval(renderInterval);
+      restoreTerminal();
+      process.exit(0);
       return;
     }
-
-    clearScreen();
-    cursorHome();
-
-    // Header
-    writeRaw('\x1b[1;1H\x1b[1;37;44m Plugin System Demo '.padEnd(80) + '\x1b[0m');
-
-    // Plugin status panel
-    writeRaw('\x1b[3;2H\x1b[1;33m╔════════════════════════════════════════════════╗\x1b[0m');
-    writeRaw('\x1b[4;2H\x1b[1;33m║\x1b[0m Plugin Status                                 \x1b[1;33m║\x1b[0m');
-    writeRaw('\x1b[5;2H\x1b[1;33m╠════════════════════════════════════════════════╣\x1b[0m');
-
-    const plugins = getPlugins(registry);
-    let row = 6;
-    for (const plugin of plugins) {
-      const active = isPluginActive(registry, plugin.name);
-      const status = active ? '\x1b[32mACTIVE\x1b[0m  ' : '\x1b[31mINACTIVE\x1b[0m';
-      const name = plugin.name.padEnd(15);
-      const version = plugin.version.padEnd(10);
-      writeRaw(`\x1b[${row};2H\x1b[1;33m║\x1b[0m ${name} ${version} ${status} \x1b[1;33m║\x1b[0m`);
-      row++;
+    state.needsRedraw = true;
+    if (state.needsRedraw) {
+      writeRaw(bufferToAnsi(renderToBuffer(state, registry)));
+      state.needsRedraw = false;
     }
+  }, 50);
 
-    writeRaw(`\x1b[${row};2H\x1b[1;33m╚════════════════════════════════════════════════╝\x1b[0m`);
+  const exit = (): void => {
+    state.running = false;
+    clearInterval(renderInterval);
+    restoreTerminal();
+    process.exit(0);
+  };
 
-    // Plugin outputs
-    let outputY = row + 2;
-
-    if (isPluginActive(registry, 'weather')) {
-      renderWeather(2, outputY);
-      outputY += 8;
-    }
-
-    if (isPluginActive(registry, 'charts')) {
-      renderChart(2, outputY);
-      outputY += 10;
-    }
-
-    if (isPluginActive(registry, 'custom-theme')) {
-      const themeStatus = getThemeStatus();
-      writeRaw(`\x1b[${outputY};2H\x1b[35m${themeStatus}\x1b[0m`);
-    }
-
-    // Controls help
-    writeRaw('\x1b[22;2H\x1b[36mControls:\x1b[0m 1=Weather 2=Theme 3=Charts a=Activate All d=Deactivate All q=Quit');
-
-    setTimeout(render, 100);
-  }
-
-  render();
+  process.on('SIGINT', exit);
+  process.on('SIGTERM', exit);
 }
 
 main();

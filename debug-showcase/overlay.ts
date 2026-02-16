@@ -3,21 +3,34 @@
  * Displays entity inspector, world stats, performance metrics, and system timings.
  */
 
+import { renderText, type Entity, type World } from 'blecsd';
 import {
-	writeRaw,
-	inspectEntity,
-	inspectWorld,
 	formatEntityInspection,
 	formatWorldInspection,
 	getPerformanceStats,
 	getSystemTimings,
-} from 'blecsd';
-import type { World, Entity } from 'blecsd';
+	inspectEntity,
+	inspectWorld,
+} from 'blecsd/debug';
+import { BOX_SINGLE, packColor, renderBox, type CellBuffer } from 'blecsd/utils';
 
 export interface OverlayState {
 	readonly enabled: boolean;
 	readonly selectedEntity: Entity | null;
 	readonly showSystemTimings: boolean;
+}
+
+export interface OverlayColors {
+	readonly bg: number;
+	readonly title: number;
+	readonly worldStats: number;
+	readonly perfHeader: number;
+	readonly perfValue: number;
+	readonly timingHeader: number;
+	readonly timingValue: number;
+	readonly entityHeader: number;
+	readonly entityValue: number;
+	readonly help: number;
 }
 
 export function createOverlayState(): OverlayState {
@@ -37,33 +50,52 @@ export function selectEntity(state: OverlayState, eid: Entity | null): OverlaySt
 }
 
 /**
- * Render the debug overlay on the right side of the screen
+ * Fill a rectangle in a cell buffer with a character and colors
  */
-export function renderOverlay(
+function fill(
+	buffer: CellBuffer,
+	x: number,
+	y: number,
+	w: number,
+	h: number,
+	char: string,
+	fg: number,
+	bg: number,
+): void {
+	for (let row = 0; row < h; row++) {
+		for (let col = 0; col < w; col++) {
+			buffer.setCell(x + col, y + row, char, fg, bg);
+		}
+	}
+}
+
+/**
+ * Render the debug overlay on the right side of the screen into a cell buffer
+ */
+export function renderOverlayToBuffer(
+	buffer: CellBuffer,
 	world: World,
 	state: OverlayState,
-	width: number,
-	height: number,
+	x: number,
+	y: number,
+	w: number,
+	h: number,
+	colors: OverlayColors,
 ): void {
 	if (!state.enabled) return;
 
-	const overlayWidth = 50;
-	const startX = width - overlayWidth;
-
 	// Draw overlay background
-	for (let y = 0; y < height; y++) {
-		writeRaw(`\x1b[${y + 1};${startX + 1}H`);
-		writeRaw('\x1b[48;2;30;30;40m'); // Dark background
-		writeRaw(' '.repeat(overlayWidth));
-	}
+	fill(buffer, x, y, w, h, ' ', 0xffffffff, colors.bg);
 
-	let line = 0;
+	// Draw border
+	renderBox(buffer, x, y, w, h, BOX_SINGLE, { fg: 0xaaaaaaff, bg: colors.bg });
+
+	let line = y + 1;
+	const textX = x + 2;
+	const maxWidth = w - 4;
 
 	// Title
-	writeRaw(`\x1b[${line + 1};${startX + 2}H`);
-	writeRaw('\x1b[38;2;255;255;255;1m'); // White bold
-	writeRaw('DEBUG OVERLAY');
-	writeRaw('\x1b[0m');
+	renderText(buffer, textX, line, 'DEBUG OVERLAY', colors.title, colors.bg);
 	line += 2;
 
 	// World stats
@@ -71,114 +103,89 @@ export function renderOverlay(
 	const worldText = formatWorldInspection(worldStats);
 	const worldLines = worldText.split('\n').slice(0, 8);
 	for (const textLine of worldLines) {
-		if (line >= height - 1) break;
-		writeRaw(`\x1b[${line + 1};${startX + 2}H`);
-		writeRaw('\x1b[38;2;200;200;255m'); // Light blue
-		writeRaw(textLine.slice(0, overlayWidth - 4));
-		writeRaw('\x1b[0m');
+		if (line >= y + h - 1) break;
+		const displayText = textLine.slice(0, maxWidth);
+		renderText(buffer, textX, line, displayText, colors.worldStats, colors.bg);
 		line++;
 	}
 	line++;
 
 	// Performance stats
 	const perfStats = getPerformanceStats(world);
-	if (line < height - 1) {
-		writeRaw(`\x1b[${line + 1};${startX + 2}H`);
-		writeRaw('\x1b[38;2;255;255;100;1m'); // Yellow bold
-		writeRaw('PERFORMANCE');
-		writeRaw('\x1b[0m');
+	if (line < y + h - 1) {
+		renderText(buffer, textX, line, 'PERFORMANCE', colors.perfHeader, colors.bg);
 		line++;
 
-		writeRaw(`\x1b[${line + 1};${startX + 2}H`);
-		writeRaw('\x1b[38;2;200;255;200m'); // Light green
-		writeRaw(`FPS: ${perfStats.fps.toFixed(1)}`);
-		writeRaw('\x1b[0m');
+		renderText(buffer, textX, line, `FPS: ${perfStats.fps.toFixed(1)}`, colors.perfValue, colors.bg);
 		line++;
 
-		writeRaw(`\x1b[${line + 1};${startX + 2}H`);
-		writeRaw('\x1b[38;2;200;255;200m');
-		writeRaw(`Frame: ${perfStats.frameTime.toFixed(2)}ms`);
-		writeRaw('\x1b[0m');
+		renderText(buffer, textX, line, `Frame: ${perfStats.frameTime.toFixed(2)}ms`, colors.perfValue, colors.bg);
 		line++;
 
-		writeRaw(`\x1b[${line + 1};${startX + 2}H`);
-		writeRaw('\x1b[38;2;200;255;200m');
-		writeRaw(`Entities: ${perfStats.entityCount}`);
-		writeRaw('\x1b[0m');
+		renderText(buffer, textX, line, `Entities: ${perfStats.entityCount}`, colors.perfValue, colors.bg);
 		line++;
 	}
 	line++;
 
 	// System timings
-	if (state.showSystemTimings && line < height - 1) {
+	if (state.showSystemTimings && line < y + h - 1) {
 		const timings = getSystemTimings();
-		writeRaw(`\x1b[${line + 1};${startX + 2}H`);
-		writeRaw('\x1b[38;2;255;200;100;1m'); // Orange bold
-		writeRaw('SYSTEM TIMINGS');
-		writeRaw('\x1b[0m');
+		renderText(buffer, textX, line, 'SYSTEM TIMINGS', colors.timingHeader, colors.bg);
 		line++;
 
 		const sortedTimings = Object.entries(timings).sort((a, b) => b[1] - a[1]);
 		for (const [name, ms] of sortedTimings.slice(0, 5)) {
-			if (line >= height - 1) break;
-			writeRaw(`\x1b[${line + 1};${startX + 2}H`);
-			writeRaw('\x1b[38;2;255;200;150m'); // Light orange
+			if (line >= y + h - 1) break;
 			const displayName = name.slice(0, 20);
 			const displayMs = ms.toFixed(2);
-			writeRaw(`${displayName}: ${displayMs}ms`);
-			writeRaw('\x1b[0m');
+			const timingText = `${displayName}: ${displayMs}ms`.slice(0, maxWidth);
+			renderText(buffer, textX, line, timingText, colors.timingValue, colors.bg);
 			line++;
 		}
 	}
 	line++;
 
 	// Entity inspector
-	if (state.selectedEntity !== null && line < height - 1) {
-		writeRaw(`\x1b[${line + 1};${startX + 2}H`);
-		writeRaw('\x1b[38;2;100;255;255;1m'); // Cyan bold
-		writeRaw('ENTITY INSPECTOR');
-		writeRaw('\x1b[0m');
+	if (state.selectedEntity !== null && line < y + h - 1) {
+		renderText(buffer, textX, line, 'ENTITY INSPECTOR', colors.entityHeader, colors.bg);
 		line++;
 
 		const inspection = inspectEntity(world, state.selectedEntity);
 		const inspectionText = formatEntityInspection(inspection);
 		const inspectionLines = inspectionText.split('\n').slice(0, 10);
 		for (const textLine of inspectionLines) {
-			if (line >= height - 1) break;
-			writeRaw(`\x1b[${line + 1};${startX + 2}H`);
-			writeRaw('\x1b[38;2;150;255;255m'); // Light cyan
-			writeRaw(textLine.slice(0, overlayWidth - 4));
-			writeRaw('\x1b[0m');
+			if (line >= y + h - 1) break;
+			const displayText = textLine.slice(0, maxWidth);
+			renderText(buffer, textX, line, displayText, colors.entityValue, colors.bg);
 			line++;
 		}
 	}
 
 	// Controls help at bottom
-	const helpY = height - 6;
+	const helpY = y + h - 7;
 	if (helpY > line) {
-		writeRaw(`\x1b[${helpY + 1};${startX + 2}H`);
-		writeRaw('\x1b[38;2;150;150;150m'); // Gray
-		writeRaw('F12/d: Toggle overlay');
-		writeRaw('\x1b[0m');
-
-		writeRaw(`\x1b[${helpY + 2};${startX + 2}H`);
-		writeRaw('\x1b[38;2;150;150;150m');
-		writeRaw('1/2/3: Workload');
-		writeRaw('\x1b[0m');
-
-		writeRaw(`\x1b[${helpY + 3};${startX + 2}H`);
-		writeRaw('\x1b[38;2;150;150;150m');
-		writeRaw('b: Burst mode');
-		writeRaw('\x1b[0m');
-
-		writeRaw(`\x1b[${helpY + 4};${startX + 2}H`);
-		writeRaw('\x1b[38;2;150;150;150m');
-		writeRaw('Tab: Next entity');
-		writeRaw('\x1b[0m');
-
-		writeRaw(`\x1b[${helpY + 5};${startX + 2}H`);
-		writeRaw('\x1b[38;2;150;150;150m');
-		writeRaw('q: Quit');
-		writeRaw('\x1b[0m');
+		renderText(buffer, textX, helpY, 'F12/d: Toggle overlay', colors.help, colors.bg);
+		renderText(buffer, textX, helpY + 1, '1/2/3: Workload', colors.help, colors.bg);
+		renderText(buffer, textX, helpY + 2, 'b: Burst mode', colors.help, colors.bg);
+		renderText(buffer, textX, helpY + 3, 'Tab: Next entity', colors.help, colors.bg);
+		renderText(buffer, textX, helpY + 4, 'q: Quit', colors.help, colors.bg);
 	}
+}
+
+/**
+ * Create default overlay colors
+ */
+export function createOverlayColors(): OverlayColors {
+	return {
+		bg: packColor(30, 30, 40),
+		title: packColor(255, 255, 255),
+		worldStats: packColor(200, 200, 255),
+		perfHeader: packColor(255, 255, 100),
+		perfValue: packColor(200, 255, 200),
+		timingHeader: packColor(255, 200, 100),
+		timingValue: packColor(255, 200, 150),
+		entityHeader: packColor(100, 255, 255),
+		entityValue: packColor(150, 255, 255),
+		help: packColor(150, 150, 150),
+	};
 }

@@ -4,14 +4,8 @@
  * the debug tools and demonstrate performance monitoring.
  */
 
-import {
-	addEntity,
-	setPosition,
-	setVelocity,
-	setZIndex,
-	removeEntity,
-} from 'blecsd';
-import type { World, Entity } from 'blecsd';
+import { addEntity, removeEntity, setPosition, setZIndex, type Entity, type World } from 'blecsd';
+import { setVelocity } from 'blecsd/components';
 
 export interface WorkloadConfig {
 	readonly entityCount: number;

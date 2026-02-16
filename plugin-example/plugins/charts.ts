@@ -1,4 +1,6 @@
-import { definePlugin, writeRaw, type World } from 'blecsd';
+import { renderText, type World } from 'blecsd';
+import { definePlugin } from 'blecsd/core';
+import { BOX_SINGLE, packColor, renderBox, type CellBuffer } from 'blecsd/utils';
 
 interface ChartData {
   values: number[];
@@ -50,22 +52,39 @@ export const chartsPlugin = definePlugin({
   },
 });
 
-export function renderChart(x: number, y: number): void {
+export function getChartData(): ChartData {
+  return chartData;
+}
+
+export function renderChartToBuffer(
+  buffer: CellBuffer,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): void {
+  const magenta = packColor(255, 0, 255);
+  const white = packColor(255, 255, 255);
+  const green = packColor(0, 255, 0);
+  const black = packColor(0, 0, 0);
+
+  // Draw box border
+  renderBox(buffer, x, y, w, h, BOX_SINGLE, { fg: magenta, bg: black });
+
+  // Draw title
+  renderText(buffer, x + 2, y, ' Chart Data ', white, black);
+
+  // Draw chart bars
   const maxValue = Math.max(...chartData.values, 1);
   const barHeight = 8;
-
-  writeRaw(`\x1b[${y};${x}H\x1b[35m╔════════════════════════╗\x1b[0m`);
-  writeRaw(`\x1b[${y + 1};${x}H\x1b[35m║\x1b[0m Chart Data           \x1b[35m║\x1b[0m`);
-  writeRaw(`\x1b[${y + 2};${x}H\x1b[35m╠════════════════════════╣\x1b[0m`);
 
   for (let i = 0; i < chartData.values.length; i++) {
     const value = chartData.values[i] ?? 0;
     const label = chartData.labels[i] ?? '?';
     const normalized = Math.round((value / maxValue) * barHeight);
-    const bar = '█'.repeat(normalized).padEnd(barHeight, ' ');
+    const bar = '█'.repeat(normalized);
 
-    writeRaw(`\x1b[${y + 3 + i};${x}H\x1b[35m║\x1b[0m ${label}: ${bar} \x1b[32m${value}\x1b[0m \x1b[35m║\x1b[0m`);
+    renderText(buffer, x + 2, y + 2 + i, `${label}: ${bar}`, white, black);
+    renderText(buffer, x + 2 + 3 + barHeight + 1, y + 2 + i, `${value}`, green, black);
   }
-
-  writeRaw(`\x1b[${y + 8};${x}H\x1b[35m╚════════════════════════╝\x1b[0m`);
 }

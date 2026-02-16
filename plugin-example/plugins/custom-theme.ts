@@ -1,4 +1,5 @@
-import { definePlugin, type World } from 'blecsd';
+import type { World } from 'blecsd';
+import { definePlugin } from 'blecsd/core';
 
 let themeActive = false;
 
