@@ -20,17 +20,17 @@
  */
 
 import * as os from 'node:os';
-import { createSignal, createEffect } from 'blecsd';
+import { createSignal, createEffect } from 'blecsd/core';
 import {
-	clearScreen,
-	cursorHome,
 	enterAlternateScreen,
 	hideCursor,
 	leaveAlternateScreen,
+	setOutputStream,
 	showCursor,
 	writeRaw,
-	setOutputStream,
-} from 'blecsd';
+} from 'blecsd/systems';
+import { parseKeyBuffer } from 'blecsd/terminal';
+import { createCellBuffer, type CellBuffer } from 'blecsd/utils';
 
 import {
 	createCpuSignal,
@@ -54,10 +54,11 @@ import {
 import { darkTheme, getNextTheme, type Theme } from './theme';
 
 // =============================================================================
-// CONFIGURATION
+// TYPE ALIASES (WORKAROUNDS)
 // =============================================================================
 
-const RENDER_FPS = 10;
+// Type alias to avoid Cell collision
+type BufferWithCells = ReturnType<typeof createCellBuffer>;
 
 // =============================================================================
 // STATE
@@ -65,39 +66,127 @@ const RENDER_FPS = 10;
 
 interface AppState {
 	running: boolean;
-	needsRender: boolean;
-	screenWidth: number;
-	screenHeight: number;
+	needsRedraw: boolean;
+	termWidth: number;
+	termHeight: number;
 }
 
+// =============================================================================
+// BUFFER TO ANSI (LOCAL IMPLEMENTATION)
+// =============================================================================
+
+/**
+ * Convert a cell buffer to ANSI escape sequences.
+ * This is needed because bufferToAnsi is not exported by blecsd.
+ */
+function bufferToAnsi(buffer: BufferWithCells): string {
+	const lines: string[] = [];
+	for (let y = 0; y < buffer.height; y++) {
+		let line = '';
+		let prevFg = -1;
+		let prevBg = -1;
+		for (let x = 0; x < buffer.width; x++) {
+			const cell = buffer.cells[y]?.[x];
+			if (!cell) continue;
+			if (cell.fg !== prevFg || cell.bg !== prevBg) {
+				const fgR = (cell.fg >> 16) & 0xff;
+				const fgG = (cell.fg >> 8) & 0xff;
+				const fgB = cell.fg & 0xff;
+				const bgR = (cell.bg >> 16) & 0xff;
+				const bgG = (cell.bg >> 8) & 0xff;
+				const bgB = cell.bg & 0xff;
+				line += `\x1b[38;2;${fgR};${fgG};${fgB};48;2;${bgR};${bgG};${bgB}m`;
+				prevFg = cell.fg;
+				prevBg = cell.bg;
+			}
+			line += cell.char;
+		}
+		lines.push(line);
+	}
+	return '\x1b[H' + lines.join('\n') + '\x1b[0m';
+}
+
+// =============================================================================
+// RENDERING
+// =============================================================================
+
+/**
+ * Render the entire dashboard to a cell buffer.
+ */
+function renderToBuffer(
+	state: AppState,
+	theme: Theme,
+	cpu: ReturnType<typeof createCpuSignal>[0],
+	memory: ReturnType<typeof createMemorySignal>[0],
+	network: ReturnType<typeof createNetworkSignal>[0],
+	system: ReturnType<typeof createSystemSignal>[0],
+): BufferWithCells {
+	const buffer = createCellBuffer(state.termWidth, state.termHeight, theme.fg, theme.bg);
+
+	const { termWidth, termHeight } = state;
+
+	// Calculate panel dimensions
+	const leftWidth = Math.floor(termWidth * 0.6);
+	const rightWidth = termWidth - leftWidth;
+	const cpuHeight = Math.min(os.cpus().length + 5, Math.floor((termHeight - 1) * 0.5));
+	const memoryHeight = Math.floor((termHeight - 1 - cpuHeight) * 0.5);
+	const networkHeight = termHeight - 1 - cpuHeight - memoryHeight;
+
+	// Get current data from signals
+	const cpuData = cpu();
+	const memoryData = memory();
+	const networkData = network();
+	const systemData = system();
+
+	// Left column
+	renderCpuPanel(buffer, cpuData, 0, 0, leftWidth, cpuHeight, theme);
+	renderMemoryPanel(buffer, memoryData, 0, cpuHeight, leftWidth, memoryHeight, theme);
+	renderNetworkPanel(buffer, networkData, 0, cpuHeight + memoryHeight, leftWidth, networkHeight, theme);
+
+	// Right column
+	renderSystemPanel(buffer, systemData, leftWidth, 0, rightWidth, termHeight - 1, theme);
+
+	// Status bar
+	renderStatusBar(buffer, termWidth, termHeight, theme);
+
+	return buffer;
+}
+
+// =============================================================================
+// INPUT HANDLING
+// =============================================================================
+
+/**
+ * Handle key press events.
+ */
+function handleKeypress(state: AppState, keyEvent: ReturnType<typeof parseKeyBuffer>[number]): void {
+	// Quit on 'q' or Ctrl+C
+	if (keyEvent.name === 'q' || (keyEvent.ctrl && keyEvent.name === 'c')) {
+		state.running = false;
+		return;
+	}
+}
 
 // =============================================================================
 // MAIN
 // =============================================================================
 
-async function main(): Promise<void> {
-	const stdout = process.stdout;
-	const stdin = process.stdin;
-
-	const screenWidth = stdout.columns ?? 80;
-	const screenHeight = stdout.rows ?? 24;
-
-	// Initialize state
+function main(): void {
 	const state: AppState = {
 		running: true,
-		needsRender: true,
-		screenWidth,
-		screenHeight,
+		needsRedraw: true,
+		termWidth: process.stdout.columns ?? 80,
+		termHeight: process.stdout.rows ?? 24,
 	};
 
 	// Create theme signal [getter, setter]
 	const [getTheme, setTheme] = createSignal<Theme>(darkTheme);
 
 	// Create data source signals [getter, dispose]
-	const [getCpu, disposeCpu] = createCpuSignal();
-	const [getMemory, disposeMemory] = createMemorySignal();
-	const [getNetwork, disposeNetwork] = createNetworkSignal();
-	const [getSystem, disposeSystem] = createSystemSignal();
+	const [getCpu] = createCpuSignal();
+	const [getMemory] = createMemorySignal();
+	const [getNetwork] = createNetworkSignal();
+	const [getSystem] = createSystemSignal();
 
 	// Create computed signals (just getters)
 	const getCpuColor = createCpuColorSignal(getCpu);
@@ -108,78 +197,55 @@ async function main(): Promise<void> {
 	createMemoryAlertEffect(getMemory);
 
 	// Terminal setup
+	if (process.stdin.isTTY) process.stdin.setRawMode(true);
+	process.stdin.resume();
 	setOutputStream(process.stdout);
-	enterAlternateScreen();
-	clearScreen();
 	hideCursor();
+	enterAlternateScreen();
 
-	stdin.setRawMode?.(true);
-	stdin.resume();
+	let terminalRestored = false;
+	const restoreTerminal = (): void => {
+		if (terminalRestored) return;
+		terminalRestored = true;
+		leaveAlternateScreen();
+		showCursor();
+		writeRaw('\x1b[0m');
+		if (process.stdin.isTTY) process.stdin.setRawMode(false);
+		process.stdin.pause();
+	};
 
-	// Render function
-	function render(): void {
-		hideCursor();
-		cursorHome();
+	// Input handler - use parseKeyBuffer
+	process.stdin.on('data', (data: Buffer) => {
+		if (!state.running) return;
+		const keyEvents = parseKeyBuffer(data);
+		for (const keyEvent of keyEvents) {
+			// Handle quit
+			if (keyEvent.name === 'q' || (keyEvent.ctrl && keyEvent.name === 'c')) {
+				state.running = false;
+				return;
+			}
 
-		const { screenWidth, screenHeight } = state;
-		const theme = getTheme();
+			// Handle theme cycling
+			if (keyEvent.name === 't') {
+				const nextTheme = getNextTheme(getTheme());
+				setTheme(nextTheme);
+				state.needsRedraw = true;
+				return;
+			}
 
-		// Get current data from signals (call getter functions)
-		const cpu = getCpu();
-		const memory = getMemory();
-		const network = getNetwork();
-		const system = getSystem();
-
-		// Calculate panel dimensions
-		const leftWidth = Math.floor(screenWidth * 0.6);
-		const rightWidth = screenWidth - leftWidth;
-		const cpuHeight = Math.min(os.cpus().length + 5, Math.floor((screenHeight - 1) * 0.5));
-		const memoryHeight = Math.floor((screenHeight - 1 - cpuHeight) * 0.5);
-		const networkHeight = screenHeight - 1 - cpuHeight - memoryHeight;
-
-		let output = '';
-
-		// Left column
-		output += renderCpuPanel(cpu, 1, 1, leftWidth, cpuHeight, theme);
-		output += renderMemoryPanel(memory, 1, cpuHeight + 1, leftWidth, memoryHeight, theme);
-		output += renderNetworkPanel(network, 1, cpuHeight + memoryHeight + 1, leftWidth, networkHeight, theme);
-
-		// Right column
-		output += renderSystemPanel(system, leftWidth + 1, 1, rightWidth, screenHeight - 1, theme);
-
-		// Status bar
-		output += renderStatusBar(screenWidth, screenHeight, theme);
-
-		writeRaw(output);
-	}
-
-	// Input handler
-	stdin.on('data', (data: Buffer) => {
-		const key = data.toString();
-
-		if (key === 'q' || key === 'Q' || key === '\x03') {
-			state.running = false;
-			return;
-		}
-
-		if (key === 't' || key === 'T') {
-			const nextTheme = getNextTheme(getTheme());
-			setTheme(nextTheme);
-			state.needsRender = true;
-			return;
-		}
-
-		if (key === 'r' || key === 'R') {
-			state.needsRender = true;
-			return;
+			// Handle refresh
+			if (keyEvent.name === 'r') {
+				state.needsRedraw = true;
+				return;
+			}
 		}
 	});
 
 	// Resize handler
-	stdout.on('resize', () => {
-		state.screenWidth = stdout.columns ?? 80;
-		state.screenHeight = stdout.rows ?? 24;
-		state.needsRender = true;
+	process.stdout.on('resize', () => {
+		state.termWidth = process.stdout.columns ?? 80;
+		state.termHeight = process.stdout.rows ?? 24;
+		state.needsRedraw = true;
 	});
 
 	// Use createEffect to automatically track signal changes and trigger re-render
@@ -192,34 +258,40 @@ async function main(): Promise<void> {
 		getTheme();
 
 		// Mark that we need a re-render
-		state.needsRender = true;
+		state.needsRedraw = true;
 	});
 
+	// Initial render
+	writeRaw(bufferToAnsi(renderToBuffer(state, getTheme(), getCpu, getMemory, getNetwork, getSystem)));
+	state.needsRedraw = false;
+
 	// Render loop
-	const FRAME_MS = 1000 / RENDER_FPS;
-	const loop = (): void => {
+	const renderInterval = setInterval(() => {
 		if (!state.running) {
-			showCursor();
-			leaveAlternateScreen();
+			clearInterval(renderInterval);
+			restoreTerminal();
 			process.exit(0);
+			return;
 		}
 
-		if (state.needsRender) {
-			render();
-			state.needsRender = false;
-		}
+		// Trigger redraw on every interval for live data updates
+		state.needsRedraw = true;
 
-		setTimeout(loop, FRAME_MS);
+		if (state.needsRedraw) {
+			writeRaw(bufferToAnsi(renderToBuffer(state, getTheme(), getCpu, getMemory, getNetwork, getSystem)));
+			state.needsRedraw = false;
+		}
+	}, 50);
+
+	const exit = (): void => {
+		state.running = false;
+		clearInterval(renderInterval);
+		restoreTerminal();
+		process.exit(0);
 	};
 
-	// Initial render
-	render();
-	loop();
+	process.on('SIGINT', exit);
+	process.on('SIGTERM', exit);
 }
 
-main().catch((err) => {
-	showCursor();
-	leaveAlternateScreen();
-	console.error('Error:', err);
-	process.exit(1);
-});
+main();

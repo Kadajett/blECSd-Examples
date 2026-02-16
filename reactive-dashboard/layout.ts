@@ -1,23 +1,14 @@
 /**
  * Layout and rendering functions for the reactive dashboard.
  *
- * Uses manual ANSI rendering following the system-monitor pattern.
+ * Uses blECSd cell buffer rendering.
  */
 
+import { renderText } from 'blecsd';
+import { BOX_SINGLE, renderBox, type CellBuffer } from 'blecsd/utils';
 import type { Theme } from './theme';
 import type { CpuData, MemoryData, NetworkData, SystemData } from './data';
 import { formatBytes, formatDuration } from './data';
-
-// =============================================================================
-// BOX DRAWING CHARACTERS
-// =============================================================================
-
-const BOX_TL = '┌';
-const BOX_TR = '┐';
-const BOX_BL = '└';
-const BOX_BR = '┘';
-const BOX_H = '─';
-const BOX_V = '│';
 
 // =============================================================================
 // PROGRESS BAR CHARACTERS
@@ -28,73 +19,78 @@ const BAR_PARTIAL = ['', '▏', '▎', '▍', '▌', '▋', '▊', '▉'];
 const BAR_EMPTY = '░';
 
 // =============================================================================
+// LOCAL HELPER: fill() - replaces fillRect
+// =============================================================================
+
+/**
+ * Fill a rectangle in the buffer with a character and colors.
+ * This avoids the fillRect collision in blecsd barrel exports.
+ */
+function fill(
+	buffer: CellBuffer,
+	x: number,
+	y: number,
+	w: number,
+	h: number,
+	char: string,
+	fg: number,
+	bg: number,
+): void {
+	for (let row = 0; row < h; row++) {
+		for (let col = 0; col < w; col++) {
+			buffer.setCell(x + col, y + row, char, fg, bg);
+		}
+	}
+}
+
+// =============================================================================
 // RENDERING HELPERS
 // =============================================================================
 
 /**
  * Get color based on threshold.
  */
-function getThresholdColor(percent: number, theme: Theme): string {
+function getThresholdColor(percent: number, theme: Theme): number {
 	if (percent >= 80) return theme.red;
 	if (percent >= 50) return theme.yellow;
 	return theme.green;
 }
 
 /**
- * Render a progress bar.
+ * Render a progress bar into the buffer.
  */
-function renderProgressBar(percent: number, width: number, theme: Theme): string {
+function renderProgressBar(
+	buffer: CellBuffer,
+	x: number,
+	y: number,
+	percent: number,
+	width: number,
+	theme: Theme,
+): void {
 	const filledWidth = (percent / 100) * width;
 	const fullChars = Math.floor(filledWidth);
 	const partialIndex = Math.floor((filledWidth - fullChars) * 8);
 
 	const color = getThresholdColor(percent, theme);
-	let bar = color;
-	bar += BAR_FILLED.repeat(fullChars);
+
+	// Filled portion
+	for (let i = 0; i < fullChars; i++) {
+		buffer.setCell(x + i, y, BAR_FILLED, color, theme.bg);
+	}
+
+	// Partial character
 	if (fullChars < width) {
-		bar += BAR_PARTIAL[partialIndex] || '';
-		bar += theme.dim + BAR_EMPTY.repeat(width - fullChars - 1);
-	}
-	bar += theme.reset;
-
-	return bar;
-}
-
-/**
- * Draw a box with title.
- */
-function drawBox(
-	x: number,
-	y: number,
-	width: number,
-	height: number,
-	title: string,
-	theme: Theme,
-): string {
-	let output = '';
-
-	// Top border
-	output += `\x1b[${y};${x}H`;
-	output += theme.accent + BOX_TL;
-	const titlePadded = ` ${title} `;
-	const leftPad = Math.floor((width - 2 - titlePadded.length) / 2);
-	const rightPad = width - 2 - titlePadded.length - leftPad;
-	output += BOX_H.repeat(Math.max(0, leftPad));
-	output += theme.white + theme.bold + titlePadded + theme.reset + theme.accent;
-	output += BOX_H.repeat(Math.max(0, rightPad));
-	output += BOX_TR + theme.reset;
-
-	// Sides
-	for (let row = 1; row < height - 1; row++) {
-		output += `\x1b[${y + row};${x}H${theme.accent}${BOX_V}${theme.reset}`;
-		output += `\x1b[${y + row};${x + width - 1}H${theme.accent}${BOX_V}${theme.reset}`;
+		const partialChar = BAR_PARTIAL[partialIndex] || '';
+		if (partialChar) {
+			buffer.setCell(x + fullChars, y, partialChar, color, theme.bg);
+		}
 	}
 
-	// Bottom border
-	output += `\x1b[${y + height - 1};${x}H`;
-	output += theme.accent + BOX_BL + BOX_H.repeat(width - 2) + BOX_BR + theme.reset;
-
-	return output;
+	// Empty portion
+	const emptyStart = fullChars + (partialIndex > 0 ? 1 : 0);
+	for (let i = emptyStart; i < width; i++) {
+		buffer.setCell(x + i, y, BAR_EMPTY, theme.dim, theme.bg);
+	}
 }
 
 // =============================================================================
@@ -105,14 +101,21 @@ function drawBox(
  * Render CPU panel.
  */
 export function renderCpuPanel(
+	buffer: CellBuffer,
 	cpu: CpuData,
 	x: number,
 	y: number,
 	width: number,
 	height: number,
 	theme: Theme,
-): string {
-	let output = drawBox(x, y, width, height, 'CPU Usage', theme);
+): void {
+	// Draw box
+	renderBox(buffer, x, y, width, height, BOX_SINGLE, { fg: theme.borderFg, bg: theme.panelBg });
+
+	// Title
+	const title = ' CPU Usage ';
+	const titleX = x + Math.floor((width - title.length) / 2);
+	renderText(buffer, titleX, y, title, theme.white, theme.panelBg);
 
 	const innerWidth = width - 4;
 	const barWidth = Math.max(10, innerWidth - 20);
@@ -123,41 +126,60 @@ export function renderCpuPanel(
 	for (let i = 0; i < Math.min(cpu.perCore.length, height - 4); i++) {
 		const usage = cpu.perCore[i] ?? 0;
 
-		output += `\x1b[${row};${x + 2}H`;
-		output += `${theme.dim}CPU${i.toString().padStart(2)}${theme.reset} `;
-		output += renderProgressBar(usage, barWidth, theme);
-		output += ` ${usage.toFixed(1).padStart(5)}%`;
+		// Label
+		const label = `CPU${i.toString().padStart(2)} `;
+		renderText(buffer, x + 2, row, label, theme.dim, theme.panelBg);
+
+		// Progress bar
+		renderProgressBar(buffer, x + 2 + label.length, row, usage, barWidth, theme);
+
+		// Percentage
+		const pct = ` ${usage.toFixed(1).padStart(5)}%`;
+		renderText(buffer, x + 2 + label.length + barWidth, row, pct, theme.fg, theme.panelBg);
 
 		row++;
 	}
 
 	// Average and load
 	if (row < y + height - 1) {
-		output += `\x1b[${row};${x + 2}H`;
-		output += `${theme.white}Avg: ${getThresholdColor(cpu.average, theme)}${cpu.average.toFixed(1)}%${theme.reset}`;
+		const avgText = `Avg: ${cpu.average.toFixed(1)}%`;
+		renderText(buffer, x + 2, row, 'Avg: ', theme.white, theme.panelBg);
+		renderText(
+			buffer,
+			x + 2 + 5,
+			row,
+			cpu.average.toFixed(1) + '%',
+			getThresholdColor(cpu.average, theme),
+			theme.panelBg,
+		);
 		row++;
 	}
 
 	if (row < y + height - 1) {
-		output += `\x1b[${row};${x + 2}H`;
-		output += `${theme.dim}Load: ${cpu.loadAvg.map((l) => l.toFixed(2)).join(' ')}${theme.reset}`;
+		const loadText = `Load: ${cpu.loadAvg.map((l) => l.toFixed(2)).join(' ')}`;
+		renderText(buffer, x + 2, row, loadText, theme.dim, theme.panelBg);
 	}
-
-	return output;
 }
 
 /**
  * Render Memory panel.
  */
 export function renderMemoryPanel(
+	buffer: CellBuffer,
 	memory: MemoryData,
 	x: number,
 	y: number,
 	width: number,
 	height: number,
 	theme: Theme,
-): string {
-	let output = drawBox(x, y, width, height, 'Memory', theme);
+): void {
+	// Draw box
+	renderBox(buffer, x, y, width, height, BOX_SINGLE, { fg: theme.borderFg, bg: theme.panelBg });
+
+	// Title
+	const title = ' Memory ';
+	const titleX = x + Math.floor((width - title.length) / 2);
+	renderText(buffer, titleX, y, title, theme.white, theme.panelBg);
 
 	const innerWidth = width - 4;
 	const barWidth = Math.max(10, innerWidth - 25);
@@ -166,94 +188,125 @@ export function renderMemoryPanel(
 	const memTotal = formatBytes(memory.total);
 
 	// Memory bar
-	output += `\x1b[${y + 1};${x + 2}H`;
-	output += `${theme.white}RAM ${theme.reset}`;
-	output += renderProgressBar(memory.percent, barWidth, theme);
-	output += ` ${memory.percent.toFixed(1).padStart(5)}%`;
+	const label = 'RAM ';
+	renderText(buffer, x + 2, y + 1, label, theme.white, theme.panelBg);
+	renderProgressBar(buffer, x + 2 + label.length, y + 1, memory.percent, barWidth, theme);
+
+	const pct = ` ${memory.percent.toFixed(1).padStart(5)}%`;
+	renderText(buffer, x + 2 + label.length + barWidth, y + 1, pct, theme.fg, theme.panelBg);
 
 	// Memory details
-	output += `\x1b[${y + 2};${x + 2}H`;
-	output += `${theme.dim}Used: ${memUsed} / ${memTotal}${theme.reset}`;
-
-	return output;
+	const details = `Used: ${memUsed} / ${memTotal}`;
+	renderText(buffer, x + 2, y + 2, details, theme.dim, theme.panelBg);
 }
 
 /**
  * Render Network panel.
  */
 export function renderNetworkPanel(
+	buffer: CellBuffer,
 	network: NetworkData,
 	x: number,
 	y: number,
 	width: number,
 	height: number,
 	theme: Theme,
-): string {
-	let output = drawBox(x, y, width, height, 'Network I/O', theme);
+): void {
+	// Draw box
+	renderBox(buffer, x, y, width, height, BOX_SINGLE, { fg: theme.borderFg, bg: theme.panelBg });
+
+	// Title
+	const title = ' Network I/O ';
+	const titleX = x + Math.floor((width - title.length) / 2);
+	renderText(buffer, titleX, y, title, theme.white, theme.panelBg);
 
 	// RX
-	output += `\x1b[${y + 1};${x + 2}H`;
-	output += `${theme.cyan}RX:${theme.reset} ${formatBytes(network.rx)} (${formatBytes(network.rxRate)}/s)`;
+	renderText(buffer, x + 2, y + 1, 'RX:', theme.cyan, theme.panelBg);
+	const rxText = ` ${formatBytes(network.rx)} (${formatBytes(network.rxRate)}/s)`;
+	renderText(buffer, x + 2 + 3, y + 1, rxText, theme.fg, theme.panelBg);
 
 	// TX
-	output += `\x1b[${y + 2};${x + 2}H`;
-	output += `${theme.cyan}TX:${theme.reset} ${formatBytes(network.tx)} (${formatBytes(network.txRate)}/s)`;
-
-	return output;
+	renderText(buffer, x + 2, y + 2, 'TX:', theme.cyan, theme.panelBg);
+	const txText = ` ${formatBytes(network.tx)} (${formatBytes(network.txRate)}/s)`;
+	renderText(buffer, x + 2 + 3, y + 2, txText, theme.fg, theme.panelBg);
 }
 
 /**
  * Render System Info panel.
  */
 export function renderSystemPanel(
+	buffer: CellBuffer,
 	system: SystemData,
 	x: number,
 	y: number,
 	width: number,
 	height: number,
 	theme: Theme,
-): string {
-	let output = drawBox(x, y, width, height, 'System Info', theme);
+): void {
+	// Draw box
+	renderBox(buffer, x, y, width, height, BOX_SINGLE, { fg: theme.borderFg, bg: theme.panelBg });
 
-	const lines = [
-		`${theme.cyan}Hostname:${theme.reset}  ${system.hostname}`,
-		`${theme.cyan}Platform:${theme.reset}  ${system.platform} ${system.arch}`,
-		`${theme.cyan}Uptime:${theme.reset}    ${formatDuration(system.uptime)}`,
-	];
+	// Title
+	const title = ' System Info ';
+	const titleX = x + Math.floor((width - title.length) / 2);
+	renderText(buffer, titleX, y, title, theme.white, theme.panelBg);
 
-	for (let i = 0; i < Math.min(lines.length, height - 2); i++) {
-		output += `\x1b[${y + 1 + i};${x + 2}H`;
-		output += lines[i];
+	// System info lines
+	let row = y + 1;
+
+	renderText(buffer, x + 2, row, 'Hostname:', theme.cyan, theme.panelBg);
+	renderText(buffer, x + 2 + 10, row, `  ${system.hostname}`, theme.fg, theme.panelBg);
+	row++;
+
+	if (row < y + height - 1) {
+		renderText(buffer, x + 2, row, 'Platform:', theme.cyan, theme.panelBg);
+		renderText(buffer, x + 2 + 10, row, `  ${system.platform} ${system.arch}`, theme.fg, theme.panelBg);
+		row++;
 	}
 
-	return output;
+	if (row < y + height - 1) {
+		renderText(buffer, x + 2, row, 'Uptime:', theme.cyan, theme.panelBg);
+		renderText(buffer, x + 2 + 10, row, `    ${formatDuration(system.uptime)}`, theme.fg, theme.panelBg);
+	}
 }
 
 /**
  * Render status bar with theme name and controls.
  */
 export function renderStatusBar(
+	buffer: CellBuffer,
 	screenWidth: number,
 	screenHeight: number,
 	theme: Theme,
-): string {
-	const y = screenHeight;
-	let output = `\x1b[${y};1H`;
-	output += '\x1b[7m'; // Reverse video
+): void {
+	const y = screenHeight - 1;
 
-	const controls = ` q:Quit  t:Theme  r:Refresh `;
+	// Fill status bar background
+	fill(buffer, 0, y, screenWidth, 1, ' ', theme.statusFg, theme.statusBg);
+
+	const controls = ' q:Quit  t:Theme  r:Refresh ';
 	const themeName = `Theme: ${theme.name}`;
-	const timestamp = new Date().toLocaleTimeString();
+	const timestamp = ` ${new Date().toLocaleTimeString()} `;
 
-	const totalWidth = controls.length + themeName.length + timestamp.length + 4;
+	const totalWidth = controls.length + themeName.length + timestamp.length;
 	const padding = Math.max(0, screenWidth - totalWidth);
 
-	output += controls;
-	output += ' '.repeat(Math.floor(padding / 2));
-	output += themeName;
-	output += ' '.repeat(Math.ceil(padding / 2));
-	output += ` ${timestamp} `;
-	output += theme.reset;
+	let xPos = 0;
 
-	return output;
+	// Controls
+	renderText(buffer, xPos, y, controls, theme.statusFg, theme.statusBg);
+	xPos += controls.length;
+
+	// Left padding
+	xPos += Math.floor(padding / 2);
+
+	// Theme name
+	renderText(buffer, xPos, y, themeName, theme.statusFg, theme.statusBg);
+	xPos += themeName.length;
+
+	// Right padding
+	xPos += Math.ceil(padding / 2);
+
+	// Timestamp
+	renderText(buffer, xPos, y, timestamp, theme.statusFg, theme.statusBg);
 }

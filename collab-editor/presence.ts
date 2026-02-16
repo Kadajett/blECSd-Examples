@@ -7,7 +7,7 @@ import {
   formatPresenceBar,
   getUserCount,
   type PresenceUser,
-} from 'blecsd';
+} from 'blecsd/terminal';
 
 export interface PresenceState {
   readonly manager: ReturnType<typeof createPresenceManager>;

@@ -11,7 +11,7 @@ import {
   type TextCRDT,
   type LWWRegister,
   type TextOp,
-} from 'blecsd';
+} from 'blecsd/terminal';
 
 export interface CursorPosition {
   readonly line: number;

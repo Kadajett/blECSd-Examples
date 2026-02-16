@@ -1,4 +1,4 @@
-import { insertText, deleteText, getTextLength, type TextOp } from 'blecsd';
+import { insertText, deleteText, getTextLength, type TextOp } from 'blecsd/terminal';
 import type { EditorState } from './editor';
 import type { PresenceState } from './presence';
 import { updateRemoteUserCursor } from './presence';

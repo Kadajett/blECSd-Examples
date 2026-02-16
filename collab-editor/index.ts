@@ -1,15 +1,12 @@
 import {
-  createWorld,
-  createScreenEntity,
-  setOutputStream,
   enterAlternateScreen,
-  clearScreen,
   hideCursor,
-  showCursor,
   leaveAlternateScreen,
-  parseKeyBuffer,
-  type KeyEvent,
-} from 'blecsd';
+  setOutputStream,
+  showCursor,
+  writeRaw,
+} from 'blecsd/systems';
+import { parseKeyBuffer } from 'blecsd/terminal';
 import {
   createEditor,
   insertChar,
@@ -20,28 +17,30 @@ import {
 } from './editor';
 import { createPresence, addRemoteUser } from './presence';
 import { createNetwork, startSimulation, getNetworkOps } from './network';
-import { createUI, render, initializeOverlays } from './ui';
+import { createUI, renderEditorToBuffer } from './ui';
 import type { NetworkOperation } from './network';
+import type { EditorState } from './editor';
+import type { PresenceState } from './presence';
+import type { NetworkState } from './network';
+import type { UIState } from './ui';
 
-const FRAME_RATE = 30;
-const FRAME_TIME = 1000 / FRAME_RATE;
+import { createCellBuffer } from 'blecsd/utils';
 
-function main(): void {
-  // Initialize terminal
-  setOutputStream(process.stdout);
-  enterAlternateScreen();
-  clearScreen();
-  hideCursor();
+type BufferWithCells = ReturnType<typeof createCellBuffer>;
 
-  // Create world and screen
-  const world = createWorld();
-  const screen = createScreenEntity(world, {
-    width: process.stdout.columns ?? 80,
-    height: process.stdout.rows ?? 24,
-  });
+interface AppState {
+  editor: EditorState;
+  readonly presence: PresenceState;
+  readonly network: NetworkState;
+  readonly ui: UIState;
+  termWidth: number;
+  termHeight: number;
+  needsRedraw: boolean;
+  running: boolean;
+}
 
-  // Initialize state
-  let editor = createEditor('local');
+function createAppState(): AppState {
+  const editor = createEditor('local');
   const presence = createPresence();
   const network = createNetwork();
   const ui = createUI(process.stdout.columns ?? 80, process.stdout.rows ?? 24);
@@ -51,87 +50,165 @@ function main(): void {
     addRemoteUser(presence, user.sessionId, user.name);
   }
 
-  // Initialize overlays
-  initializeOverlays(ui, network);
+  return {
+    editor,
+    presence,
+    network,
+    ui,
+    termWidth: process.stdout.columns ?? 80,
+    termHeight: process.stdout.rows ?? 24,
+    needsRedraw: true,
+    running: true,
+  };
+}
+
+function bufferToAnsi(buffer: BufferWithCells): string {
+  const lines: string[] = [];
+  for (let y = 0; y < buffer.height; y++) {
+    let line = '';
+    let prevFg = -1;
+    let prevBg = -1;
+    for (let x = 0; x < buffer.width; x++) {
+      const cell = buffer.cells[y]?.[x];
+      if (!cell) continue;
+      if (cell.fg !== prevFg || cell.bg !== prevBg) {
+        const fgR = (cell.fg >> 16) & 0xff;
+        const fgG = (cell.fg >> 8) & 0xff;
+        const fgB = cell.fg & 0xff;
+        const bgR = (cell.bg >> 16) & 0xff;
+        const bgG = (cell.bg >> 8) & 0xff;
+        const bgB = cell.bg & 0xff;
+        line += `\x1b[38;2;${fgR};${fgG};${fgB};48;2;${bgR};${bgG};${bgB}m`;
+        prevFg = cell.fg;
+        prevBg = cell.bg;
+      }
+      line += cell.char;
+    }
+    lines.push(line);
+  }
+  return '\x1b[H' + lines.join('\n') + '\x1b[0m';
+}
+
+function renderToBuffer(state: AppState): BufferWithCells {
+  return renderEditorToBuffer(
+    state.editor,
+    state.presence,
+    state.network,
+    state.termWidth,
+    state.termHeight
+  );
+}
+
+function handleKeypress(state: AppState, key: ReturnType<typeof parseKeyBuffer>[number]): void {
+  if (key.name === 'q' && key.ctrl) {
+    state.running = false;
+    return;
+  }
+
+  if (key.name === 'backspace' || key.name === 'delete') {
+    state.editor = deleteChar(state.editor);
+  } else if (key.name === 'up') {
+    state.editor = moveCursor(state.editor, 'up');
+  } else if (key.name === 'down') {
+    state.editor = moveCursor(state.editor, 'down');
+  } else if (key.name === 'left') {
+    state.editor = moveCursor(state.editor, 'left');
+  } else if (key.name === 'right') {
+    state.editor = moveCursor(state.editor, 'right');
+  } else if (key.name === 'return' || key.name === 'enter') {
+    state.editor = insertChar(state.editor, '\n');
+  } else if (key.sequence.length === 1 && !key.ctrl && !key.meta) {
+    state.editor = insertChar(state.editor, key.sequence);
+  }
+
+  state.needsRedraw = true;
+}
+
+function main(): void {
+  const state = createAppState();
+
+  // Initialize terminal
+  if (process.stdin.isTTY) process.stdin.setRawMode(true);
+  process.stdin.resume();
+  setOutputStream(process.stdout);
+  hideCursor();
+  enterAlternateScreen();
+
+  let terminalRestored = false;
+  const restoreTerminal = (): void => {
+    if (terminalRestored) return;
+    terminalRestored = true;
+    leaveAlternateScreen();
+    showCursor();
+    writeRaw('\x1b[0m');
+    if (process.stdin.isTTY) process.stdin.setRawMode(false);
+    process.stdin.pause();
+  };
 
   // Add some initial content
-  editor = setCursor(editor, 0, 0);
+  state.editor = setCursor(state.editor, 0, 0);
   const initialText = 'Welcome to Collaborative Editor!\nStart typing to see CRDT in action.\n';
   for (const char of initialText) {
-    editor = insertChar(editor, char);
+    state.editor = insertChar(state.editor, char);
   }
-  editor = setCursor(editor, 2, 0);
+  state.editor = setCursor(state.editor, 2, 0);
 
   // Start network simulation
-  startSimulation(network, editor, presence, (op: NetworkOperation) => {
+  startSimulation(state.network, state.editor, state.presence, (op: NetworkOperation) => {
     const ops = getNetworkOps(op);
     for (const textOp of ops) {
-      editor = applyRemoteOperation(editor, textOp);
+      state.editor = applyRemoteOperation(state.editor, textOp);
     }
+    state.needsRedraw = true;
   });
 
   // Input handling
-  if (process.stdin.setRawMode) {
-    process.stdin.setRawMode(true);
-  }
-  process.stdin.resume();
-
   process.stdin.on('data', (data: Buffer) => {
-    const events = parseKeyBuffer(new Uint8Array(data));
-
-    for (const key of events) {
-      if (key.name === 'q' && key.ctrl) {
-        cleanup();
-        process.exit(0);
-      }
-
-      if (key.name === 'backspace' || key.name === 'delete') {
-        editor = deleteChar(editor);
-      } else if (key.name === 'up') {
-        editor = moveCursor(editor, 'up');
-      } else if (key.name === 'down') {
-        editor = moveCursor(editor, 'down');
-      } else if (key.name === 'left') {
-        editor = moveCursor(editor, 'left');
-      } else if (key.name === 'right') {
-        editor = moveCursor(editor, 'right');
-      } else if (key.name === 'return' || key.name === 'enter') {
-        editor = insertChar(editor, '\n');
-      } else if (key.sequence.length === 1 && !key.ctrl && !key.meta) {
-        editor = insertChar(editor, key.sequence);
-      }
+    if (!state.running) return;
+    const keyEvents = parseKeyBuffer(new Uint8Array(data));
+    for (const keyEvent of keyEvents) {
+      handleKeypress(state, keyEvent);
     }
   });
 
-  // Render loop
-  const renderInterval = setInterval(() => {
-    render(editor, presence, network, ui);
-  }, FRAME_TIME);
-
-  // Cleanup function
-  function cleanup(): void {
-    clearInterval(renderInterval);
-    if (process.stdin.setRawMode) {
-      process.stdin.setRawMode(false);
-    }
-    process.stdin.pause();
-    showCursor();
-    leaveAlternateScreen();
-  }
-
-  // Handle exit signals
-  process.on('SIGINT', () => {
-    cleanup();
-    process.exit(0);
-  });
-
-  process.on('SIGTERM', () => {
-    cleanup();
-    process.exit(0);
+  // Terminal resize handling
+  process.stdout.on('resize', () => {
+    state.termWidth = process.stdout.columns ?? 80;
+    state.termHeight = process.stdout.rows ?? 24;
+    state.needsRedraw = true;
   });
 
   // Initial render
-  render(editor, presence, network, ui);
+  writeRaw(bufferToAnsi(renderToBuffer(state)));
+  state.needsRedraw = false;
+
+  // Render loop (50ms = ~20fps)
+  const renderInterval = setInterval(() => {
+    if (!state.running) {
+      clearInterval(renderInterval);
+      restoreTerminal();
+      process.exit(0);
+      return;
+    }
+
+    // Always redraw for live network simulation
+    state.needsRedraw = true;
+
+    if (state.needsRedraw) {
+      writeRaw(bufferToAnsi(renderToBuffer(state)));
+      state.needsRedraw = false;
+    }
+  }, 50);
+
+  const exit = (): void => {
+    state.running = false;
+    clearInterval(renderInterval);
+    restoreTerminal();
+    process.exit(0);
+  };
+
+  process.on('SIGINT', exit);
+  process.on('SIGTERM', exit);
 }
 
 main();

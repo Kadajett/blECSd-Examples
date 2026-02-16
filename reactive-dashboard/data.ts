@@ -9,8 +9,8 @@
  */
 
 import * as os from 'node:os';
-import { createPollingSignal, createComputed } from 'blecsd';
-import type { SignalGetter, ComputedSignal } from 'blecsd';
+import { createPollingSignal, createComputed } from 'blecsd/core';
+import type { SignalGetter, ComputedSignal } from 'blecsd/core';
 
 type Dispose = () => void;
 

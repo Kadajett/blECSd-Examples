@@ -4,8 +4,8 @@
  * Demonstrates using createEffect for logging alerts when thresholds are exceeded.
  */
 
-import { createEffect } from 'blecsd';
-import type { SignalGetter } from 'blecsd';
+import { createEffect } from 'blecsd/core';
+import type { SignalGetter } from 'blecsd/core';
 import type { CpuData, MemoryData } from './data';
 
 // =============================================================================

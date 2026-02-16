@@ -1,131 +1,198 @@
-import { writeRaw } from 'blecsd';
-import type { EditorState, CursorPosition } from './editor';
+import { renderText } from 'blecsd';
+import { createCellBuffer, packColor, type CellBuffer } from 'blecsd/utils';
+import type { EditorState } from './editor';
 import type { PresenceState } from './presence';
 import type { NetworkState } from './network';
 import { getCursor, getDocumentLength } from './editor';
 import { getPresenceBar, getRemoteUserCount } from './presence';
-import {
-  createOverlayManager,
-  addSessionOverlay,
-  setCursorOverlay,
-  renderOverlaysToAnsi,
-} from 'blecsd';
+
+type BufferWithCells = ReturnType<typeof createCellBuffer>;
 
 export interface UIState {
   readonly width: number;
   readonly height: number;
-  readonly overlayManager: ReturnType<typeof createOverlayManager>;
 }
 
 export function createUI(width: number, height: number): UIState {
   return {
     width,
     height,
-    overlayManager: createOverlayManager(),
   };
 }
 
-export function initializeOverlays(ui: UIState, network: NetworkState): void {
-  for (const user of network.users) {
-    addSessionOverlay(user.sessionId, user.name, user.color);
-    setCursorOverlay(user.sessionId, user.cursorX, user.cursorY);
+// Helper function to fill a rectangular region with a character
+function fill(
+  buffer: CellBuffer,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  char: string,
+  fg: number,
+  bg: number
+): void {
+  for (let row = 0; row < h; row++) {
+    for (let col = 0; col < w; col++) {
+      buffer.setCell(x + col, y + row, char, fg, bg);
+    }
   }
 }
 
-export function updateOverlayCursors(ui: UIState, network: NetworkState): void {
-  for (const user of network.users) {
-    setCursorOverlay(user.sessionId, user.cursorX, user.cursorY);
+// Color constants
+const COLOR_WHITE = packColor(255, 255, 255);
+const COLOR_BLACK = packColor(0, 0, 0);
+const COLOR_GRAY_BG = packColor(58, 58, 58); // ~237 in 256-color
+const COLOR_GRAY_DIM = packColor(88, 88, 88); // ~240 in 256-color
+const COLOR_RED = packColor(255, 85, 85);
+const COLOR_GREEN = packColor(85, 255, 85);
+const COLOR_YELLOW = packColor(255, 255, 85);
+const COLOR_CURSOR_INVERTED_FG = COLOR_BLACK;
+const COLOR_CURSOR_INVERTED_BG = COLOR_WHITE;
+
+function getUserColor(color: number): number {
+  switch (color) {
+    case 1:
+      return COLOR_RED;
+    case 2:
+      return COLOR_GREEN;
+    case 3:
+      return COLOR_YELLOW;
+    default:
+      return COLOR_WHITE;
   }
 }
 
-function drawTopBar(presence: PresenceState, width: number): void {
-  const bar = getPresenceBar(presence, width - 2);
+function renderTopBar(buffer: CellBuffer, presence: PresenceState, width: number): void {
+  const bar = getPresenceBar(presence, width - 12);
   const userCount = getRemoteUserCount(presence);
+  const text = ` ${bar} (${userCount} users)`;
 
-  writeRaw('\x1b[1;1H'); // Move to top-left
-  writeRaw('\x1b[48;5;237m'); // Gray background
-  writeRaw('\x1b[38;5;255m'); // White text
-  writeRaw(` ${bar} (${userCount} users)`);
-  writeRaw(' '.repeat(Math.max(0, width - bar.length - 12)));
-  writeRaw('\x1b[0m'); // Reset
+  // Fill entire top bar with gray background
+  fill(buffer, 0, 0, width, 1, ' ', COLOR_WHITE, COLOR_GRAY_BG);
+
+  // Render text
+  renderText(buffer, 0, 0, text, COLOR_WHITE, COLOR_GRAY_BG);
 }
 
-function drawLineNumbers(startLine: number, endLine: number): void {
+function renderLineNumbers(
+  buffer: CellBuffer,
+  startLine: number,
+  endLine: number,
+  yOffset: number
+): void {
   for (let i = startLine; i <= endLine; i++) {
     const lineNum = String(i + 1).padStart(4, ' ');
-    writeRaw(`\x1b[${i - startLine + 3};1H`); // Position cursor
-    writeRaw('\x1b[38;5;240m'); // Dark gray
-    writeRaw(lineNum);
-    writeRaw('\x1b[0m');
+    renderText(buffer, 0, yOffset + (i - startLine), lineNum, COLOR_GRAY_DIM, COLOR_BLACK);
   }
 }
 
-function drawEditorContent(editor: EditorState, ui: UIState): void {
-  const contentWidth = ui.width - 5; // Account for line numbers
-  const contentHeight = ui.height - 3; // Account for top and bottom bars
+function renderEditorContent(
+  buffer: CellBuffer,
+  editor: EditorState,
+  width: number,
+  height: number
+): void {
+  const contentWidth = width - 5; // Account for line numbers (4 digits + 1 space)
+  const contentHeight = height - 3; // Account for top and bottom bars
   const startLine = 0;
   const endLine = Math.min(startLine + contentHeight - 1, editor.lines.length - 1);
+  const xOffset = 5;
+  const yOffset = 2;
 
   for (let i = startLine; i <= endLine; i++) {
     const line = editor.lines[i] ?? '';
     const displayLine = line.slice(0, contentWidth);
 
-    writeRaw(`\x1b[${i - startLine + 3};6H`); // Position after line numbers
-    writeRaw('\x1b[0m'); // Reset styling
-    writeRaw(displayLine);
-    writeRaw(' '.repeat(Math.max(0, contentWidth - displayLine.length)));
+    renderText(buffer, xOffset, yOffset + (i - startLine), displayLine, COLOR_WHITE, COLOR_BLACK);
   }
 }
 
-function drawCursor(cursor: CursorPosition): void {
-  const screenY = cursor.line + 3; // Account for top bar and offset
-  const screenX = cursor.col + 6; // Account for line numbers
+function renderLocalCursor(
+  buffer: CellBuffer,
+  editor: EditorState,
+  width: number,
+  height: number
+): void {
+  const cursor = getCursor(editor);
+  const screenY = cursor.line + 2; // Account for top bar
+  const screenX = cursor.col + 5; // Account for line numbers
 
-  writeRaw(`\x1b[${screenY};${screenX}H`); // Move cursor to position
+  if (screenY >= 2 && screenY < height - 1 && screenX >= 5 && screenX < width) {
+    const line = editor.lines[cursor.line] ?? '';
+    const char = cursor.col < line.length ? line[cursor.col] ?? ' ' : ' ';
+
+    // Invert colors for cursor
+    buffer.setCell(
+      screenX,
+      screenY,
+      char,
+      COLOR_CURSOR_INVERTED_FG,
+      COLOR_CURSOR_INVERTED_BG
+    );
+  }
 }
 
-function drawBottomBar(editor: EditorState, presence: PresenceState, ui: UIState): void {
+function renderRemoteCursors(
+  buffer: CellBuffer,
+  network: NetworkState,
+  width: number,
+  height: number
+): void {
+  for (const user of network.users) {
+    const x = user.cursorX;
+    const y = user.cursorY;
+
+    if (x >= 0 && x < width && y >= 0 && y < height) {
+      const color = getUserColor(user.color);
+      // Render remote cursor as a colored block
+      buffer.setCell(x, y, '█', color, COLOR_BLACK);
+    }
+  }
+}
+
+function renderBottomBar(
+  buffer: CellBuffer,
+  editor: EditorState,
+  presence: PresenceState,
+  width: number,
+  height: number
+): void {
   const cursor = getCursor(editor);
   const docLength = getDocumentLength(editor);
   const userCount = getRemoteUserCount(presence);
 
-  const status = `Ln ${cursor.line + 1}, Col ${cursor.col + 1} | ${docLength} chars | ${userCount} users online`;
+  const status = ` Ln ${cursor.line + 1}, Col ${cursor.col + 1} | ${docLength} chars | ${userCount} users online`;
 
-  writeRaw(`\x1b[${ui.height};1H`); // Move to bottom
-  writeRaw('\x1b[48;5;237m'); // Gray background
-  writeRaw('\x1b[38;5;255m'); // White text
-  writeRaw(' ' + status);
-  writeRaw(' '.repeat(Math.max(0, ui.width - status.length - 1)));
-  writeRaw('\x1b[0m'); // Reset
+  const y = height - 1;
+
+  // Fill entire bottom bar with gray background
+  fill(buffer, 0, y, width, 1, ' ', COLOR_WHITE, COLOR_GRAY_BG);
+
+  // Render status text
+  renderText(buffer, 0, y, status, COLOR_WHITE, COLOR_GRAY_BG);
 }
 
-function drawOverlays(ui: UIState): void {
-  const overlayAnsi = renderOverlaysToAnsi(ui.width, ui.height);
-  writeRaw(overlayAnsi);
-}
-
-export function render(
+export function renderEditorToBuffer(
   editor: EditorState,
   presence: PresenceState,
   network: NetworkState,
-  ui: UIState
-): void {
-  // Clear screen
-  writeRaw('\x1b[2J');
+  width: number,
+  height: number
+): BufferWithCells {
+  const buffer = createCellBuffer(width, height, COLOR_WHITE, COLOR_BLACK);
 
-  // Draw UI components
-  drawTopBar(presence, ui.width);
+  // Render UI components in order
+  renderTopBar(buffer, presence, width);
 
-  const contentHeight = ui.height - 3;
-  drawLineNumbers(0, Math.min(contentHeight - 1, editor.lines.length - 1));
-  drawEditorContent(editor, ui);
+  const contentHeight = height - 3;
+  renderLineNumbers(buffer, 0, Math.min(contentHeight - 1, editor.lines.length - 1), 2);
+  renderEditorContent(buffer, editor, width, height);
 
-  // Update and draw overlays
-  updateOverlayCursors(ui, network);
-  drawOverlays(ui);
+  // Render cursors
+  renderRemoteCursors(buffer, network, width, height);
+  renderLocalCursor(buffer, editor, width, height);
 
-  drawBottomBar(editor, presence, ui);
+  renderBottomBar(buffer, editor, presence, width, height);
 
-  // Draw local cursor
-  drawCursor(getCursor(editor));
+  return buffer;
 }
