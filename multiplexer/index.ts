@@ -27,9 +27,10 @@
  * @module examples/multiplexer
  */
 
-import { createWorld, setOutputStream, writeRaw, type World } from 'blecsd';
+import { createWorld, type World } from 'blecsd';
+import { setOutputStream, writeRaw } from 'blecsd/systems';
 import { createTerminal, type TerminalWidget } from 'blecsd/widgets';
-import { screen, cursor, mouse, style } from 'blecsd/terminal';
+import { cursorSeq as cursor, screenSeq as screen, mouse, style } from 'blecsd/terminal';
 
 // =============================================================================
 // CONFIGURATION

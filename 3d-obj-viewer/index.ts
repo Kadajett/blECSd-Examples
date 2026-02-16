@@ -9,23 +9,32 @@
  */
 
 import { readFileSync } from 'fs';
-import { addEntity, createWorld } from 'blecsd';
+import { addEntity, clearScreen, createWorld } from 'blecsd';
+import type { Entity, World } from 'blecsd';
+import { createPackedQueryAdapter, setWorldAdapter, syncWorldAdapter } from 'blecsd/core';
 import {
-	type Entity,
-	type World,
-	three,
-	createViewport3D,
 	enterAlternateScreen,
-	leaveAlternateScreen,
 	hideCursor,
-	showCursor,
-	clearScreen,
-	createPackedQueryAdapter,
-	setWorldAdapter,
-	syncWorldAdapter,
+	leaveAlternateScreen,
 	setOutputStream,
+	showCursor,
 	writeRaw,
-} from 'blecsd';
+} from 'blecsd/systems';
+import {
+	Camera3D,
+	Mesh,
+	Transform3D,
+	Viewport3D,
+	createSphereMesh,
+	createViewport3D,
+	getMeshData,
+	loadObjAsMesh,
+	outputStore,
+	projectionSystem,
+	rasterSystem,
+	sceneGraphSystem,
+	viewportOutputSystem,
+} from '@blecsd/3d';
 
 // Parse CLI args
 const objPath = process.argv[2];
@@ -36,10 +45,10 @@ const world = createWorld() as World;
 // Set up packed adapter for 3D performance
 const adapter = createPackedQueryAdapter({
 	queries: [
-		{ name: 'transforms', components: [three.Transform3D] },
-		{ name: 'cameras', components: [three.Camera3D] },
-		{ name: 'viewports', components: [three.Viewport3D] },
-		{ name: 'meshes', components: [three.Mesh] },
+		{ name: 'transforms', components: [Transform3D] },
+		{ name: 'cameras', components: [Camera3D] },
+		{ name: 'viewports', components: [Viewport3D] },
+		{ name: 'meshes', components: [Mesh] },
 	],
 	initialCapacity: 128,
 	syncMode: 'all',
@@ -67,16 +76,16 @@ let modelName: string;
 if (objPath) {
 	try {
 		const objSource = readFileSync(objPath, 'utf-8');
-		meshId = three.loadObjAsMesh(objSource, { name: objPath });
+		meshId = loadObjAsMesh(objSource, { name: objPath });
 		modelName = objPath;
 	} catch (err) {
 		console.error(`Failed to load ${objPath}: ${(err as Error).message}`);
 		console.error('Falling back to generated sphere...');
-		meshId = three.createSphereMesh({ radius: 1.5, widthSegments: 24, heightSegments: 12 });
+		meshId = createSphereMesh({ radius: 1.5, widthSegments: 24, heightSegments: 12 });
 		modelName = 'sphere (fallback)';
 	}
 } else {
-	meshId = three.createSphereMesh({ radius: 1.5, widthSegments: 24, heightSegments: 12 });
+	meshId = createSphereMesh({ radius: 1.5, widthSegments: 24, heightSegments: 12 });
 	modelName = 'sphere (default)';
 }
 
@@ -108,20 +117,20 @@ function frame(): void {
 
 	// Rotate the model
 	rotationY += 0.8 * dt;
-	three.Transform3D.ry[meshEid] = rotationY;
-	three.Transform3D.dirty[meshEid] = 1;
+	Transform3D.ry[meshEid] = rotationY;
+	Transform3D.dirty[meshEid] = 1;
 
 	// Sync packed adapter before running systems
 	syncWorldAdapter(world);
 
 	// Run 3D pipeline
-	three.sceneGraphSystem(world);
-	three.projectionSystem(world);
-	three.rasterSystem(world);
-	three.viewportOutputSystem(world);
+	sceneGraphSystem(world);
+	projectionSystem(world);
+	rasterSystem(world);
+	viewportOutputSystem(world);
 
 	// Get output
-	const output = three.outputStore.get(vpEntity);
+	const output = outputStore.get(vpEntity);
 	if (!output?.encoded.cells) return;
 
 	// Render to terminal
@@ -144,7 +153,7 @@ function frame(): void {
 	ansi += `\x1B[1;${titleX}H\x1B[1;36m${title}\x1B[0m`;
 
 	const fps = dt > 0 ? Math.round(1 / dt) : 0;
-	const meshData = three.getMeshData(meshId);
+	const meshData = getMeshData(meshId);
 	const vertCount = meshData?.vertexCount ?? 0;
 	ansi += `\x1B[${VIEWPORT_HEIGHT + 2};2H\x1B[90mFPS: ${fps}  Vertices: ${vertCount}  Press Ctrl+C to quit\x1B[0m`;
 

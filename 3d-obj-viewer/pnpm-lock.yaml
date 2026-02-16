@@ -8,9 +8,12 @@ importers:
 
   .:
     dependencies:
+      '@blecsd/3d':
+        specifier: ^0.6.0
+        version: 0.6.0(blecsd@0.6.0)
       blecsd:
-        specifier: ^0.4.0
-        version: 0.4.0
+        specifier: ^0.6.0
+        version: 0.6.0
     devDependencies:
       '@types/node':
         specifier: ^25.2.1
@@ -26,6 +29,12 @@ importers:
         version: 5.9.3
 
 packages:
+
+  '@blecsd/3d@0.6.0':
+    resolution: {integrity: sha512-cNhgkcZu5PxNfaMsMycRLi/8gDTAsosupbsiNanj8FQyVsAo0+NjspxLQBkErKZCETq789tA5d9ary9n5OceWA==}
+    engines: {node: '>=22.0.0'}
+    peerDependencies:
+      blecsd: '>=0.6.0'
 
   '@esbuild/aix-ppc64@0.27.3':
     resolution: {integrity: sha512-9fJMTNFTWZMh5qwrBItuziu834eOCUcEqymSH7pY+zoMVEZg3gcPuBNxH1EvfVYe9h0x/Ptw8KBzv7qxb7l8dg==}
@@ -338,8 +347,8 @@ packages:
   bitecs@0.4.0:
     resolution: {integrity: sha512-ho6Zop/L79DRTnBAfakPpGPuX7y0+lAjX06CpaAW+5tnAc7BH3L3RlSrWAXAqwnQGDZ10GsoxaxyTTsddlun3g==}
 
-  blecsd@0.4.0:
-    resolution: {integrity: sha512-FSl1o0w11nQSavy+1zwgZ/V9QUCP6beJJ+BK+YFYAnVOTPszxMUvMGH1zSOWxRhsdZC3MHpX56cBxmS357tsQg==}
+  blecsd@0.6.0:
+    resolution: {integrity: sha512-evc6mIN3PX2rupPMfRvlDEyGHcG/Nr5nDADdXeG+zZ46Z3WDzkDHaTNNh4aMmga5FG7vWqRE6kORWQmn01JYnw==}
     engines: {node: '>=22.0.0'}
     hasBin: true
 
@@ -554,6 +563,10 @@ packages:
 
 snapshots:
 
+  '@blecsd/3d@0.6.0(blecsd@0.6.0)':
+    dependencies:
+      blecsd: 0.6.0
+
   '@esbuild/aix-ppc64@0.27.3':
     optional: true
 
@@ -733,7 +746,7 @@ snapshots:
 
   bitecs@0.4.0: {}
 
-  blecsd@0.4.0:
+  blecsd@0.6.0:
     dependencies:
       bitecs: 0.4.0
       zod: 4.3.6

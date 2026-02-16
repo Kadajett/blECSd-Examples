@@ -32,8 +32,8 @@ import {
 	type ProgramConfig,
 	createInputHandler,
 	type InputHandler,
-	screen,
-	cursor,
+	cursorSeq as cursor,
+	screenSeq as screen,
 	style,
 	triggerResize,
 } from 'blecsd/terminal';

@@ -8,20 +8,27 @@
  * Quit: Ctrl+C
  */
 
-import { addEntity, createWorld } from 'blecsd';
+import { addEntity, clearScreen, createWorld } from 'blecsd';
+import type { Entity, World } from 'blecsd';
 import {
-	type Entity,
-	type World,
-	three,
-	createViewport3D,
 	enterAlternateScreen,
-	leaveAlternateScreen,
 	hideCursor,
-	showCursor,
-	clearScreen,
-	writeRaw,
+	leaveAlternateScreen,
 	setOutputStream,
-} from 'blecsd';
+	showCursor,
+	writeRaw,
+} from 'blecsd/systems';
+import {
+	Transform3D,
+	createCubeMesh,
+	createViewport3D,
+	outputStore,
+	projectionSystem,
+	rasterSystem,
+	sceneGraphSystem,
+	setAnimation3D,
+	viewportOutputSystem,
+} from '@blecsd/3d';
 
 // Backend names and their display labels
 const BACKENDS = ['braille', 'halfblock', 'sextant', 'sixel', 'kitty'] as const;
@@ -49,7 +56,7 @@ function getViewportPosition(index: number): { left: number; top: number } {
 const world = createWorld() as World;
 
 // Create a shared cube mesh
-const cubeId = three.createCubeMesh({ size: 1.5 });
+const cubeId = createCubeMesh({ size: 1.5 });
 
 // Create a viewport and cube entity for each backend
 const viewports: Array<{ vpEntity: Entity; widget: ReturnType<typeof createViewport3D>; backend: BackendName }> = [];
@@ -74,7 +81,7 @@ for (let i = 0; i < BACKENDS.length; i++) {
 	cubeEntities.push(cubeEid);
 
 	// Set up rotation animation
-	three.setAnimation3D(world, cubeEid, {
+	setAnimation3D(world, cubeEid, {
 		rotateSpeed: { x: 0.8, y: 1.2, z: 0.3 },
 	});
 
@@ -129,23 +136,23 @@ function frame(): void {
 
 	// Manually update rotation for all cube entities
 	for (const cubeEid of cubeEntities) {
-		three.Transform3D.rx[cubeEid] = (three.Transform3D.rx[cubeEid] as number) + 0.8 * dt;
-		three.Transform3D.ry[cubeEid] = (three.Transform3D.ry[cubeEid] as number) + 1.2 * dt;
-		three.Transform3D.rz[cubeEid] = (three.Transform3D.rz[cubeEid] as number) + 0.3 * dt;
-		three.Transform3D.dirty[cubeEid] = 1;
+		Transform3D.rx[cubeEid] = (Transform3D.rx[cubeEid] as number) + 0.8 * dt;
+		Transform3D.ry[cubeEid] = (Transform3D.ry[cubeEid] as number) + 1.2 * dt;
+		Transform3D.rz[cubeEid] = (Transform3D.rz[cubeEid] as number) + 0.3 * dt;
+		Transform3D.dirty[cubeEid] = 1;
 	}
 
 	// Run 3D pipeline
-	three.sceneGraphSystem(world);
-	three.projectionSystem(world);
-	three.rasterSystem(world);
-	three.viewportOutputSystem(world);
+	sceneGraphSystem(world);
+	projectionSystem(world);
+	rasterSystem(world);
+	viewportOutputSystem(world);
 
 	// Render each viewport's output to terminal
 	let ansi = '';
 
 	for (const { vpEntity, backend } of viewports) {
-		const output = three.outputStore.get(vpEntity);
+		const output = outputStore.get(vpEntity);
 		if (!output) continue;
 
 		if (output.encoded.cells) {

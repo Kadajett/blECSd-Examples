@@ -26,16 +26,15 @@
  * @module examples/terminal
  */
 
+import { clearScreen, createWorld } from 'blecsd';
 import {
-	createWorld,
 	enterAlternateScreen,
-	leaveAlternateScreen,
 	hideCursor,
-	showCursor,
-	clearScreen,
-	writeRaw,
+	leaveAlternateScreen,
 	setOutputStream,
-} from 'blecsd';
+	showCursor,
+	writeRaw,
+} from 'blecsd/systems';
 import { createTerminal, handleTerminalKey, type TerminalWidget } from 'blecsd/widgets';
 
 // =============================================================================

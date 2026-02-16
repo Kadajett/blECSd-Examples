@@ -18,25 +18,25 @@
 
 import {
 	addEntity,
-	createWorld,
-	createCellBuffer,
-	Position,
-	setPosition,
-	getPosition,
-	Velocity,
-	setVelocity,
-	ZOrder,
-	setZIndex,
-	getZIndex,
-	enterAlternateScreen,
-	leaveAlternateScreen,
-	hideCursor,
-	showCursor,
 	clearScreen,
-	cursorHome,
-	setOutputStream,
+	createWorld,
+	getPosition,
+	getZIndex,
+	setPosition,
+	setZIndex,
 } from 'blecsd';
-import type { World, Entity } from 'blecsd';
+import type { Entity, World } from 'blecsd';
+import { Position, Velocity, setVelocity } from 'blecsd/components';
+import {
+	cursorHome,
+	enterAlternateScreen,
+	hideCursor,
+	leaveAlternateScreen,
+	setOutputStream,
+	showCursor,
+	writeRaw,
+} from 'blecsd/systems';
+import { createCellBuffer } from 'blecsd/utils';
 
 // =============================================================================
 // CONFIGURATION

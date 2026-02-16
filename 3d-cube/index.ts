@@ -9,23 +9,31 @@
  * Quit: Ctrl+C
  */
 
-import { addEntity, createWorld } from 'blecsd';
+import { addEntity, clearScreen, createWorld } from 'blecsd';
+import type { Entity, World } from 'blecsd';
+import { createPackedQueryAdapter, setWorldAdapter, syncWorldAdapter } from 'blecsd/core';
 import {
-	type Entity,
-	type World,
-	three,
-	createViewport3D,
 	enterAlternateScreen,
-	leaveAlternateScreen,
 	hideCursor,
-	showCursor,
-	clearScreen,
-	createPackedQueryAdapter,
-	setWorldAdapter,
-	syncWorldAdapter,
+	leaveAlternateScreen,
 	setOutputStream,
+	showCursor,
 	writeRaw,
-} from 'blecsd';
+} from 'blecsd/systems';
+import {
+	Camera3D,
+	Mesh,
+	Transform3D,
+	Viewport3D,
+	createCubeMesh,
+	createViewport3D,
+	outputStore,
+	projectionSystem,
+	rasterSystem,
+	sceneGraphSystem,
+	setAnimation3D,
+	viewportOutputSystem,
+} from '@blecsd/3d';
 
 // Create ECS world
 const world = createWorld() as World;
@@ -33,10 +41,10 @@ const world = createWorld() as World;
 // Set up packed adapter for 3D performance
 const adapter = createPackedQueryAdapter({
 	queries: [
-		{ name: 'transforms', components: [three.Transform3D] },
-		{ name: 'cameras', components: [three.Camera3D] },
-		{ name: 'viewports', components: [three.Viewport3D] },
-		{ name: 'meshes', components: [three.Mesh] },
+		{ name: 'transforms', components: [Transform3D] },
+		{ name: 'cameras', components: [Camera3D] },
+		{ name: 'viewports', components: [Viewport3D] },
+		{ name: 'meshes', components: [Mesh] },
 	],
 	initialCapacity: 128,
 	syncMode: 'all',
@@ -59,13 +67,13 @@ const viewport = createViewport3D(world, vpEntity, {
 });
 
 // Create a cube mesh
-const cubeId = three.createCubeMesh({ size: 1.5 });
+const cubeId = createCubeMesh({ size: 1.5 });
 
 // Add cube to the scene
 const cubeEid = viewport.addMesh(cubeId, { tz: -5 });
 
 // Set up animation: rotate the cube
-three.setAnimation3D(world, cubeEid, {
+setAnimation3D(world, cubeEid, {
 	rotateSpeed: { x: 0.8, y: 1.2, z: 0.3 },
 });
 
@@ -90,22 +98,22 @@ function frame(): void {
 
 	// Run animation
 	// Manually update rotation since we don't have the scheduler running
-	three.Transform3D.rx[cubeEid] = (three.Transform3D.rx[cubeEid] as number) + 0.8 * dt;
-	three.Transform3D.ry[cubeEid] = (three.Transform3D.ry[cubeEid] as number) + 1.2 * dt;
-	three.Transform3D.rz[cubeEid] = (three.Transform3D.rz[cubeEid] as number) + 0.3 * dt;
-	three.Transform3D.dirty[cubeEid] = 1;
+	Transform3D.rx[cubeEid] = (Transform3D.rx[cubeEid] as number) + 0.8 * dt;
+	Transform3D.ry[cubeEid] = (Transform3D.ry[cubeEid] as number) + 1.2 * dt;
+	Transform3D.rz[cubeEid] = (Transform3D.rz[cubeEid] as number) + 0.3 * dt;
+	Transform3D.dirty[cubeEid] = 1;
 
 	// Sync packed adapter before running systems
 	syncWorldAdapter(world);
 
 	// Run 3D pipeline
-	three.sceneGraphSystem(world);
-	three.projectionSystem(world);
-	three.rasterSystem(world);
-	three.viewportOutputSystem(world);
+	sceneGraphSystem(world);
+	projectionSystem(world);
+	rasterSystem(world);
+	viewportOutputSystem(world);
 
 	// Get output
-	const output = three.outputStore.get(vpEntity);
+	const output = outputStore.get(vpEntity);
 	if (!output?.encoded.cells) return;
 
 	// Render cells to terminal

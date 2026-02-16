@@ -39,19 +39,17 @@
  * @module api-explorer
  */
 
-import {
-	createWorld,
-	parseMouseSequence,
-	isMouseBuffer,
-	enterAlternateScreen,
-	leaveAlternateScreen,
-	hideCursor,
-	showCursor,
-	clearScreen,
-	writeRaw,
-	setOutputStream,
-} from 'blecsd';
+import { clearScreen, createWorld } from 'blecsd';
 import type { World } from 'blecsd';
+import {
+	enterAlternateScreen,
+	hideCursor,
+	leaveAlternateScreen,
+	setOutputStream,
+	showCursor,
+	writeRaw,
+} from 'blecsd/systems';
+import { isMouseBuffer, parseMouseSequence } from 'blecsd/terminal';
 
 // =============================================================================
 // TYPES

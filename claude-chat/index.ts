@@ -29,18 +29,16 @@
  * @module examples/claude-chat
  */
 
+import { createWorld } from 'blecsd';
 import {
-	createWorld,
-	parseMouseSequence,
-	isMouseBuffer,
 	enterAlternateScreen,
-	leaveAlternateScreen,
 	hideCursor,
+	leaveAlternateScreen,
+	setOutputStream,
 	showCursor as showTerminalCursor,
 	writeRaw,
-	setOutputStream,
-} from 'blecsd';
-import type { ParsedMouseEvent } from 'blecsd';
+} from 'blecsd/systems';
+import { isMouseBuffer, parseMouseSequence, type ParsedMouseEvent } from 'blecsd/terminal';
 import { createVirtualizedList, handleVirtualizedListKey } from 'blecsd/widgets';
 
 // =============================================================================
