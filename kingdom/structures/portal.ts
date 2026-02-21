@@ -8,7 +8,8 @@
  * Victory: all portals destroyed on island 5.
  */
 
-import { addEntity, setPosition, getPosition } from 'blecsd';
+import { addEntity } from 'blecsd/core';
+import { setPosition, getPosition } from 'blecsd/components';
 import {
   type GameState,
   type StructureData,

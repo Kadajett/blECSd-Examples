@@ -4,7 +4,9 @@
  * Dirty-rect double-buffered ANSI output.
  */
 
-import { createCellBuffer, getPosition, writeRaw } from 'blecsd';
+import { getPosition } from 'blecsd/components';
+import { writeRaw } from 'blecsd/systems';
+import { createCellBuffer } from 'blecsd/utils';
 import {
   type GameState,
   type StructureData,

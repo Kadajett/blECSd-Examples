@@ -10,7 +10,7 @@
  * - Autumn: 75% production
  * - Winter: no farming, forage berry bushes instead (1 coin per berry)
  */
-import { getPosition, setVelocity } from 'blecsd';
+import { getPosition, setVelocity } from 'blecsd/components';
 import {
   type GameState,
   type UnitData,

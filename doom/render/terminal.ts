@@ -15,7 +15,7 @@ import {
 	leaveAlternateScreen,
 	hideCursor,
 	showCursor,
-} from 'blecsd';
+} from 'blecsd/systems';
 import type { KittyRenderer } from './kittyProtocol.js';
 
 // ─── Terminal Detection ──────────────────────────────────────────

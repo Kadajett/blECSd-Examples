@@ -11,22 +11,25 @@
  * @module examples/balatro
  */
 
-import { addEntity, removeEntity } from 'blecsd';
-import type { World } from 'blecsd';
+import { addEntity, removeEntity, createWorld } from 'blecsd/core';
+import type { World } from 'blecsd/core';
 import {
 	Position,
 	setPosition,
 	getPosition,
 	Velocity,
 	setVelocity,
+} from 'blecsd/components';
+import {
 	createCellBuffer,
 	renderText,
-	createWorld,
+} from 'blecsd/utils';
+import {
 	setOutputStream,
 	leaveAlternateScreen,
 	showCursor,
 	writeRaw,
-} from 'blecsd';
+} from 'blecsd/systems';
 import type { WriteStream, ReadStream } from 'node:tty';
 import { resolve } from 'node:path';
 
@@ -37,7 +40,7 @@ import {
 	clearLog,
 	dumpRaw,
 	LogLevel,
-} from 'blecsd';
+} from 'blecsd/terminal';
 
 // Core
 import type { FrameContext, System } from './core';

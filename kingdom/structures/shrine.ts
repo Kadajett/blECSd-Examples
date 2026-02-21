@@ -9,7 +9,8 @@
  * 2-3 shrines per island, 1-day cooldown between uses per shrine.
  */
 
-import { addEntity, setPosition } from 'blecsd';
+import { addEntity } from 'blecsd/core';
+import { setPosition } from 'blecsd/components';
 import {
   type GameState,
   type StructureData,

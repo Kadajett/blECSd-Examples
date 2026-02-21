@@ -7,7 +7,7 @@
  * @module render/intermission
  */
 
-import { type three } from 'blecsd';
+import type { PixelFramebuffer } from '@blecsd/3d';
 import type { TransitionState } from '../game/levelTransition.js';
 import { PAR_TIMES, formatTime } from '../game/levelTransition.js';
 import type { Palette } from '../wad/types.js';
@@ -27,7 +27,7 @@ const SCREEN_HEIGHT = 200;
  * @param ts - Current transition state with stats and animation counters
  */
 export function drawIntermission(
-	fb: ReturnType<typeof three.createPixelFramebuffer>,
+	fb: PixelFramebuffer,
 	palette: Palette,
 	ts: TransitionState,
 ): void {

@@ -18,9 +18,9 @@ import {
 	parseKeyBuffer,
 	parseMouseSequence,
 	isMouseBuffer,
-	writeRaw,
 	type KeyName,
-} from 'blecsd';
+} from 'blecsd/terminal';
+import { writeRaw } from 'blecsd/systems';
 
 /** How long a key stays "held" after last press event (ms). */
 const KEY_HOLD_MS = 120;

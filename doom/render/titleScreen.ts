@@ -8,7 +8,7 @@
  * @module render/titleScreen
  */
 
-import { type three } from 'blecsd';
+import type { PixelFramebuffer } from '@blecsd/3d';
 import type { WadFile, Palette } from '../wad/types.js';
 import { findLump, getLumpData } from '../wad/wad.js';
 import { parsePicture, renderPictureToFlat } from '../wad/pictureFormat.js';
@@ -106,7 +106,7 @@ const CHAR_HEIGHT = 7;
  * Draw a character at the given position using the bitmap font.
  */
 function drawFontChar(
-	fb: three.PixelFramebuffer,
+	fb: PixelFramebuffer,
 	x: number,
 	y: number,
 	ch: string,
@@ -142,7 +142,7 @@ function drawFontChar(
  * Draw a string at the given position.
  */
 function drawText(
-	fb: three.PixelFramebuffer,
+	fb: PixelFramebuffer,
 	x: number,
 	y: number,
 	text: string,
@@ -162,7 +162,7 @@ function drawText(
  * Draw a string centered horizontally on screen.
  */
 function drawTextCentered(
-	fb: three.PixelFramebuffer,
+	fb: PixelFramebuffer,
 	y: number,
 	text: string,
 	r: number,
@@ -178,7 +178,7 @@ function drawTextCentered(
  * Fill a rectangle with a color (with alpha blending for dimming).
  */
 function fillRect(
-	fb: three.PixelFramebuffer,
+	fb: PixelFramebuffer,
 	x: number,
 	y: number,
 	w: number,
@@ -225,7 +225,7 @@ function fillRect(
  * @param palette - Color palette for index-to-RGB conversion
  */
 export function drawTitlePic(
-	fb: three.PixelFramebuffer,
+	fb: PixelFramebuffer,
 	palette: Palette,
 ): void {
 	const buf = fb.colorBuffer;
@@ -291,7 +291,7 @@ const CURSOR_B = 50;
  * @param menu - Current menu state
  */
 export function drawTitleScreen(
-	fb: three.PixelFramebuffer,
+	fb: PixelFramebuffer,
 	palette: Palette,
 	menu: MenuState,
 ): void {
@@ -309,7 +309,7 @@ export function drawTitleScreen(
  * Draw the main menu overlay (NEW GAME, QUIT).
  */
 function drawMainMenu(
-	fb: three.PixelFramebuffer,
+	fb: PixelFramebuffer,
 	menu: MenuState,
 ): void {
 	const items = MAIN_MENU_ITEMS;
@@ -350,7 +350,7 @@ function drawMainMenu(
  * Draw the skill selection menu overlay.
  */
 function drawSkillMenu(
-	fb: three.PixelFramebuffer,
+	fb: PixelFramebuffer,
 	menu: MenuState,
 ): void {
 	const items = SKILL_NAMES;

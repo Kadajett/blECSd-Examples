@@ -4,7 +4,7 @@
  * @module render/defs
  */
 
-import { type three } from 'blecsd';
+import type { PixelFramebuffer } from '@blecsd/3d';
 import type { ColorMap, MapData, Palette } from '../wad/types.js';
 import type { CompositeTexture, TextureStore } from './textures.js';
 
@@ -61,7 +61,7 @@ export interface DrawSeg {
 /** All mutable state for the current frame's rendering. */
 export interface RenderState {
 	/** The pixel framebuffer being rendered to. */
-	fb: three.PixelFramebuffer;
+	fb: PixelFramebuffer;
 
 	/** Map data. */
 	map: MapData;
@@ -124,7 +124,7 @@ export interface RenderState {
  * @returns Fresh render state
  */
 export function createRenderState(
-	fb: three.PixelFramebuffer,
+	fb: PixelFramebuffer,
 	map: MapData,
 	textures: TextureStore,
 	palette: Palette,

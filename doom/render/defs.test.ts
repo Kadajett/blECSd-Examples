@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { three } from 'blecsd';
+import { createPixelFramebuffer } from '@blecsd/3d';
 import { createRenderState, VP_UNUSED } from './defs.js';
 import type { MapData, Palette, ColorMap } from '../wad/types.js';
 import type { TextureStore } from './textures.js';
@@ -63,7 +63,7 @@ describe('createRenderState', () => {
 	const HEIGHT = 200;
 
 	function makeState() {
-		const fb = three.createPixelFramebuffer({
+		const fb = createPixelFramebuffer({
 			width: WIDTH,
 			height: HEIGHT,
 			enableDepthBuffer: true,
@@ -137,7 +137,7 @@ describe('createRenderState', () => {
 	});
 
 	it('stores references to map, textures, palette, and colormap', () => {
-		const fb = three.createPixelFramebuffer({
+		const fb = createPixelFramebuffer({
 			width: WIDTH,
 			height: HEIGHT,
 			enableDepthBuffer: true,
@@ -157,7 +157,7 @@ describe('createRenderState', () => {
 	});
 
 	it('uses framebuffer dimensions for clip arrays and solidsegs', () => {
-		const smallFb = three.createPixelFramebuffer({
+		const smallFb = createPixelFramebuffer({
 			width: 64,
 			height: 48,
 			enableDepthBuffer: true,

@@ -7,8 +7,8 @@
  * Auto-fires when loaded and greed in range during night.
  */
 
-import { getPosition } from 'blecsd';
-import type { Entity } from 'blecsd';
+import type { Entity } from 'blecsd/core';
+import { getPosition } from 'blecsd/components';
 import {
   type GameState,
   StructureType,

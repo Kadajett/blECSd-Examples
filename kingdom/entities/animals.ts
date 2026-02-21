@@ -12,8 +12,9 @@
  * Animal data is stored in module-level state since GameState
  * doesn't have an animals field (types.ts is shared/locked).
  */
-import { addEntity, removeEntity, getPosition, setPosition, setVelocity } from 'blecsd';
-import type { Entity } from 'blecsd';
+import { addEntity, removeEntity } from 'blecsd/core';
+import type { Entity } from 'blecsd/core';
+import { getPosition, setPosition, setVelocity } from 'blecsd/components';
 import {
   type GameState,
   Season,

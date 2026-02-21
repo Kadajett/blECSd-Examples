@@ -9,7 +9,8 @@
  * - Crown stealer can grab dropped crown and carry to portal
  * - If timer expires or crown reaches portal: game over
  */
-import { addEntity, setPosition, getPosition, setVelocity } from 'blecsd';
+import { addEntity } from 'blecsd/core';
+import { setPosition, getPosition, setVelocity } from 'blecsd/components';
 import {
   type GameState,
   type UnitData,

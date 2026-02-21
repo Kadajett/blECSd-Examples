@@ -6,7 +6,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { getPosition } from 'blecsd';
+import { getPosition } from 'blecsd/components';
 import {
   type GameState,
   type StructureData,

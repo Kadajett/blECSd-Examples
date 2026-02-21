@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { three } from 'blecsd';
+import { createPixelFramebuffer, getPixel } from '@blecsd/3d';
 import {
 	createHudState,
 	drawHud,
@@ -100,7 +100,7 @@ function createMockColormap(): ColorMap {
 }
 
 function makeRenderState(): RenderState {
-	const fb = three.createPixelFramebuffer({
+	const fb = createPixelFramebuffer({
 		width: 320,
 		height: 200,
 		enableDepthBuffer: true,
@@ -235,7 +235,7 @@ describe('drawHud', () => {
 		// Check that some pixels in the status bar area have been written.
 		// The status bar is at y=168 to y=199. The background is dark gray (48,48,48).
 		const barTop = rs.screenHeight - STATUS_BAR_HEIGHT;
-		const pixel = three.getPixel(rs.fb, 160, barTop + 16);
+		const pixel = getPixel(rs.fb, 160, barTop + 16);
 		// Status bar should have non-zero pixel data
 		const hasContent = pixel.r !== 0 || pixel.g !== 0 || pixel.b !== 0;
 		expect(hasContent).toBe(true);
@@ -259,7 +259,7 @@ describe('drawHud', () => {
 		let foundGreenPixel = false;
 		for (let x = 10; x < 54; x++) {
 			for (let y = numberY; y < numberY + 7; y++) {
-				const pixel = three.getPixel(rs.fb, x, y);
+				const pixel = getPixel(rs.fb, x, y);
 				if (pixel.g > 200 && pixel.r === 0 && pixel.b === 0) {
 					foundGreenPixel = true;
 					break;
@@ -287,7 +287,7 @@ describe('drawHud', () => {
 		let foundYellowPixel = false;
 		for (let x = 260; x < 300; x++) {
 			for (let y = numberY; y < numberY + 7; y++) {
-				const pixel = three.getPixel(rs.fb, x, y);
+				const pixel = getPixel(rs.fb, x, y);
 				if (pixel.r > 200 && pixel.g > 200 && pixel.b === 0) {
 					foundYellowPixel = true;
 					break;
@@ -323,8 +323,8 @@ describe('drawHud', () => {
 		let diffFound = false;
 		for (let x = 10; x < 54; x++) {
 			for (let y = numberY; y < numberY + 7; y++) {
-				const p1 = three.getPixel(rs1.fb, x, y);
-				const p2 = three.getPixel(rs2.fb, x, y);
+				const p1 = getPixel(rs1.fb, x, y);
+				const p2 = getPixel(rs2.fb, x, y);
 				if (p1.g !== p2.g) {
 					diffFound = true;
 					break;

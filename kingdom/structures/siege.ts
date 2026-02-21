@@ -18,7 +18,8 @@
  *   Ground fire patch (3x3) for 5 seconds, 2 DPS to passing greed
  */
 
-import { addEntity, setPosition, getPosition } from 'blecsd';
+import { addEntity } from 'blecsd/core';
+import { setPosition, getPosition } from 'blecsd/components';
 import {
   type GameState,
   type StructureData,

@@ -10,7 +10,7 @@ import {
   clamp,
   lerp,
 } from '../types';
-import { getPosition, getVelocity } from 'blecsd';
+import { getPosition, getVelocity } from 'blecsd/components';
 
 const CAMERA_LERP_SPEED = 0.1;
 const LOOK_AHEAD_TILES = 5;

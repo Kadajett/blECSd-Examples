@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { three } from 'blecsd';
+import { createPixelFramebuffer } from '@blecsd/3d';
 import { findPlane, setPlaneColumn } from './planes.js';
 import { createRenderState, VP_UNUSED } from './defs.js';
 import type { RenderState, Visplane } from './defs.js';
@@ -59,7 +59,7 @@ function createMockColormap(): ColorMap {
 }
 
 function makeRenderState(): RenderState {
-	const fb = three.createPixelFramebuffer({
+	const fb = createPixelFramebuffer({
 		width: 320,
 		height: 200,
 		enableDepthBuffer: true,

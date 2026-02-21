@@ -8,7 +8,8 @@
  * - Craftsman (blue): central settlements, becomes builder 1.5x faster (2 coins)
  * - Peasant (yellow): everywhere, becomes farmer +50% output (1 coin)
  */
-import { addEntity, setPosition, getPosition, setVelocity } from 'blecsd';
+import { addEntity } from 'blecsd/core';
+import { setPosition, getPosition, setVelocity } from 'blecsd/components';
 import {
   type GameState,
   type UnitData,

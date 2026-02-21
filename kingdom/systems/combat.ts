@@ -17,8 +17,9 @@
  * Mounted combat: monarch on bear can instakill 1 greed (8s cooldown).
  */
 
-import { getPosition, removeEntity } from 'blecsd';
-import type { Entity } from 'blecsd';
+import { removeEntity } from 'blecsd/core';
+import type { Entity } from 'blecsd/core';
+import { getPosition } from 'blecsd/components';
 import {
   type GameState,
   type GreedData,

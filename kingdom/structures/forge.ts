@@ -9,7 +9,7 @@
  * Requires TownCenterTier >= 7 (Iron Keep).
  */
 
-import { getPosition } from 'blecsd';
+import { getPosition } from 'blecsd/components';
 import {
   type GameState,
   TownCenterTier,

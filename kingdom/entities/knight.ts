@@ -6,7 +6,8 @@
  *   5 HP, 11 coin cap. Enhanced combat.
  * Both lead squads of archers toward portals and can damage them.
  */
-import { addEntity, getPosition, setPosition, setVelocity } from 'blecsd';
+import { addEntity } from 'blecsd/core';
+import { getPosition, setPosition, setVelocity } from 'blecsd/components';
 import {
   type GameState,
   type UnitData,

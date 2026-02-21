@@ -6,8 +6,9 @@
  * Can be kidnapped by greedlings and carried to nearest portal.
  * Recovery: destroy portal OR lose crown (dog returns next day).
  */
-import { addEntity, getPosition, setPosition, setVelocity, removeEntity } from 'blecsd';
-import type { Entity } from 'blecsd';
+import { addEntity, removeEntity } from 'blecsd/core';
+import type { Entity } from 'blecsd/core';
+import { getPosition, setPosition, setVelocity } from 'blecsd/components';
 import {
   type GameState,
   GROUND_Y,

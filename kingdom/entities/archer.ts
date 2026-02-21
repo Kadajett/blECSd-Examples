@@ -9,7 +9,8 @@
  * Ground archers: hunt/defend as usual, patrol, ~33% accuracy (existing).
  * Recruitment distributes archers evenly left/right.
  */
-import { addEntity, getPosition, setVelocity } from 'blecsd';
+import { addEntity } from 'blecsd/core';
+import { getPosition, setVelocity } from 'blecsd/components';
 import {
   type GameState,
   type UnitData,

@@ -6,7 +6,7 @@
  * Expands walls outward during peaceful day periods (if coins > 15).
  * Craftsman-origin builders work 1.5x faster.
  */
-import { getPosition, setVelocity } from 'blecsd';
+import { getPosition, setVelocity } from 'blecsd/components';
 import {
   type GameState,
   type UnitData,

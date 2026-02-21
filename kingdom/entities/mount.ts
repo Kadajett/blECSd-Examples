@@ -16,7 +16,7 @@
  * | Unicorn  | 1.4x  | 90      | Grass eating: +3 coins, 15s cd         |
  */
 
-import { getPosition } from 'blecsd';
+import { getPosition } from 'blecsd/components';
 import {
   type GameState,
   MountType,

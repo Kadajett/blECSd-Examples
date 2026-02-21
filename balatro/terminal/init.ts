@@ -15,7 +15,7 @@ import {
 	showCursor,
 	clearScreen as blecsdClearScreen,
 	cursorHome,
-} from 'blecsd';
+} from 'blecsd/systems';
 
 // =============================================================================
 // TYPES

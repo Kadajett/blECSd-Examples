@@ -16,7 +16,8 @@
  *   | 5    | WallIron  | 12   | 400 | TownCenterTier >= 7  |
  */
 
-import { addEntity, setPosition } from 'blecsd';
+import { addEntity } from 'blecsd/core';
+import { setPosition } from 'blecsd/components';
 import {
   type GameState,
   type StructureData,

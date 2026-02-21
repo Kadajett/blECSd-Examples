@@ -8,7 +8,7 @@
  * - Builder Statue (Island 3): +50% wall HP for 2 days
  * - Knight Statue (Island 5): jump-slash (2x damage) for 1 day
  */
-import { getPosition } from 'blecsd';
+import { getPosition } from 'blecsd/components';
 import {
   type GameState,
   distance,

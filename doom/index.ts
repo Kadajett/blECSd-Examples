@@ -24,7 +24,7 @@
  * @module doom
  */
 
-import { three } from 'blecsd';
+import { createPixelFramebuffer } from '@blecsd/3d';
 
 import { ANGLETOFINESHIFT, FINEMASK, finecosine, finesine, generateTables } from './math/angles.js';
 import { FRACBITS, FRACUNIT } from './math/fixed.js';
@@ -163,7 +163,7 @@ function main(): void {
 	console.log(`Title screen: ${hasTitlePic ? 'TITLEPIC loaded' : 'fallback'}`);
 
 	// Create framebuffer and custom Kitty renderer
-	const fb = three.createPixelFramebuffer({
+	const fb = createPixelFramebuffer({
 		width: SCREEN_WIDTH,
 		height: SCREEN_HEIGHT,
 		enableDepthBuffer: true,

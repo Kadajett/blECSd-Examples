@@ -4,7 +4,8 @@
  * Night: defend outermost wall with AoE pike thrust (1.5 tile range).
  * Carries 0 coins (drops immediately).
  */
-import { addEntity, getPosition, setPosition, setVelocity } from 'blecsd';
+import { addEntity } from 'blecsd/core';
+import { getPosition, setPosition, setVelocity } from 'blecsd/components';
 import {
   type GameState,
   type UnitData,

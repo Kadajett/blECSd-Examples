@@ -4,7 +4,7 @@
  * Mechanic: monarch drops 1 coin near merchant -> merchant returns 8 coins next dawn.
  * Only accepts during daytime, not during danger (no active greed nearby).
  */
-import { getPosition } from 'blecsd';
+import { getPosition } from 'blecsd/components';
 import {
   type GameState,
   TimeOfDay,

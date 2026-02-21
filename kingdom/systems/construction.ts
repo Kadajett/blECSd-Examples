@@ -24,7 +24,7 @@
  * Catapult builders are skipped (managed by catapult.ts).
  */
 
-import { getPosition } from 'blecsd';
+import { getPosition } from 'blecsd/components';
 import {
   type GameState,
   type StructureData,

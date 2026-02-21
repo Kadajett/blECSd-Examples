@@ -2,8 +2,9 @@
  * Movement system - applies velocity to positions, handles bounds,
  * projectiles, collision avoidance, and animal movement.
  */
-import { getPosition, setPosition, getVelocity, removeEntity } from 'blecsd';
-import type { Entity } from 'blecsd';
+import { removeEntity } from 'blecsd/core';
+import type { Entity } from 'blecsd/core';
+import { getPosition, setPosition, getVelocity } from 'blecsd/components';
 import {
   type GameState,
   MAP_WIDTH,

@@ -4,7 +4,7 @@
  * wall health, blood moon warning, message log.
  */
 
-import { getPosition } from 'blecsd';
+import { getPosition } from 'blecsd/components';
 import {
   type GameState,
   type StructureData,

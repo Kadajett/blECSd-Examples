@@ -6,7 +6,7 @@
  * crown defense (knights rush to dropped crown),
  * and dog bark alertness bonus for archers.
  */
-import { getPosition } from 'blecsd';
+import { getPosition } from 'blecsd/components';
 import {
   type GameState,
   UnitRole,

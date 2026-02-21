@@ -4,7 +4,7 @@
  * Supports NPC subtypes (warrior, scout, craftsman, peasant) and
  * standard vagrant recruiting via tool stands.
  */
-import { getPosition } from 'blecsd';
+import { getPosition } from 'blecsd/components';
 import {
   type GameState,
   type UnitData,

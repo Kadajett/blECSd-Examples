@@ -9,8 +9,8 @@
  * Builders caught in blast radius are lost.
  */
 
-import { getPosition } from 'blecsd';
-import type { Entity } from 'blecsd';
+import type { Entity } from 'blecsd/core';
+import { getPosition } from 'blecsd/components';
 import {
   type GameState,
   TownCenterTier,

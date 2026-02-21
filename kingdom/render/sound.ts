@@ -3,7 +3,7 @@
  * Terminal bell-based audio feedback with multiple patterns.
  */
 
-import { writeRaw, setOutputStream } from 'blecsd';
+import { writeRaw, setOutputStream } from 'blecsd/systems';
 
 // Initialize blECSd output stream
 setOutputStream(process.stdout);

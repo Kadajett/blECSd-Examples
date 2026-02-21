@@ -21,7 +21,8 @@
  * Windmill farms support extra workers to attract more farmers.
  */
 
-import { addEntity, setPosition } from 'blecsd';
+import { addEntity } from 'blecsd/core';
+import { setPosition } from 'blecsd/components';
 import {
   type GameState,
   type StructureData,

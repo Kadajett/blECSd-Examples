@@ -3,7 +3,7 @@
  * All agents reference this file. DO NOT modify without coordinating.
  */
 
-import type { World, Entity } from 'blecsd';
+import type { World, Entity } from 'blecsd/core';
 
 // ─── World Constants ───────────────────────────────────────────────
 export const MAP_WIDTH = 1200;       // Total world width in tiles

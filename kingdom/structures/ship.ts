@@ -22,8 +22,9 @@
  * State: boatState, hullPieces, boatBuilders, boardedEntities
  */
 
-import { addEntity, setPosition, getPosition } from 'blecsd';
-import type { Entity } from 'blecsd';
+import { addEntity } from 'blecsd/core';
+import type { Entity } from 'blecsd/core';
+import { setPosition, getPosition } from 'blecsd/components';
 import {
   type GameState,
   type StructureData,

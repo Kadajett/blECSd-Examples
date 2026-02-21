@@ -7,7 +7,7 @@
  * @module balatro/render/card
  */
 
-import type { CellBuffer } from 'blecsd';
+import type { CellBuffer } from 'blecsd/utils';
 import type { Card, Suit } from '../data';
 import { getSuitSymbol, isRedSuit } from '../data';
 

@@ -4,7 +4,7 @@
  * Monarch pays gems to coax hermit, then drops at target tower to convert it.
  * Hermits can be kidnapped by greed and must be rescued by destroying portals.
  */
-import { getPosition } from 'blecsd';
+import { getPosition } from 'blecsd/components';
 import {
   type GameState,
   GROUND_Y,

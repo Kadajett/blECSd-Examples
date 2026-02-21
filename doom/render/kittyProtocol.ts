@@ -9,7 +9,8 @@
  * @module render/kittyProtocol
  */
 
-import { type three, writeRaw } from 'blecsd';
+import type { PixelFramebuffer } from '@blecsd/3d';
+import { writeRaw } from 'blecsd/systems';
 
 // ─── Constants ──────────────────────────────────────────────────
 
@@ -18,7 +19,7 @@ const CHUNK_SIZE = 4096;
 // ─── Types ──────────────────────────────────────────────────────
 
 export interface KittyRenderer {
-	renderFrame(fb: three.PixelFramebuffer): void;
+	renderFrame(fb: PixelFramebuffer): void;
 	cleanup(): void;
 }
 
@@ -44,7 +45,7 @@ export function createKittyRenderer(
 	const rgb24 = new Uint8Array(width * height * 3);
 
 	return {
-		renderFrame(fb: three.PixelFramebuffer): void {
+		renderFrame(fb: PixelFramebuffer): void {
 			// Convert RGBA to RGB24
 			const rgba = fb.colorBuffer;
 			const totalPixels = width * height;
